@@ -125,18 +125,20 @@ void QCanSetting::InitUi()
 	tableView->setColumnCount(6);
 	tableView->setHorizontalHeaderLabels(listname);
 	tableView->setSelectionBehavior(QAbstractItemView::SelectRows);
+	connect(tableView, SIGNAL(cellDoubleClicked(int, int)), this, SLOT(on_tableView_doubleCLicked(int, int)));
 	QVBoxLayout* vLayout = new QVBoxLayout();
 	vLayout->addLayout(hLayout);
 	vLayout->addWidget(tableView);
-	//vLayout->addSpacerItem(new QSpacerItem(20, 20, QSizePolicy::Expanding));
-
+	
+	//新建一个水平layout
 	QHBoxLayout* hLayoutAll = new QHBoxLayout();
 	hLayoutAll->addLayout(vLayoutModel);
 	hLayoutAll->addLayout(vLayoutCanId);
 	hLayoutAll->addLayout(vLayout);
+	//设置比例，1：1：3
 	hLayoutAll->setStretch(0, 1);
 	hLayoutAll->setStretch(1, 1);
-	hLayoutAll->setStretch(2, 2);
+	hLayoutAll->setStretch(2, 3);
 	this->setLayout(hLayoutAll);
 	
 }
@@ -188,6 +190,7 @@ void QCanSetting::savepGboleData()
 			pItemObj.insert("CanId", pGboleData.at(i).cItem.at(j).CanId);
 			pItemObj.insert("opt", pGboleData.at(i).cItem.at(j).opt);
 			QJsonObject pDItem;
+			//pItem用一个数组来储存
 			for (int k = 0; k < pGboleData.at(i).cItem.at(j).pItem.size(); k++)
 			{
 				QJsonArray pItem;
@@ -276,18 +279,21 @@ void QCanSetting::InitpGboleData()
 			{
 				if (rootthird[keyListThird.at(j)].type() != QJsonValue::Object)
 					continue;
+				//mDitem本身也是对象，对应的数据结构是struct canIdData,std::vector<canIdData>cItem;
 				QJsonObject rootfour = rootthird[keyListThird.at(j)].toObject();
 				canIdData ctemp;
 				ctemp.CanId = rootfour["CanId"].toInt(0);
 				ctemp.opt = rootfour["opt"].toInt(0);
 				if (rootfour["pDItem"].isObject())
 				{
+					//pDitem对应的是std::vector<struct protoItem>pItem;
 					QJsonObject rootfift = rootfour["pDItem"].toObject();
 					QStringList keyListFour = rootfift.keys();
 					for (int k = 0; k < keyListFour.size(); k++)
 					{
 						if (!rootfift[keyListFour.at(k)].isArray())
 							continue;
+						//对应 struct protoItem
 						QJsonArray jarr = rootfift[keyListFour.at(k)].toArray();
 						if (jarr.size() < 5)
 							continue;
@@ -308,6 +314,7 @@ void QCanSetting::InitpGboleData()
 		}
 		pGboleData.push_back(ptem);
 	}
+	//初始化表格
 	SetTableData();
 }
 
@@ -377,7 +384,7 @@ void QCanSetting::on_pbAddCanId_clicked()
 	QComboBox* proto = new QComboBox();
 	proto->addItem(tr("接收"));
 	proto->addItem(tr("发送"));
-
+	connect(proto, SIGNAL(currentIndexChanged(int)), this, SLOT(on_canIdView_currentIndexChanged(int)));
 
 	canIdView->setItem(row, 0, new QTableWidgetItem(tr("0x123456")));
 	canIdView->setCellWidget(row, 1, proto);
@@ -561,10 +568,45 @@ void QCanSetting::on_modelView_Clicked(int row, int col)
 
 void QCanSetting::on_canIdView_currentIndexChanged(int index)
 {
+	QComboBox* cb = dynamic_cast<QComboBox*>(sender());
+	if (!cb)
+		return;
+	if (!modelView) return;
+	int mCurRow = modelView->currentRow();
+	if (mCurRow < 0 || mCurRow>pGboleData.size() - 1) {
+		QMessageBox::warning(this, tr("warning"), tr("未选中型号， 不能修改CanID"));
+		return;
+	}
+	if (!canIdView) return;
+	QModelIndex pIndex = canIdView->indexAt(QPoint(cb->frameGeometry().x(), cb->frameGeometry().y()));
+	int row = pIndex.row();
+
+	if (row > pGboleData.at(mCurRow).cItem.size() - 1 || row < 0 )
+	{
+		QMessageBox::warning(this, tr("warning"), tr("修改的位置超出范围"));
+		return;
+	}
+	
+	pGboleData.at(mCurRow).cItem.at(row).opt = cb->currentIndex();
+
 }
 
 void QCanSetting::on_canIdView_cellChanged(int row, int col)
 {
+	if (!modelView) return;
+	int mCurRow = modelView->currentRow();
+	if (mCurRow < 0 ||mCurRow>pGboleData.size()-1) {
+		QMessageBox::warning(this, tr("warning"), tr("未选中型号， 不能修改CanID"));
+		return;
+	}
+	if (!canIdView) return;
+
+	if (row > pGboleData.at(mCurRow).cItem.size() - 1 || row <0||col!=0)
+	{
+		QMessageBox::warning(this, tr("warning"), tr("修改的位置超出范围"));
+		return;
+	}
+	pGboleData.at(mCurRow).cItem.at(row).CanId = canIdView->item(row,col)->text().toInt(nullptr, 16);
 
 	//关掉这个，防止添加行setData的时候，触发这个信号
 	disconnect(canIdView, SIGNAL(itemChanged(cellChanged(int, int))), this, SLOT(on_canIdView_cellChanged(int, int)));
@@ -616,5 +658,17 @@ void QCanSetting::on_canIdView_Clicked(int row, int col)
 	{
 		QMessageBox::warning(this, tr("warning"), QString(tr("Vector超出:")+e.what()));
 	}
+}
+
+void QCanSetting::on_tableView_doubleCLicked(int, int)
+{
+	connect(tableView, SIGNAL(cellChanged(int, int)), this, SLOT(on_tableView_cellChanged(int, int)));
+}
+
+void QCanSetting::on_tableView_cellChanged(int row, int col)
+{
+
+	//后面要把这个关掉
+	disconnect(tableView, SIGNAL(cellChanged(int, int)), this, SLOT(on_tableView_cellChanged(int, int)));
 }
 
