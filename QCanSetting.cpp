@@ -41,27 +41,34 @@ void QCanSetting::InitUi()
 	QStringList listname;
 	listname << "名称" << "协议";
 	QPushButton* pbAddModel = new QPushButton("添加型号");
+	pbAddModel->setMinimumWidth(60);
 	connect(pbAddModel, &QPushButton::clicked, this, &QCanSetting::on_pbAddModel_clicked);
 	QPushButton* pbMoveUpModel = new QPushButton("上移");
+	pbMoveUpModel->setMinimumWidth(50);
 	connect(pbMoveUpModel, &QPushButton::clicked, this, &QCanSetting::on_pbMoveUpModel_clicked);
 	QPushButton* pbMoveDownModel = new QPushButton("下移");
+	pbMoveDownModel->setMinimumWidth(50);
 	connect(pbMoveDownModel, &QPushButton::clicked, this, &QCanSetting::on_pbMoveDownModel_clicked);
 	QPushButton* pbDelModel = new QPushButton("删除");
+	pbDelModel->setMinimumWidth(50);
 	connect(pbDelModel, &QPushButton::clicked, this, &QCanSetting::on_pbDelModel_clicked);
 	QPushButton* pbSaveModel = new QPushButton("保存");
+	pbSaveModel->setMinimumWidth(50);
 	connect(pbSaveModel, &QPushButton::clicked, this, &QCanSetting::on_pbSaveModel_clicked);
+	pbSaveModel->setMinimumWidth(50);
 	QHBoxLayout* hLayoutMdeol = new QHBoxLayout();
 	hLayoutMdeol->addWidget(pbAddModel);
 	hLayoutMdeol->addWidget(pbMoveUpModel);
 	hLayoutMdeol->addWidget(pbMoveDownModel);
 	hLayoutMdeol->addWidget(pbDelModel);
 	hLayoutMdeol->addWidget(pbSaveModel);
-	hLayoutMdeol->addSpacerItem(new QSpacerItem(20, 20, QSizePolicy::Expanding));
-
+	hLayoutMdeol->addSpacerItem(new QSpacerItem(60, 20, QSizePolicy::Expanding));
+	hLayoutMdeol->setSpacing(0);
 	modelView = new QTableWidget();
 	modelView->setColumnCount(2);
 	modelView->setHorizontalHeaderLabels(listname);
 	modelView->setSelectionBehavior(QAbstractItemView::SelectRows);
+	modelView->setMaximumWidth(250);
 	connect(modelView, SIGNAL(cellDoubleClicked(int, int)), this, SLOT(on_modelView_doubleClicked(int, int)));
 	connect(modelView, SIGNAL(cellClicked(int, int)), this, SLOT(on_modelView_Clicked(int, int)));
 	
@@ -82,6 +89,11 @@ void QCanSetting::InitUi()
 	connect(pbDelCanId, &QPushButton::clicked, this, &QCanSetting::on_pbDelCanId_clicked);
 	QPushButton* pbSaveCanId = new QPushButton("保存");
 	connect(pbSaveCanId, &QPushButton::clicked, this, &QCanSetting::on_pbSaveCanId_clicked);
+	pbAddCanId->setMinimumWidth(60);
+	pbMoveUpCanId->setMinimumWidth(50);
+	pbMoveDownCanId->setMinimumWidth(50);
+	pbDelCanId->setMinimumWidth(50);
+	pbSaveCanId->setMinimumWidth(50);
 	QHBoxLayout* hLayoutCanId = new QHBoxLayout();
 	hLayoutCanId->addWidget(pbAddCanId);
 	hLayoutCanId->addWidget(pbMoveUpCanId);
@@ -89,16 +101,18 @@ void QCanSetting::InitUi()
 	hLayoutCanId->addWidget(pbDelCanId);
 	hLayoutCanId->addWidget(pbSaveCanId);
 	hLayoutCanId->addSpacerItem(new QSpacerItem(20, 20, QSizePolicy::Expanding));
-
+	hLayoutCanId->setSpacing(0);
 	canIdView = new QTableWidget();
 	canIdView->setColumnCount(2);
 	canIdView->setHorizontalHeaderLabels(listname);
 	canIdView->setSelectionBehavior(QAbstractItemView::SelectRows);
+	canIdView->setMaximumWidth(250);
 	connect(canIdView, SIGNAL(cellDoubleClicked(int, int)), this, SLOT(on_canIdView_doubleClicked(int, int)));
 	connect(canIdView, SIGNAL(cellClicked(int, int)), this, SLOT(on_canIdView_Clicked(int, int)));
 	QVBoxLayout* vLayoutCanId = new QVBoxLayout();
 	vLayoutCanId->addLayout(hLayoutCanId);
 	vLayoutCanId->addWidget(canIdView);
+	
 	//vLayoutCanId->addSpacerItem(new QSpacerItem(20, 80, QSizePolicy::Expanding));
 
 	QPushButton* pbAddIteam = new QPushButton("添加项");
@@ -117,6 +131,7 @@ void QCanSetting::InitUi()
 	hLayout->addWidget(pbMoveDownIteam);
 	hLayout->addWidget(pbDelIteam);
 	hLayout->addWidget(pbSaveIteam);
+	hLayout->setSpacing(0);
 	//hLayout->addSpacerItem(new QSpacerItem(20, 80, QSizePolicy::Expanding));
 	listname.clear();
 	listname << "字段名称" << "起止字节" << "起止位" << "长度" << "精度" << "偏移量";
@@ -553,6 +568,7 @@ void QCanSetting::on_modelView_Clicked(int row, int col)
 			proto->setCurrentIndex(pGboleData.at(row).cItem.at(i).opt);
 			canIdView->setItem(i, 0, new QTableWidgetItem(QString("%1").arg(pGboleData.at(row).cItem.at(i).CanId,8,16)));
 			canIdView->setCellWidget(i, 1, proto);
+			connect(proto, SIGNAL(currentIndexChanged(int)), this, SLOT(on_canIdView_currentIndexChanged(int)));
 		}
 	}
 	catch (const std::exception&e)
@@ -586,8 +602,14 @@ void QCanSetting::on_canIdView_currentIndexChanged(int index)
 		QMessageBox::warning(this, tr("warning"), tr("修改的位置超出范围"));
 		return;
 	}
-	
-	pGboleData.at(mCurRow).cItem.at(row).opt = cb->currentIndex();
+	try
+	{
+		pGboleData.at(mCurRow).cItem.at(row).opt = cb->currentIndex();
+	}
+	catch (const std::exception&e)
+	{
+		QMessageBox::warning(this, tr("warning"), QString(tr("Vector超出:") + e.what() + "Infunction:on_canIdView_currentIndexChanged"));
+	}
 
 }
 
@@ -600,14 +622,19 @@ void QCanSetting::on_canIdView_cellChanged(int row, int col)
 		return;
 	}
 	if (!canIdView) return;
-
-	if (row > pGboleData.at(mCurRow).cItem.size() - 1 || row <0||col!=0)
+	try
 	{
-		QMessageBox::warning(this, tr("warning"), tr("修改的位置超出范围"));
-		return;
+		if (row > pGboleData.at(mCurRow).cItem.size() - 1 || row <0||col!=0)
+		{
+			QMessageBox::warning(this, tr("warning"), tr("修改的位置超出范围"));
+			return;
+		}
+		pGboleData.at(mCurRow).cItem.at(row).CanId = canIdView->item(row,col)->text().toInt(nullptr, 16);
 	}
-	pGboleData.at(mCurRow).cItem.at(row).CanId = canIdView->item(row,col)->text().toInt(nullptr, 16);
-
+	catch (const std::exception&e)
+	{
+		QMessageBox::warning(this, tr("warning"), QString(tr("Vector超出:") + e.what() + "Infunction:on_canIdView_cellChanged"));
+	}
 	//关掉这个，防止添加行setData的时候，触发这个信号
 	disconnect(canIdView, SIGNAL(itemChanged(cellChanged(int, int))), this, SLOT(on_canIdView_cellChanged(int, int)));
 }
@@ -618,7 +645,10 @@ void QCanSetting::on_canIdView_doubleClicked(int, int)
 	//所以曲线救国，在双击的时候才连接这个槽，
 	connect(canIdView, SIGNAL(cellChanged(int, int)), this, SLOT(on_canIdView_cellChanged(int, int)));
 }
-
+/*
+* @brief: 在tableView这个表格上显示canId对应的项
+* @return: void
+*/
 void QCanSetting::on_canIdView_Clicked(int row, int col)
 {
 	if (!tableView)
@@ -629,11 +659,11 @@ void QCanSetting::on_canIdView_Clicked(int row, int col)
 		return;
 	if (row < 0)
 		return;
-
+	//获取当前选中的型号，若没选中，则不管
 	short mRow = modelView->currentRow();
 	if (mRow < 0 || mRow > pGboleData.size() - 1)
 		return;
-	//清空内容，但不清空头，若要清空头，用clear()
+	//清空之前表格的内容
 	int rowCount = tableView->rowCount();
 	for (int m = 0; m < rowCount; m++)
 		tableView->removeRow(rowCount - m - 1);
@@ -642,6 +672,7 @@ void QCanSetting::on_canIdView_Clicked(int row, int col)
 		return;
 	try
 	{
+		//显示对应CanID的项
 		for (int i = 0; i < pGboleData.at(mRow).cItem.at(row).pItem.size(); i++)
 		{
 			//short int crow = tableView->rowCount();
@@ -656,19 +687,77 @@ void QCanSetting::on_canIdView_Clicked(int row, int col)
 	}
 	catch (const std::exception&e)
 	{
-		QMessageBox::warning(this, tr("warning"), QString(tr("Vector超出:")+e.what()));
+		QMessageBox::warning(this, tr("warning"), QString(tr("Vector超出:")+e.what()+ "Infunction:on_canIdView_Clicked"));
+		return;
 	}
 }
 
-void QCanSetting::on_tableView_doubleCLicked(int, int)
+void QCanSetting::on_tableView_doubleCLicked(int row , int col)
 {
+	//建立编辑后的信号槽
 	connect(tableView, SIGNAL(cellChanged(int, int)), this, SLOT(on_tableView_cellChanged(int, int)));
 }
 
 void QCanSetting::on_tableView_cellChanged(int row, int col)
 {
-
-	//后面要把这个关掉
+	if (!tableView)
+		return;
+	if (!canIdView)
+		return;
+	if (!modelView)
+		return;
+	if (row < 0 || col < 0)
+		return;
+	try
+	{
+		int mCurRow = modelView->currentRow();
+		if (mCurRow<0 || mCurRow>pGboleData.size() - 1)
+		{
+			QMessageBox::warning(this, tr("warning"), QString(tr("未选中型号，不能修改")));
+			return;
+		}
+		int cCurRow = canIdView->currentRow();
+		if (cCurRow<0 || cCurRow>pGboleData.at(mCurRow).cItem.size() - 1)
+		{
+			QMessageBox::warning(this, tr("warning"), QString(tr("未选中型号，不能修改")));
+			return;
+		}
+		if (row > pGboleData.at(mCurRow).cItem.at(cCurRow).pItem.size() - 1)
+		{
+			QMessageBox::warning(this, tr("warning"), QString(tr("字段vector超出范围：\nrow > pGboleData.at(mCurRow).cItem.at(cCurRow).pItem.size() - 1")));
+			return;
+		}
+		//获取修改的的值
+		switch (col)
+		{
+		case 0:
+			pGboleData.at(mCurRow).cItem.at(cCurRow).pItem.at(row).bitName = tableView->item(row, col)->text();
+			break;
+		case 1:
+			pGboleData.at(mCurRow).cItem.at(cCurRow).pItem.at(row).startByte = tableView->item(row, col)->text().toInt();
+			break;
+		case 2:
+			pGboleData.at(mCurRow).cItem.at(cCurRow).pItem.at(row).startBit = tableView->item(row, col)->text().toInt();
+			break;
+		case 3:
+			pGboleData.at(mCurRow).cItem.at(cCurRow).pItem.at(row).bitLeng = tableView->item(row, col)->text().toInt();
+			break;
+		case 4:
+			pGboleData.at(mCurRow).cItem.at(cCurRow).pItem.at(row).precision = tableView->item(row, col)->text().toInt();
+			break;
+		case 5:
+			pGboleData.at(mCurRow).cItem.at(cCurRow).pItem.at(row).offset = tableView->item(row, col)->text().toInt();
+			break;
+		default:
+			break;
+		}
+	}
+	catch (const std::exception&e)
+	{
+		QMessageBox::warning(this, tr("warning"), QString(tr("Vector超出:") + e.what()+"Infunction:on_tableView_cellChanged"));
+		//return;
+	}
+	//后面要把这个关掉，不然用户在添加的项时候，会触发这个槽函数
 	disconnect(tableView, SIGNAL(cellChanged(int, int)), this, SLOT(on_tableView_cellChanged(int, int)));
 }
 
