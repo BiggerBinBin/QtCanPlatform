@@ -90,11 +90,16 @@
     <QtUic Include="QtCanPlatform.ui" />
     <QtMoc Include="QtCanPlatform.h" />
     <ClCompile Include="QCanSetting.cpp" />
+    <ClCompile Include="qGboleData.cpp" />
     <ClCompile Include="QtCanPlatform.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="QCanSetting.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="dataStruct.h" />
+    <ClInclude Include="qGboleData.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Condition="Exists('$(QtMsBuild)\qt.targets')">

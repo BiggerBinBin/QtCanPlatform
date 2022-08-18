@@ -1,5 +1,5 @@
 /*
- * QtCanPlatform.h - header file of QtCanPlatform class
+ * qGboleData.h - header file of qGboleData class
  *
  * Copyright (C) 2021-2022 lyb <liyangbinbin@foxmail.com>
  *
@@ -20,39 +20,38 @@
  * <http://www.gnu.org/licenses/>.
  */
 #pragma once
-
-#include <QtWidgets/QMainWindow>
-#include "ui_QtCanPlatform.h"
-#include <QTableView>
-#include <qtextbrowser.h>
-#include <iostream>
-#include <memory>
-#include <QStringList>
-#include <QStringListModel>
-#include "QCanSetting.h"
-#pragma execution_character_set("utf-8")  
-class QtCanPlatform : public QMainWindow
+#include <QObject>
+#include <thread>
+#include<Mutex>
+#include "dataStruct.h"
+class qGboleData
 {
-    Q_OBJECT
 
 public:
-    QtCanPlatform(QWidget *parent = nullptr);
-    ~QtCanPlatform();
-
+	//qGboleData(QObject *parent);
+	static qGboleData* getInstance()
+	{
+		//std::lock_guard<std::mutex>lock(mut);
+		if (pGboleInstance == nullptr)
+		{
+			pGboleInstance = new qGboleData();
+			return pGboleInstance;
+		}
+		else
+		{
+			return pGboleInstance;
+		}
+	}
+	void save();
+	void read();
+	std::vector<struct protoData>pGboleData;
+	bool getIsInit() { return isInit; }
+	
 private:
-    Ui::QtCanPlatformClass ui;
-    void initUi();
-    void initData();
-    QStringListModel *model=nullptr;
-
-    //UI
-    QTableView* tableView=nullptr;
-    QTextBrowser* textBrowser=nullptr;
-
-    QCanSetting* canSetting = nullptr;
-
-    int currentModel = -1;
-private slots:
-    void qCanSettingShow();
-    void on_CurrentModelChanged(int index);
+	bool isInit = false;
+	~qGboleData();
+	qGboleData();
+	static qGboleData* pGboleInstance;
+	//static std::mutex mut;
+	std::mutex dMut;
 };

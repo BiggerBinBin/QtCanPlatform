@@ -1,5 +1,5 @@
 /*
- * client.h - header file of QCanSetting class
+ * QCanSetting.h - header file of QCanSetting class
  *
  * Copyright (C) 2021-2022 lyb <liyangbinbin@foxmail.com>
  *
@@ -26,24 +26,7 @@
 #include <qtablewidget.h>
 #include <QStandardItemModel>
 #pragma execution_character_set("utf-8")  
-struct protoItem {
-	int startByte;
-	int startBit;
-	int bitLeng;
-	int precision;
-	int offset;
-	QString bitName;
-};
-struct canIdData {
-	uint8_t opt;
-	qint64 CanId;
-	std::vector<struct protoItem>pItem;
-};
-struct protoData {
-	uint8_t agreement;
-	QString modelName;
-	std::vector<canIdData>cItem;
-};
+#include "dataStruct.h"
 class QCanSetting : public QWidget
 {
 	Q_OBJECT
@@ -60,7 +43,7 @@ private:
 	QTableWidget* modelView = nullptr;
 	//can id table
 	QTableWidget* canIdView = nullptr;
-	std::vector<struct protoData>pGboleData;
+	//std::vector<struct protoData>pGboleData;
 	void savepGboleData();
 	void InitpGboleData();
 	void SetTableData();

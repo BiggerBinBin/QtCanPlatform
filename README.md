@@ -1,1 +1,2 @@
-QtCanPlatform
+#  QtCanPlatform
+QtCanPlatform是一款用于测试CAN设备的可视化编辑软件，他可以根据CAN协议设置对应的字段参数，来测试设备
