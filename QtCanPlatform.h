@@ -52,6 +52,7 @@ private:
     QCanSetting* canSetting = nullptr;
 
     int currentModel = -1;
+    bool sendDataIntoTab();
 private slots:
     void qCanSettingShow();
     void on_CurrentModelChanged(int index);

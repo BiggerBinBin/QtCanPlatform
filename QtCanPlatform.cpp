@@ -6,12 +6,12 @@
 #include <QHBoxLayout>
 #include "qGboleData.h"
 #include <QLabel>
+#include <QMessageBox>
 QtCanPlatform::QtCanPlatform(QWidget *parent)
     : QMainWindow(parent)
 {
     ui.setupUi(this);
     initUi();
-    initData();
 }
 
 QtCanPlatform::~QtCanPlatform()
@@ -70,10 +70,42 @@ void QtCanPlatform::initData()
 {
     qGboleData* qGb = qGboleData::getInstance();
     if (!qGb)return;
-    qGb->read();
+    if(!qGb->getIsInit())
+        qGb->read();
+}
+bool QtCanPlatform::sendDataIntoTab()
+{
+    qGboleData* qGb = qGboleData::getInstance();
+    if (!qGb)return false;
+    if (currentModel > qGb->pGboleData.size() - 1 || currentModel< 0)
+    {
+        QMessageBox::warning(this, tr("warning"), tr("数据出错，当前型号不存在"));
+        return false;
+    }
+    const protoData pTemp = qGb->pGboleData.at(currentModel);
+    //canIdData cTemp;
+    std::vector<canIdData>cTemp;
+    bool res = false;
+    for (int i = 0; i < pTemp.cItem.size(); i++)
+    {
+        //取出操作为发送的信号
+        if (1 == pTemp.cItem.at(i).opt)
+        {
+            cTemp.push_back(pTemp.cItem.at(i));
+            break;
+        }
+    }
+    if (cTemp.size() <= 0)
+    {
+        QMessageBox::warning(this, tr("warning"), tr("该型号没有发送信号，请添加再操作"));
+        return false;
+    }
+    return true;
 }
 void QtCanPlatform::on_CurrentModelChanged(int index)
 {
+    currentModel = index;
+    
 }
 void QtCanPlatform::qCanSettingShow()
 {
