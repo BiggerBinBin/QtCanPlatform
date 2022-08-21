@@ -46,7 +46,7 @@ private:
     QStringListModel *model=nullptr;
 
     //UI
-    QTableView* tableView=nullptr;
+    QTableWidget* tableView=nullptr;
     QTextBrowser* textBrowser=nullptr;
 
     QCanSetting* canSetting = nullptr;
@@ -56,4 +56,5 @@ private:
 private slots:
     void qCanSettingShow();
     void on_CurrentModelChanged(int index);
+    void on_pbSend_clicked(bool clicked);
 };
