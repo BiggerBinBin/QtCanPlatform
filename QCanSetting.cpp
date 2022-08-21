@@ -239,6 +239,27 @@ void QCanSetting::on_pbDelModel_clicked()
 	short int index = modelView->currentIndex().row();
 	if (index < 0)return;
 	modelView->removeRow(index);
+	qGboleData* qGb = qGboleData::getInstance();
+	if (!qGb)return;
+	if (qGb->pGboleData.size() - 1 < index)
+		return;
+	std::vector<protoData>::iterator iterb = qGb->pGboleData.begin();
+	std::vector<protoData>::iterator itere = qGb->pGboleData.end();
+	int n = 0;
+	while (iterb != itere)
+	{
+		if (n == index)
+		{
+			qGb->pGboleData.erase(iterb);
+			break;
+		}
+		else
+		{
+			iterb++;
+			n++;
+		}
+			
+	}
 }
 
 void QCanSetting::on_pbSaveModel_clicked()
@@ -270,7 +291,7 @@ void QCanSetting::on_pbAddCanId_clicked()
 	proto->addItem(tr("发送"));
 	connect(proto, SIGNAL(currentIndexChanged(int)), this, SLOT(on_canIdView_currentIndexChanged(int)));
 
-	canIdView->setItem(row, 0, new QTableWidgetItem(tr("0x123456")));
+	canIdView->setItem(row, 0, new QTableWidgetItem(tr("123456")));
 	canIdView->setCellWidget(row, 1, proto);
 	canIdData cdata;
 	cdata.CanId = canIdView->item(row,0)->text().toInt(NULL,16);
@@ -294,6 +315,29 @@ void QCanSetting::on_pbDelCanId_clicked()
 	short int index = canIdView->currentIndex().row();
 	if (index < 0)return;
 	canIdView->removeRow(index);
+	qGboleData* qGb = qGboleData::getInstance();
+	if (!qGb)return;
+	short int mr = modelView->currentRow();
+	if (mr<0 || mr>qGb->pGboleData.size() - 1)
+		return;
+	if (index > qGb->pGboleData.at(mr).cItem.size() - 1)
+		return;
+	std::vector<canIdData>::iterator itbe = qGb->pGboleData.at(mr).cItem.begin();
+	std::vector<canIdData>::iterator itend = qGb->pGboleData.at(mr).cItem.end();
+	int n = 0;
+	while (itbe != itend)
+	{
+		if (n == index)
+		{
+			qGb->pGboleData.at(mr).cItem.erase(itbe);
+			break;
+		}
+		else
+		{
+			n++;
+			itbe++;
+		}
+	}
 }
 
 void QCanSetting::on_pbSaveCanId_clicked()
@@ -442,7 +486,8 @@ void QCanSetting::on_modelView_Clicked(int row, int col)
 			proto->addItem(tr("接收"));
 			proto->addItem(tr("发送"));
 			proto->setCurrentIndex(qGb->pGboleData.at(row).cItem.at(i).opt);
-			canIdView->setItem(i, 0, new QTableWidgetItem(QString("%1").arg(qGb->pGboleData.at(row).cItem.at(i).CanId,8,16)));
+			QString mt = "0x" + QString("%1").arg(qGb->pGboleData.at(row).cItem.at(i).CanId, QString::number(qGb->pGboleData.at(row).cItem.at(i).CanId, 16).length(), 16).toUpper().trimmed();
+			canIdView->setItem(i, 0, new QTableWidgetItem(mt));
 			canIdView->setCellWidget(i, 1, proto);
 			connect(proto, SIGNAL(currentIndexChanged(int)), this, SLOT(on_canIdView_currentIndexChanged(int)));
 		}
@@ -509,7 +554,7 @@ void QCanSetting::on_canIdView_cellChanged(int row, int col)
 			QMessageBox::warning(this, tr("warning"), tr("修改的位置超出范围"));
 			return;
 		}
-		qGb->pGboleData.at(mCurRow).cItem.at(row).CanId = canIdView->item(row,col)->text().toInt(nullptr, 16);
+		qGb->pGboleData.at(mCurRow).cItem.at(row).CanId = canIdView->item(row,col)->text().trimmed().toInt(nullptr, 16);
 	}
 	catch (const std::exception&e)
 	{
