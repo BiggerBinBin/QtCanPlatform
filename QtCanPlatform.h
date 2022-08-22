@@ -47,12 +47,14 @@ private:
 
     //UI
     QTableWidget* tableView=nullptr;
+    QTableWidget* tableRecView=nullptr;
     QTextBrowser* textBrowser=nullptr;
 
     QCanSetting* canSetting = nullptr;
 
     int currentModel = -1;
     bool sendDataIntoTab();
+    bool recDataIntoTab();
 private slots:
     void qCanSettingShow();
     void on_CurrentModelChanged(int index);

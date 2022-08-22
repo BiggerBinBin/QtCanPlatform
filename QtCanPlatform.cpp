@@ -20,6 +20,7 @@ QtCanPlatform::~QtCanPlatform()
     if (canSetting) { delete canSetting; canSetting = nullptr; }
     if (tableView) { delete tableView; tableView = nullptr; }
     if (textBrowser) { delete textBrowser; textBrowser = nullptr; }
+    if (tableRecView) { delete tableRecView; tableRecView = nullptr; }
 }
 
 void QtCanPlatform::initUi()
@@ -28,7 +29,7 @@ void QtCanPlatform::initUi()
     tableView = new QTableWidget();
     tableView->setColumnCount(6);
     QStringList header;
-    header << tr("操作")<<tr("地址") << tr("名称") << tr("起止字节") << tr("起止位") << tr("长度");
+    header << tr("操作")<<tr("数值") << tr("地址") << tr("名称") << tr("起止字节") << tr("起止位") << tr("长度");
     tableView->setHorizontalHeaderLabels(header);
     textBrowser = new QTextBrowser();
     initData();
@@ -66,10 +67,14 @@ void QtCanPlatform::initUi()
     mLabel->setText(tr("当前型号"));
     hLayout->addWidget(mLabel);
     hLayout->addWidget(cbSelectModel);
+
+    tableRecView = new QTableWidget();
+    tableRecView->setColumnCount(10);
     //定义一个垂直布局
     QVBoxLayout* vLayout = new QVBoxLayout();
     vLayout->addLayout(hLayout);
     vLayout->addWidget(tableView);
+    vLayout->addWidget(tableRecView);
     vLayout->addWidget(textBrowser);
     ui.centralWidget->setLayout(vLayout);
 
@@ -125,19 +130,72 @@ bool QtCanPlatform::sendDataIntoTab()
             tableView->setRowCount(cr+1);
             tableView->setCellWidget(cr, 0, cb);
             QString mt = "0x"+QString("%1").arg(cTemp.at(i).CanId, QString::number(cTemp.at(i).CanId).length(), 16).toUpper().trimmed();
-            tableView->setItem(cr, 1, new QTableWidgetItem(mt));
-            tableView->setItem(cr, 2, new QTableWidgetItem(cTemp.at(i).pItem.at(j).bitName));
-            tableView->setItem(cr, 3, new QTableWidgetItem(QString::number(cTemp.at(i).pItem.at(j).startByte)));
-            tableView->setItem(cr, 4, new QTableWidgetItem(QString::number(cTemp.at(i).pItem.at(j).startBit)));
-            tableView->setItem(cr, 5, new QTableWidgetItem(QString::number(cTemp.at(i).pItem.at(j).bitLeng)));
+            tableView->setItem(cr, 1, new QTableWidgetItem("0"));
+            tableView->setItem(cr, 2, new QTableWidgetItem(mt));
+            tableView->setItem(cr, 3, new QTableWidgetItem(cTemp.at(i).pItem.at(j).bitName));
+            tableView->setItem(cr, 4, new QTableWidgetItem(QString::number(cTemp.at(i).pItem.at(j).startByte)));
+            tableView->setItem(cr, 5, new QTableWidgetItem(QString::number(cTemp.at(i).pItem.at(j).startBit)));
+            tableView->setItem(cr, 6, new QTableWidgetItem(QString::number(cTemp.at(i).pItem.at(j).bitLeng)));
         }
    }
+    return true;
+}
+bool QtCanPlatform::recDataIntoTab()
+{
+
+    if (!tableRecView)
+        return false;
+    int rcount = tableRecView->rowCount();
+    for (int m = 0; m < rcount; m++)
+        tableRecView->removeRow(rcount - m - 1);
+    qGboleData* qGb = qGboleData::getInstance();
+    if (!qGb)return false;
+    if (currentModel > qGb->pGboleData.size() - 1 || currentModel < 0)
+    {
+        QMessageBox::warning(this, tr("warning"), tr("数据出错，当前型号不存在"));
+        return false;
+    }
+    const protoData pTemp = qGb->pGboleData.at(currentModel);
+    //canIdData cTemp;
+    std::vector<canIdData>cTemp;
+    for (int i = 0; i < pTemp.cItem.size(); i++)
+    {
+        //取出操作为接收的信号
+        if (0 == pTemp.cItem.at(i).opt)
+        {
+            cTemp.push_back(pTemp.cItem.at(i));
+            // break;
+        }
+    }
+    if (cTemp.size() <= 0)
+    {
+        QMessageBox::warning(this, tr("warning"), tr("该型号没有发送信号，请添加再操作"));
+        return false;
+    }
+
+    for (int i = 0; i < cTemp.size(); i++)
+    {
+        int num = cTemp.at(i).pItem.size();
+        int cr = tableRecView->rowCount();
+        for (int j = 0; j <num; j++)
+        {
+
+            //每5个换一行
+            if ((j + 1) % 6 == 0)
+                ++cr;
+            //每加一行就要设置到表格去
+            tableRecView->setRowCount(cr + 1);
+            tableRecView->setItem(cr, 2*(j%5), new QTableWidgetItem(cTemp.at(i).pItem.at(j).bitName));
+            
+        }
+    }
     return true;
 }
 void QtCanPlatform::on_CurrentModelChanged(int index)
 {
     currentModel = index;
     sendDataIntoTab();
+    recDataIntoTab();
 }
 void QtCanPlatform::on_pbSend_clicked(bool clicked)
 {
