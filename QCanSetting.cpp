@@ -415,6 +415,56 @@ void QCanSetting::on_pbDelIteam_clicked()
 	short int index = tableView->currentIndex().row();
 	if (index < 0)return;
 	tableView->removeRow(index);
+
+	qGboleData* qGb = qGboleData::getInstance();
+	if (!qGb)return;
+	if (!modelView)
+		return;
+	
+	if (!canIdView)
+		return;
+	if (modelView->rowCount() < 1)
+		return;
+	if (canIdView->rowCount() < 1)
+		return;
+	//超出范围
+	short int curSelectRow = modelView->currentRow();
+	if (curSelectRow<0 || curSelectRow>qGb->pGboleData.size() - 1)
+	{
+		QMessageBox::warning(this, tr("warning"), tr("未选中型号，不能删除，要先选中型号，然后再选中CanID，再删除"));
+		return;
+	}
+	//超出范围
+	short int curSelectCanRow = canIdView->currentRow();
+	if (curSelectCanRow<0 || curSelectCanRow>qGb->pGboleData.at(curSelectRow).cItem.size() - 1)
+	{
+		QMessageBox::warning(this, tr("warning"), tr("未选中CanId，不能删除，要先选中型号，然后再选中CanID，再删除"));
+		return;
+	}
+	//超出范围
+	if (index<0 || index>qGb->pGboleData.at(curSelectRow).cItem.at(curSelectCanRow).pItem.size())
+	{
+		QMessageBox::warning(this, tr("warning"), tr("数据删除出错，不在Vector里面"));
+		return;
+	}
+	//使用迭代器找到所在位置
+	std::vector<protoItem>::iterator itbegin= qGb->pGboleData.at(curSelectRow).cItem.at(curSelectCanRow).pItem.begin();
+	std::vector<protoItem>::iterator itend= qGb->pGboleData.at(curSelectRow).cItem.at(curSelectCanRow).pItem.end();
+	int n = 0;
+	while (itbegin != itend)
+	{
+		if (n == index)
+		{
+			//使用erase移除
+			qGb->pGboleData.at(curSelectRow).cItem.at(curSelectCanRow).pItem.erase(itbegin);
+			break;
+		}
+		else
+		{
+			itbegin++;
+			n++;
+		}
+	}
 }
 
 void QCanSetting::on_pbSaveIteam_clicked()
