@@ -2,6 +2,12 @@
 #include <QString>
 #include <iostream>
 #include<vector>
+#include <QColor>
+struct cellProperty
+{
+	QString toWord;
+	QColor  color;
+};
 struct protoItem {
 	int startByte;
 	int startBit;
@@ -9,6 +15,7 @@ struct protoItem {
 	int precision;
 	int offset;
 	QString bitName;
+	std::map<QString, cellProperty>itemProperty;
 };
 struct canIdData {
 	uint8_t opt;

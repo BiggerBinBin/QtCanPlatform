@@ -13,6 +13,7 @@
 #include <QJsonParseError>
 #include <QTextStream>
 #include "qGboleData.h"
+
 QCanSetting::QCanSetting(QWidget *parent)
 	: QWidget(parent)
 {
@@ -135,10 +136,10 @@ void QCanSetting::InitUi()
 	hLayout->setSpacing(0);
 	//hLayout->addSpacerItem(new QSpacerItem(20, 80, QSizePolicy::Expanding));
 	listname.clear();
-	listname << "字段名称" << "起止字节" << "起止位" << "长度" << "精度" << "偏移量";
+	listname << tr("字段名称") << tr("起止字节") << tr("起止位") << tr("长度") << tr("精度") << tr("偏移量")<<tr("属性");
 	
 	tableView = new QTableWidget();
-	tableView->setColumnCount(6);
+	tableView->setColumnCount(7);
 	tableView->setHorizontalHeaderLabels(listname);
 	tableView->setSelectionBehavior(QAbstractItemView::SelectRows);
 	connect(tableView, SIGNAL(cellDoubleClicked(int, int)), this, SLOT(on_tableView_doubleCLicked(int, int)));
@@ -379,6 +380,9 @@ void QCanSetting::on_pbAddIteam_clicked()
 	tableView->setItem(row, 3, new QTableWidgetItem(QString::number(1)));
 	tableView->setItem(row, 4, new QTableWidgetItem(QString::number(1)));
 	tableView->setItem(row, 5, new QTableWidgetItem(QString::number(0)));
+	QPushButton* property = new QPushButton(tr("属性"));
+	connect(property, SIGNAL(clicked()), this, SLOT(on_property_clicked()));
+	tableView->setCellWidget(row, 6, property);
 	protoItem pItem;
 	pItem.bitName	= tableView->item(row, 0)->text();
 	pItem.startByte = tableView->item(row, 1)->text().toInt(NULL, 10);
@@ -660,6 +664,9 @@ void QCanSetting::on_canIdView_Clicked(int row, int col)
 			tableView->setItem(i, 3, new QTableWidgetItem(QString::number(qGb->pGboleData.at(mRow).cItem.at(row).pItem.at(i).bitLeng)));
 			tableView->setItem(i, 4, new QTableWidgetItem(QString::number(qGb->pGboleData.at(mRow).cItem.at(row).pItem.at(i).precision)));
 			tableView->setItem(i, 5, new QTableWidgetItem(QString::number(qGb->pGboleData.at(mRow).cItem.at(row).pItem.at(i).offset)));
+			QPushButton* property = new QPushButton(tr("属性"));
+			connect(property, SIGNAL(clicked()), this, SLOT(on_property_clicked()));
+			tableView->setCellWidget(i, 6, property);
 		}
 	}
 	catch (const std::exception&e)
@@ -738,5 +745,15 @@ void QCanSetting::on_tableView_cellChanged(int row, int col)
 	}
 	//后面要把这个关掉，不然用户在添加的项时候，会触发这个槽函数
 	disconnect(tableView, SIGNAL(cellChanged(int, int)), this, SLOT(on_tableView_cellChanged(int, int)));
+}
+
+void QCanSetting::on_property_clicked()
+{
+	if (!pp)
+	{
+		pp = new QSetProperty();
+	}
+	pp->setIntoMap(&ItemProperty);
+	pp->show();
 }
 

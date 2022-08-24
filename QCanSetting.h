@@ -27,6 +27,7 @@
 #include <QStandardItemModel>
 #pragma execution_character_set("utf-8")  
 #include "dataStruct.h"
+#include "QSetProperty.h"
 class QCanSetting : public QWidget
 {
 	Q_OBJECT
@@ -47,6 +48,8 @@ private:
 	void savepGboleData();
 	void InitpGboleData();
 	void SetTableData();
+	std::map<QString, cellProperty>ItemProperty;
+	QSetProperty *pp=nullptr;
 private slots:
 	//添加型号
 	void on_pbAddModel_clicked();
@@ -88,4 +91,6 @@ private slots:
 	//字段表格响应槽函数
 	void on_tableView_doubleCLicked(int, int);
 	void on_tableView_cellChanged(int row, int col);
+
+	void on_property_clicked();
 };
