@@ -514,7 +514,12 @@ void QCanSetting::on_modelView_doubleClicked(int, int)
 	//所以曲线救国，在双击的时候才连接这个槽，
 	connect(modelView, SIGNAL(cellChanged(int, int)), this, SLOT(on_modelView_cellChanged(int, int)));
 }
-
+/***********************************
+*@brief:列表在初始化时，只会初始化型号列表的
+*而型号下面的CanId vector数据，只有鼠标在点击某个型号时
+* 才会初始化后面的
+* @return: void
+************************************/
 void QCanSetting::on_modelView_Clicked(int row, int col)
 {
 	qGboleData* qGb = qGboleData::getInstance();

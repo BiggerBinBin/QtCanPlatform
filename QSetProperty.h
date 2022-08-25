@@ -12,6 +12,7 @@ class QSetProperty : public QWidget
 public:
 	QSetProperty(QWidget *parent = nullptr);
 	~QSetProperty();
+	//外面传进来的map，用来保存数据
 	void setIntoMap(std::map<QString, cellProperty>*cp) { mcp = cp; }
 private:
 	Ui::QSetPropertyClass ui;
@@ -23,4 +24,6 @@ private slots:
 	void on_pbAddItem_clicked();
 	void on_pbDelItem_clicked();
 	void on_pbSaveItem_clicked();
+	void on_itemDoubleClicked();
+	void on_table_cellChanged(int,int);
 };
