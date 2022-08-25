@@ -13,6 +13,8 @@ QtCanPlatform::QtCanPlatform(QWidget *parent)
 {
     ui.setupUi(this);
     initUi();
+    //让widget模态运行
+    this->setWindowModality(Qt::ApplicationModal);
 }
 
 QtCanPlatform::~QtCanPlatform()
@@ -69,6 +71,7 @@ void QtCanPlatform::initUi()
     hLayout->addWidget(cbSelectModel);
 
     tableRecView = new QTableWidget();
+    //设置表格为10列，不加这个内容不会显示的
     tableRecView->setColumnCount(10);
     //定义一个垂直布局
     QVBoxLayout* vLayout = new QVBoxLayout();
@@ -82,8 +85,10 @@ void QtCanPlatform::initUi()
 
 void QtCanPlatform::initData()
 {
+    //获取数据类指针
     qGboleData* qGb = qGboleData::getInstance();
     if (!qGb)return;
+    //如果数据类未曾初始化（从文件读取），则进行初始化（从文件读取）
     if(!qGb->getIsInit())
         qGb->read();
 }
@@ -140,6 +145,7 @@ bool QtCanPlatform::sendDataIntoTab()
    }
     return true;
 }
+
 bool QtCanPlatform::recDataIntoTab()
 {
 
