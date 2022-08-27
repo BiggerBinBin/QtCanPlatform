@@ -13,8 +13,7 @@ QtCanPlatform::QtCanPlatform(QWidget *parent)
 {
     ui.setupUi(this);
     initUi();
-    //ÈÃwidgetÄ£Ì¬ÔËÐÐ
-    this->setWindowModality(Qt::ApplicationModal);
+    
 }
 
 QtCanPlatform::~QtCanPlatform()

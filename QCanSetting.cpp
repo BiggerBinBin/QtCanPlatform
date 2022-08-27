@@ -18,6 +18,8 @@ QCanSetting::QCanSetting(QWidget *parent)
 	: QWidget(parent)
 {
 	ui.setupUi(this);
+	//让widget模态运行
+	this->setWindowModality(Qt::ApplicationModal);
 	InitUi();
 	InitpGboleData();
 }
@@ -411,7 +413,7 @@ void QCanSetting::on_pbMoveUpIteam_clicked()
 void QCanSetting::on_pbMoveDownIteam_clicked()
 {
 }
-
+//第三层表格，删除
 void QCanSetting::on_pbDelIteam_clicked()
 {
 	if (!tableView)
@@ -427,8 +429,10 @@ void QCanSetting::on_pbDelIteam_clicked()
 	
 	if (!canIdView)
 		return;
+	//若第一层表格没有东西，直接return
 	if (modelView->rowCount() < 1)
 		return;
+	//叵第二层表格没有东西，同样return
 	if (canIdView->rowCount() < 1)
 		return;
 	//超出范围
@@ -451,12 +455,13 @@ void QCanSetting::on_pbDelIteam_clicked()
 		QMessageBox::warning(this, tr("warning"), tr("数据删除出错，不在Vector里面"));
 		return;
 	}
-	//使用迭代器找到所在位置
+	//使用迭代器
 	std::vector<protoItem>::iterator itbegin= qGb->pGboleData.at(curSelectRow).cItem.at(curSelectCanRow).pItem.begin();
 	std::vector<protoItem>::iterator itend= qGb->pGboleData.at(curSelectRow).cItem.at(curSelectCanRow).pItem.end();
 	int n = 0;
 	while (itbegin != itend)
 	{
+		//找到所在位置,因为vector是有序的，添加行的同时也push到vector了，行的位置就是vector的位置
 		if (n == index)
 		{
 			//使用erase移除
@@ -754,11 +759,59 @@ void QCanSetting::on_tableView_cellChanged(int row, int col)
 
 void QCanSetting::on_property_clicked()
 {
-	if (!pp)
+	QPushButton* pb = dynamic_cast<QPushButton*>(sender());
+	if (!pb)
+		return;
+	if (!tableView)
+		return;
+	if (!canIdView)
+		return;
+	if (!modelView)
+		return;
+	QModelIndex inedx = tableView->indexAt(QPoint(pb->geometry().x(), pb->geometry().y()));
+	int row = inedx.row();
+	qGboleData* qGb = qGboleData::getInstance();
+	if (!qGb)return;
+	
+	try
 	{
-		pp = new QSetProperty();
+		//判断第一层表格是否选中
+		int mCurRow = modelView->currentRow();
+		if (mCurRow<0 || mCurRow>qGb->pGboleData.size() - 1)
+		{
+			QMessageBox::warning(this, tr("warning"), QString(tr("未选中型号，不能修改")));
+			return;
+		}
+		//判断第二层表格是否选中
+		int cCurRow = canIdView->currentRow();
+		if (cCurRow<0 || cCurRow>qGb->pGboleData.at(mCurRow).cItem.size() - 1)
+		{
+			QMessageBox::warning(this, tr("warning"), QString(tr("未选中型号，不能修改")));
+			return;
+		}
+		//判断Button是否在第三层表格的数据范围内
+		if (row > qGb->pGboleData.at(mCurRow).cItem.at(cCurRow).pItem.size() - 1 || row <0)
+		{
+			QMessageBox::warning(this, tr("warning"), QString(tr("字段vector超出范围：\nrow > pGboleData.at(mCurRow).cItem.at(cCurRow).pItem.size() - 1")));
+			return;
+		}
+		if (!pp)
+		{
+			pp = new QSetProperty();
+		}
+		//取出该项的map
+		std::map<QString, cellProperty>&mapMM = qGb->pGboleData.at(mCurRow).cItem.at(cCurRow).pItem.at(row).itemProperty;
+		//丢个指针进去（C/C++指针真TMD的好）
+		pp->setIntoMap(&mapMM);
+		pp->setWindowFlag(Qt::Window);
+		pp->show();
 	}
-	pp->setIntoMap(&ItemProperty);
-	pp->show();
+	catch (const std::exception& e)
+	{
+		QMessageBox::warning(this, tr("warning"), QString(tr("Vector超出:") + e.what() + "Infunction:on_property_clicked"));
+		//return;
+	}
+
+	
 }
 

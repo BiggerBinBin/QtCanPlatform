@@ -54,6 +54,28 @@ void qGboleData::save()
 				pItem.append(pGboleData.at(i).cItem.at(j).pItem.at(k).bitLeng);
 				pItem.append(pGboleData.at(i).cItem.at(j).pItem.at(k).precision);
 				pItem.append(pGboleData.at(i).cItem.at(j).pItem.at(k).offset);
+				std::map<QString, cellProperty>& cpro = pGboleData.at(i).cItem.at(j).pItem.at(k).itemProperty;
+
+				//用来存储属性对象的
+				QJsonObject cellPr;
+				std::map<QString, cellProperty>::iterator ibegin = cpro.begin();
+				std::map<QString, cellProperty>::iterator iend = cpro.end();
+				while(ibegin!=iend)
+				{
+					QJsonArray itemarr;
+					itemarr.append(ibegin->second.toWord);
+					uint16_t red = ibegin->second.r;
+					uint16_t green = ibegin->second.g;
+					uint16_t blue = ibegin->second.b;
+					itemarr.append(QString::number(red));
+					itemarr.append(QString::number(green));
+					itemarr.append(QString::number(blue));
+					//把first当key，value是一个数组
+					cellPr.insert(ibegin->first, itemarr);
+					ibegin++;
+				}
+				//把对象追加到数组后面，数据也能包含对象
+				pItem.append(cellPr);
 				pDItem.insert(QString::number(k), pItem);
 			}
 			pItemObj.insert("pDItem", pDItem);
@@ -115,6 +137,7 @@ void qGboleData::read()
 	//根据key进行遍历
 	for (int i = 0; i < keyList.size(); i++)
 	{
+		//第一层表格，也就是型号层
 		protoData ptem;
 		//对象就是用{}括起来的
 		if (rootObj[keyList.at(i)].type() != QJsonValue::Object)
@@ -136,8 +159,11 @@ void qGboleData::read()
 					continue;
 				//mDitem本身也是对象，对应的数据结构是struct canIdData,std::vector<canIdData>cItem;
 				QJsonObject rootfour = rootthird[keyListThird.at(j)].toObject();
+				//第二层表格，也就是ID层，一个ID下面有好多返回的字段值
 				canIdData ctemp;
+				//ID，也就是CAN设备的报文地址
 				ctemp.CanId = rootfour["CanId"].toInt(0);
+				//opt就是表明该ID是发送报文还是接收报文，1是接收，0是发送
 				ctemp.opt = rootfour["opt"].toInt(0);
 				if (rootfour["pDItem"].isObject())
 				{
@@ -150,7 +176,7 @@ void qGboleData::read()
 							continue;
 						//对应 struct protoItem
 						QJsonArray jarr = rootfift[keyListFour.at(k)].toArray();
-						if (jarr.size() < 5)
+						if (jarr.size() < 6)
 							continue;
 						protoItem dtemp;
 						dtemp.bitName = jarr[0].toString();
@@ -159,14 +185,43 @@ void qGboleData::read()
 						dtemp.bitLeng = jarr[3].toInt();
 						dtemp.precision = jarr[4].toInt();
 						dtemp.offset = jarr[5].toInt();
+						//这个数据结构，主要是用来根据返回的值，显示不同的颜色
+						if (jarr[6].isObject())
+						{
+							QJsonObject cProperty = jarr[6].toObject();
+							QStringList keyListFift = cProperty.keys();
+							//{返回值:["名称",r,g,b]}
+							for (int h = 0; h < keyListFift.size(); ++h)
+							{
+								if (cProperty[keyListFift.at(h)].isArray())
+								{
+									cellProperty myCellP;
+									QJsonArray cpArr = cProperty[keyListFift.at(h)].toArray();
+									if (cpArr.size() < 4)
+										continue;
+									//先转换成QString，不能直接转换int
+									QString sr = cpArr[1].toString();
+									QString sg = cpArr[2].toString();
+									QString sb = cpArr[3].toString();
+									//使用QString转换int才正确的
+									myCellP.r = sr.toInt();
+									myCellP.g = sg.toInt();
+									myCellP.b = sb.toInt();
+									myCellP.toWord = cpArr[0].toString();
+									dtemp.itemProperty.insert({ keyListFift.at(h),myCellP });
+								}
+								
+							}
+						}
 						ctemp.pItem.push_back(dtemp);
 					}
 				}
-
+				//{canID vector}
 				ptem.cItem.push_back(ctemp);
 
 			}
 		}
+		//{型号vetor}
 		pGboleData.push_back(ptem);
 	}
 	isInit = true;

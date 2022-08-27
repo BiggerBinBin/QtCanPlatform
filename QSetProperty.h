@@ -4,7 +4,7 @@
 #include "ui_QSetProperty.h"
 #include <QTableWidget>
 #include "dataStruct.h"
-
+#include <QCloseEvent>
 class QSetProperty : public QWidget
 {
 	Q_OBJECT
@@ -13,10 +13,12 @@ public:
 	QSetProperty(QWidget *parent = nullptr);
 	~QSetProperty();
 	//外面传进来的map，用来保存数据
-	void setIntoMap(std::map<QString, cellProperty>*cp) { mcp = cp; }
+	void setIntoMap(std::map<QString, cellProperty>* cp); 
+	virtual void closeEvent(QCloseEvent* event) override;
 private:
 	Ui::QSetPropertyClass ui;
 	void InitUI();
+	void ItitData();
 	QTableWidget* table=nullptr;
 	std::map<QString, cellProperty>*mcp;
 private slots:

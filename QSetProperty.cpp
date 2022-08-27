@@ -13,11 +13,61 @@ QSetProperty::QSetProperty(QWidget *parent)
 	ui.setupUi(this);
 	InitUI();
 	this->setWindowModality(Qt::ApplicationModal);
+	//ItitData();
 }
 
 QSetProperty::~QSetProperty()
 {
 	
+}
+
+void QSetProperty::setIntoMap(std::map<QString, cellProperty>* cp)
+{
+	if (!cp)
+		return;
+	mcp = cp;
+	if (!table)
+	{
+		return;
+	}
+	int row = table->rowCount();
+	for (int i = 0; i < row; i++)
+	{
+		table->removeRow(row - i - 1);
+	}
+	std::map<QString, cellProperty>::iterator iBegin = cp->begin();
+	std::map<QString, cellProperty>::iterator iEnd = cp->end();
+	while (iBegin!=iEnd)
+	{
+
+		int rows = table->rowCount();
+		table->setRowCount(rows + 1);
+		table->setItem(rows, 0, new QTableWidgetItem(iBegin->first));
+		table->setItem(rows, 1, new QTableWidgetItem(iBegin->second.toWord));
+		QPushButton* pbColor = new QPushButton(tr("背景色"));
+		QColor cu = QColor(iBegin->second.r, iBegin->second.g, iBegin->second.b);
+		QString rgba = "background-color:#" + QString::number(cu.rgb(), 16);
+		pbColor->setStyleSheet(rgba);
+		connect(pbColor, SIGNAL(clicked()), this, SLOT(getColor()));
+		table->setCellWidget(rows, 2, pbColor);
+		iBegin++;
+	}
+	
+
+}
+
+void QSetProperty::closeEvent(QCloseEvent* event)
+{
+	if (!table)
+	{
+		return;
+	}
+	int row = table->rowCount();
+	for (int i = 0; i < row; i++)
+	{
+		table->removeRow(row - i - 1);
+	}
+	event->accept();
 }
 
 
@@ -52,6 +102,14 @@ void QSetProperty::InitUI()
 
 }
 
+void QSetProperty::ItitData()
+{
+	
+	if (!mcp)
+		return;
+	
+}
+
 void QSetProperty::on_pbAddItem_clicked()
 {
 	if (!table) return;
@@ -68,7 +126,9 @@ void QSetProperty::on_pbAddItem_clicked()
 		return;
 	}
 	cellProperty cp;
-	cp.color = QColor(240, 240, 240);
+	cp.r = 240;
+	cp.g = 240;
+	cp.b = 240;
 	cp.toWord = "正常";
 	//插入
 	mcp->insert({ QString::number(rows), cp });
@@ -100,7 +160,7 @@ void QSetProperty::getColor()
 		return;
 	QColor color = QColorDialog::getColor(Qt::white, this, tr("选择颜色"));
 	//color.rgba();
-	QString rgba = "background-color:#"+QString::number(color.rgba(), 16);
+	QString rgba = "background-color:#"+QString::number(color.rgb(), 16);
 	send->setStyleSheet(rgba);
 	QModelIndex index = table->indexAt(QPoint(send->geometry().x(), send->geometry().y()));
 	int row = index.row();
@@ -108,5 +168,7 @@ void QSetProperty::getColor()
 	{
 		return;
 	}
-	(*mcp)[QString::number(row)].color = color;
+	(*mcp)[QString::number(row)].r = color.red();
+	(*mcp)[QString::number(row)].g = color.green();
+	(*mcp)[QString::number(row)].b = color.blue();
 }
