@@ -6,7 +6,10 @@
 struct cellProperty
 {
 	QString toWord;
-	QColor  color;
+	//QColor  color;
+	uint16_t r;
+	uint16_t g;
+	uint16_t b;
 };
 struct protoItem {
 	int startByte;
