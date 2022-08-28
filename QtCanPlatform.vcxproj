@@ -32,7 +32,7 @@
   </ImportGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'" Label="QtSettings">
     <QtInstall>msvc2017_64</QtInstall>
-    <QtModules>core;gui;serialbus;serialport;widgets</QtModules>
+    <QtModules>core;gui;widgets;serialport;serialbus</QtModules>
     <QtBuildConfig>debug</QtBuildConfig>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'" Label="QtSettings">
@@ -87,10 +87,14 @@
   <ItemGroup>
     <QtRcc Include="QtCanPlatform.qrc" />
     <QtUic Include="QCanSetting.ui" />
+    <QtUic Include="QSetProperty.ui" />
     <QtUic Include="QtCanPlatform.ui" />
     <QtMoc Include="QtCanPlatform.h" />
+    <ClCompile Include="AlgorithmSet.cpp" />
+    <ClCompile Include="PCAN.cpp" />
     <ClCompile Include="QCanSetting.cpp" />
     <ClCompile Include="qGboleData.cpp" />
+    <ClCompile Include="QSetProperty.cpp" />
     <ClCompile Include="QtCanPlatform.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
@@ -98,8 +102,11 @@
     <QtMoc Include="QCanSetting.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="AlgorithmSet.h" />
     <ClInclude Include="dataStruct.h" />
+    <QtMoc Include="PCAN.h" />
     <ClInclude Include="qGboleData.h" />
+    <QtMoc Include="QSetProperty.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Condition="Exists('$(QtMsBuild)\qt.targets')">

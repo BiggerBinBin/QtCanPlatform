@@ -46,14 +46,32 @@
     <ClCompile Include="qGboleData.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="QSetProperty.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="AlgorithmSet.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="PCAN.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="QCanSetting.h">
       <Filter>Header Files</Filter>
     </QtMoc>
+    <QtMoc Include="QSetProperty.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="PCAN.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
   </ItemGroup>
   <ItemGroup>
     <QtUic Include="QCanSetting.ui">
+      <Filter>Form Files</Filter>
+    </QtUic>
+    <QtUic Include="QSetProperty.ui">
       <Filter>Form Files</Filter>
     </QtUic>
   </ItemGroup>
@@ -62,6 +80,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="dataStruct.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="AlgorithmSet.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
