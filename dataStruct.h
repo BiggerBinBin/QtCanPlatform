@@ -12,6 +12,7 @@ struct cellProperty
 	uint16_t b;
 };
 struct protoItem {
+	int send;
 	int startByte;
 	int startBit;
 	int bitLeng;
