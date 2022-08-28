@@ -392,6 +392,7 @@ void QCanSetting::on_pbAddIteam_clicked()
 	pItem.bitLeng	= tableView->item(row, 3)->text().toInt(NULL, 10);
 	pItem.precision = tableView->item(row, 4)->text().toInt(NULL, 10);
 	pItem.offset	= tableView->item(row, 5)->text().toInt(NULL, 10);
+	pItem.send = 0;
 	try
 	{
 		qGb->pGboleData.at(curSelectRow).cItem.at(curSelectCanRow).pItem.push_back(pItem);
