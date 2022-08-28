@@ -30,6 +30,10 @@
 #include <QStringList>
 #include <QStringListModel>
 #include "QCanSetting.h"
+#include "PCAN.h"
+#include <QTimer>
+#include <QPushButton>
+#include <QCloseEvent>
 #pragma execution_character_set("utf-8")  
 class QtCanPlatform : public QMainWindow
 {
@@ -38,7 +42,7 @@ class QtCanPlatform : public QMainWindow
 public:
     QtCanPlatform(QWidget *parent = nullptr);
     ~QtCanPlatform();
-
+    virtual void closeEvent(QCloseEvent* event) override;
 private:
     Ui::QtCanPlatformClass ui;
     void initUi();
@@ -49,14 +53,32 @@ private:
     QTableWidget* tableView=nullptr;
     QTableWidget* tableRecView=nullptr;
     QTextBrowser* textBrowser=nullptr;
-
     QCanSetting* canSetting = nullptr;
-
+   
     int currentModel = -1;
     bool sendDataIntoTab();
     bool recDataIntoTab();
+    void sendData();
+    bool intelProtocol(canIdData &cdata,uchar data[], unsigned int &fream_id);
+    bool motoProtocol(canIdData& cdata,uchar data[], unsigned int& fream_id);
+private:
+    std::vector<canIdData>recCanData;
+    std::vector<canIdData>sendCanData;
+    PCAN *pcan = nullptr;
+    QPushButton* pbSend = nullptr;
+    QComboBox* cbPcan = nullptr;
+    QPushButton* pbOpen = nullptr;
+    QLineEdit* cycle = nullptr;
+    QComboBox* cbBitRate = nullptr;
+    QPushButton* reFresh = nullptr;
+    QTimer* sendTimer = nullptr;
+    bool pcanIsOpen = false;
 private slots:
     void qCanSettingShow();
     void on_CurrentModelChanged(int index);
     void on_pbSend_clicked(bool clicked);
+    void on_pbRefreshDevice_clicked();
+    void on_pbOpenPcan_clicked();
+    void on_tableDoubleClicked(int,int);
+    void on_tableClicked(int, int);
 };

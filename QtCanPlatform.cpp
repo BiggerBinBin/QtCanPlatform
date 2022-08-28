@@ -1,19 +1,25 @@
-#include "QtCanPlatform.h"
+ï»¿#include "QtCanPlatform.h"
 #include <QComboBox>
 #include <QHBoxLayout>
 #include <QVBoxLayout>
-#include <QPushButton>
+
 #include <QHBoxLayout>
 #include "qGboleData.h"
 #include <QLabel>
+#include <QComboBox>
 #include <QMessageBox>
 #include <QCheckBox>
+#include <cstring>
+#include <QLineEdit>
+#include <QRegExp>
+#include <QRegExpValidator>
 QtCanPlatform::QtCanPlatform(QWidget *parent)
     : QMainWindow(parent)
 {
     ui.setupUi(this);
     initUi();
-    
+    sendTimer = new QTimer();
+    connect(sendTimer, &QTimer::timeout, this, &QtCanPlatform::sendData);
 }
 
 QtCanPlatform::~QtCanPlatform()
@@ -22,16 +28,34 @@ QtCanPlatform::~QtCanPlatform()
     if (tableView) { delete tableView; tableView = nullptr; }
     if (textBrowser) { delete textBrowser; textBrowser = nullptr; }
     if (tableRecView) { delete tableRecView; tableRecView = nullptr; }
+    if (pcan) {
+        delete pcan; 
+        pcan = nullptr;
+    }
+    if (cbPcan)
+    {
+        delete cbPcan; cbPcan = nullptr;
+    }
+}
+
+void QtCanPlatform::closeEvent(QCloseEvent* event)
+{
+    if (pcan)
+    {
+        pcan->CloseCan();
+    }
+    event->accept();
 }
 
 void QtCanPlatform::initUi()
 {
-    //Õâ¸öÊÇÏÔÊ¾ÄÚÈÝµÄ
+    //è¿™ä¸ªæ˜¯æ˜¾ç¤ºå†…å®¹çš„
     tableView = new QTableWidget();
     tableView->setColumnCount(6);
     QStringList header;
-    header << tr("²Ù×÷")<<tr("ÊýÖµ") << tr("µØÖ·") << tr("Ãû³Æ") << tr("ÆðÖ¹×Ö½Ú") << tr("ÆðÖ¹Î»") << tr("³¤¶È");
+    header << tr("æ“ä½œ")<<tr("æ•°å€¼") << tr("åœ°å€") << tr("åç§°") << tr("èµ·æ­¢å­—èŠ‚") << tr("èµ·æ­¢ä½") << tr("é•¿åº¦");
     tableView->setHorizontalHeaderLabels(header);
+    connect(tableView, SIGNAL(cellDoubleClicked(int, int)), this, SLOT(on_tableDoubleClicked(int, int)));
     textBrowser = new QTextBrowser();
     initData();
     QComboBox* cbSelectModel = new QComboBox();
@@ -50,29 +74,61 @@ void QtCanPlatform::initUi()
     }
        
     connect(cbSelectModel, SIGNAL(currentIndexChanged(int)), this, SLOT(on_CurrentModelChanged(int)));
-    //Ìí¼Ó¸ö°´Å¥
-    QPushButton* pbAddModel = new QPushButton(tr("Ìí¼ÓCan½âÎö"));
+    //æ·»åŠ ä¸ªæŒ‰é’®
+    QPushButton* pbAddModel = new QPushButton(tr("æ·»åŠ Canè§£æž"));
     connect(pbAddModel, &QPushButton::clicked, this, &QtCanPlatform::qCanSettingShow);
-    QPushButton* pbSend = new QPushButton(tr("·¢ËÍ"));
+    pbSend = new QPushButton(tr("å‘é€"));
     pbSend->setCheckable(true);
+    pbSend->setEnabled(false);
     connect(pbSend, SIGNAL(clicked(bool)),this,SLOT(on_pbSend_clicked(bool)));
-    //Ìí¼Ó¸öË®Æ½µÄ²¼¾Ö
+
+    QLabel* pcn = new QLabel(tr("é€‰æ‹©CANï¼š"));
+    cbPcan = new QComboBox();
+    pcan = new PCAN(this);
+    QStringList canStr = pcan->DetectDevice();
+    for (int i = 0; i < canStr.size(); ++i)
+    {
+        cbPcan->addItem(canStr.at(i));
+    }
+    reFresh = new QPushButton(tr("åˆ·æ–°è®¾å¤‡"));
+    connect(reFresh, SIGNAL(clicked()), this, SLOT(on_pbRefreshDevice_clicked()));
+    //æ·»åŠ å¸¸ç”¨æ³¢ç‰¹çŽ‡
+    cbBitRate = new QComboBox();
+    cbBitRate->addItem("200kb/s");
+    cbBitRate->addItem("250kb/s");
+    cbBitRate->addItem("500kb/s");
+    cbBitRate->addItem("800kb/s");
+    cbBitRate->setCurrentIndex(1);
+    QLabel* Period = new QLabel(tr("æŠ¥æ–‡å‘¨æœŸï¼š"));
+    cycle = new QLineEdit("1000");
+    cycle->setValidator(new QIntValidator(0, 9999999, this));
+    pbOpen = new QPushButton(tr("æ‰“å¼€è®¾å¤‡"));
+    connect(pbOpen, SIGNAL(clicked()), this, SLOT(on_pbOpenPcan_clicked()));
+    //æ·»åŠ ä¸ªæ°´å¹³çš„å¸ƒå±€
     QHBoxLayout* hLayout = new QHBoxLayout();
-    //°Ñ°´Å¥¶ª½øÈ¥
+    //æŠŠæŒ‰é’®ä¸¢è¿›åŽ»
     hLayout->addWidget(pbAddModel);
     hLayout->addWidget(pbSend);
+    hLayout->addWidget(pcn);
+    hLayout->addWidget(cbPcan);
+    hLayout->addWidget(reFresh);
+    hLayout->addWidget(cbBitRate);
+    hLayout->addWidget(Period);
+    hLayout->addWidget(cycle);
+    hLayout->addWidget(pbOpen);
+    
    
-    //°Ñµ¯»ÉÒ²¶ª½øÈ¥
+    //æŠŠå¼¹ç°§ä¹Ÿä¸¢è¿›åŽ»
     hLayout->addSpacerItem(new QSpacerItem(20, 20, QSizePolicy::Expanding));
     QLabel* mLabel = new QLabel();
-    mLabel->setText(tr("µ±Ç°ÐÍºÅ"));
+    mLabel->setText(tr("å½“å‰åž‹å·"));
     hLayout->addWidget(mLabel);
     hLayout->addWidget(cbSelectModel);
 
     tableRecView = new QTableWidget();
-    //ÉèÖÃ±í¸ñÎª10ÁÐ£¬²»¼ÓÕâ¸öÄÚÈÝ²»»áÏÔÊ¾µÄ
+    //è®¾ç½®è¡¨æ ¼ä¸º10åˆ—ï¼Œä¸åŠ è¿™ä¸ªå†…å®¹ä¸ä¼šæ˜¾ç¤ºçš„
     tableRecView->setColumnCount(10);
-    //¶¨ÒåÒ»¸ö´¹Ö±²¼¾Ö
+    //å®šä¹‰ä¸€ä¸ªåž‚ç›´å¸ƒå±€
     QVBoxLayout* vLayout = new QVBoxLayout();
     vLayout->addLayout(hLayout);
     vLayout->addWidget(tableView);
@@ -84,15 +140,16 @@ void QtCanPlatform::initUi()
 
 void QtCanPlatform::initData()
 {
-    //»ñÈ¡Êý¾ÝÀàÖ¸Õë
+    //èŽ·å–æ•°æ®ç±»æŒ‡é’ˆ
     qGboleData* qGb = qGboleData::getInstance();
     if (!qGb)return;
-    //Èç¹ûÊý¾ÝÀàÎ´Ôø³õÊ¼»¯£¨´ÓÎÄ¼þ¶ÁÈ¡£©£¬Ôò½øÐÐ³õÊ¼»¯£¨´ÓÎÄ¼þ¶ÁÈ¡£©
+    //å¦‚æžœæ•°æ®ç±»æœªæ›¾åˆå§‹åŒ–ï¼ˆä»Žæ–‡ä»¶è¯»å–ï¼‰ï¼Œåˆ™è¿›è¡Œåˆå§‹åŒ–ï¼ˆä»Žæ–‡ä»¶è¯»å–ï¼‰
     if(!qGb->getIsInit())
         qGb->read();
 }
 bool QtCanPlatform::sendDataIntoTab()
 {
+    sendCanData.clear();
     if (!tableView)
         return false;
     int rcount = tableView->rowCount();
@@ -102,30 +159,30 @@ bool QtCanPlatform::sendDataIntoTab()
     if (!qGb)return false;
     if (currentModel > qGb->pGboleData.size() - 1 || currentModel< 0)
     {
-        QMessageBox::warning(this, tr("warning"), tr("Êý¾Ý³ö´í£¬µ±Ç°ÐÍºÅ²»´æÔÚ"));
+        QMessageBox::warning(this, tr("warning"), tr("æ•°æ®å‡ºé”™ï¼Œå½“å‰åž‹å·ä¸å­˜åœ¨"));
         return false;
     }
     const protoData pTemp = qGb->pGboleData.at(currentModel);
     //canIdData cTemp;
-    std::vector<canIdData>cTemp;
+   
     for (int i = 0; i < pTemp.cItem.size(); i++)
     {
-        //È¡³ö²Ù×÷Îª·¢ËÍµÄÐÅºÅ
+        //å–å‡ºæ“ä½œä¸ºå‘é€çš„ä¿¡å·
         if (1 == pTemp.cItem.at(i).opt)
         {
-            cTemp.push_back(pTemp.cItem.at(i));
+            sendCanData.push_back(pTemp.cItem.at(i));
            // break;
         }
     }
-    if (cTemp.size() <= 0)
+    if (sendCanData.size() <= 0)
     {
-        QMessageBox::warning(this, tr("warning"), tr("¸ÃÐÍºÅÃ»ÓÐ·¢ËÍÐÅºÅ£¬ÇëÌí¼ÓÔÙ²Ù×÷"));
+        QMessageBox::warning(this, tr("warning"), tr("è¯¥åž‹å·æ²¡æœ‰å‘é€ä¿¡å·ï¼Œè¯·æ·»åŠ å†æ“ä½œ"));
         return false;
     }
-   
-    for (int i = 0; i < cTemp.size(); i++)
+    
+    for (int i = 0; i < sendCanData.size(); i++)
     {
-        int num = cTemp.at(i).pItem.size();
+        int num = sendCanData.at(i).pItem.size();
        
         for (int j = 0; j < num; j++)
         {
@@ -133,13 +190,13 @@ bool QtCanPlatform::sendDataIntoTab()
             int cr = tableView->rowCount();
             tableView->setRowCount(cr+1);
             tableView->setCellWidget(cr, 0, cb);
-            QString mt = "0x"+QString("%1").arg(cTemp.at(i).CanId, QString::number(cTemp.at(i).CanId).length(), 16).toUpper().trimmed();
+            QString mt = "0x"+QString("%1").arg(sendCanData.at(i).CanId, QString::number(sendCanData.at(i).CanId).length(), 16).toUpper().trimmed();
             tableView->setItem(cr, 1, new QTableWidgetItem("0"));
             tableView->setItem(cr, 2, new QTableWidgetItem(mt));
-            tableView->setItem(cr, 3, new QTableWidgetItem(cTemp.at(i).pItem.at(j).bitName));
-            tableView->setItem(cr, 4, new QTableWidgetItem(QString::number(cTemp.at(i).pItem.at(j).startByte)));
-            tableView->setItem(cr, 5, new QTableWidgetItem(QString::number(cTemp.at(i).pItem.at(j).startBit)));
-            tableView->setItem(cr, 6, new QTableWidgetItem(QString::number(cTemp.at(i).pItem.at(j).bitLeng)));
+            tableView->setItem(cr, 3, new QTableWidgetItem(sendCanData.at(i).pItem.at(j).bitName));
+            tableView->setItem(cr, 4, new QTableWidgetItem(QString::number(sendCanData.at(i).pItem.at(j).startByte)));
+            tableView->setItem(cr, 5, new QTableWidgetItem(QString::number(sendCanData.at(i).pItem.at(j).startBit)));
+            tableView->setItem(cr, 6, new QTableWidgetItem(QString::number(sendCanData.at(i).pItem.at(j).bitLeng)));
         }
    }
     return true;
@@ -147,7 +204,7 @@ bool QtCanPlatform::sendDataIntoTab()
 
 bool QtCanPlatform::recDataIntoTab()
 {
-
+    recCanData.clear();
     if (!tableRecView)
         return false;
     int rcount = tableRecView->rowCount();
@@ -157,44 +214,92 @@ bool QtCanPlatform::recDataIntoTab()
     if (!qGb)return false;
     if (currentModel > qGb->pGboleData.size() - 1 || currentModel < 0)
     {
-        QMessageBox::warning(this, tr("warning"), tr("Êý¾Ý³ö´í£¬µ±Ç°ÐÍºÅ²»´æÔÚ"));
+        QMessageBox::warning(this, tr("warning"), tr("æ•°æ®å‡ºé”™ï¼Œå½“å‰åž‹å·ä¸å­˜åœ¨"));
         return false;
     }
     const protoData pTemp = qGb->pGboleData.at(currentModel);
+   
     //canIdData cTemp;
-    std::vector<canIdData>cTemp;
+   
     for (int i = 0; i < pTemp.cItem.size(); i++)
     {
-        //È¡³ö²Ù×÷Îª½ÓÊÕµÄÐÅºÅ
+        //å–å‡ºæ“ä½œä¸ºæŽ¥æ”¶çš„ä¿¡å·
         if (0 == pTemp.cItem.at(i).opt)
         {
-            cTemp.push_back(pTemp.cItem.at(i));
+            recCanData.push_back(pTemp.cItem.at(i));
             // break;
         }
     }
-    if (cTemp.size() <= 0)
+    if (recCanData.size() <= 0)
     {
-        QMessageBox::warning(this, tr("warning"), tr("¸ÃÐÍºÅÃ»ÓÐ·¢ËÍÐÅºÅ£¬ÇëÌí¼ÓÔÙ²Ù×÷"));
+        QMessageBox::warning(this, tr("warning"), tr("è¯¥åž‹å·æ²¡æœ‰æŽ¥æ”¶ä¿¡å·ï¼Œè¯·æ·»åŠ å†æ“ä½œ"));
         return false;
     }
 
-    for (int i = 0; i < cTemp.size(); i++)
+    for (int i = 0; i < recCanData.size(); i++)
     {
-        int num = cTemp.at(i).pItem.size();
+        int num = recCanData.at(i).pItem.size();
         int cr = tableRecView->rowCount();
         for (int j = 0; j <num; j++)
         {
 
-            //Ã¿5¸ö»»Ò»ÐÐ
+            //æ¯5ä¸ªæ¢ä¸€è¡Œ
             if ((j + 1) % 6 == 0)
                 ++cr;
-            //Ã¿¼ÓÒ»ÐÐ¾ÍÒªÉèÖÃµ½±í¸ñÈ¥
+            //æ¯åŠ ä¸€è¡Œå°±è¦è®¾ç½®åˆ°è¡¨æ ¼åŽ»
             tableRecView->setRowCount(cr + 1);
-            tableRecView->setItem(cr, 2*(j%5), new QTableWidgetItem(cTemp.at(i).pItem.at(j).bitName));
+            tableRecView->setItem(cr, 2*(j%5), new QTableWidgetItem(recCanData.at(i).pItem.at(j).bitName));
             
         }
     }
     return true;
+}
+void QtCanPlatform::sendData()
+{
+    uchar s_Data[8];
+    memset(s_Data, 0, 8 * sizeof(uchar));
+    for (int i = 0; i < sendCanData.size(); i++)
+    {
+        unsigned int fream_id;
+        bool b= intelProtocol(sendCanData.at(i), s_Data, fream_id);
+        if (!b)
+            continue;
+        pcan->SendFrame(fream_id, s_Data);
+    }
+
+}
+bool QtCanPlatform::intelProtocol(canIdData& cdata,uchar data[], unsigned int& fream_id)
+{
+    if (cdata.pItem.size() <= 0)
+        return false;
+    fream_id = cdata.CanId;
+    for (int i = 0; i < cdata.pItem.size() && i < 8; i++)
+    {
+        const protoItem &itemp = cdata.pItem.at(i);
+        int startbyte = itemp.startByte;
+        int startbit = itemp.startBit;
+        int lengght = itemp.bitLeng;
+        int senddd = itemp.send;
+        if (lengght <= 8)
+        {
+            int pos = startbit % 8;             //èµ·æ­¢ä½ï¼Œæ¨¡8ï¼Œ1å­—èŠ‚8ä½ï¼Œucharæ˜¯1èŠ‚é•¿åº¦çš„
+            uchar m_send = senddd << pos &0xff; //å·¦ç§»èµ·æ­¢ä½ï¼Œå†&0xffï¼Œä¿è¯æ•°æ®æ˜¯ä¸è¶…è¿‡255
+            data[i] += m_send;                  //åŠ ä¸ŠåŽ»ï¼Œæœ‰å¯èƒ½å…¶å®ƒçš„æ•°æ®ä¹Ÿåœ¨è¿™ä¸ªå­—èŠ‚é‡Œ
+        }
+        else if(lengght<=16)
+        {
+            int pos = startbit % 8;
+            uchar m_send = senddd << pos & 0xff; //ä½Ž8ä½
+            data[i] += m_send;
+            m_send = senddd >> 8 & 0xff;         //é«˜8ä½
+            data[i+1] += m_send;
+        }
+    }
+    return true;
+}
+bool QtCanPlatform::motoProtocol(canIdData& cdata,uchar data[], unsigned int& fream_id)
+{
+    return false;
 }
 void QtCanPlatform::on_CurrentModelChanged(int index)
 {
@@ -204,7 +309,106 @@ void QtCanPlatform::on_CurrentModelChanged(int index)
 }
 void QtCanPlatform::on_pbSend_clicked(bool clicked)
 {
-   
+    if (clicked)
+    {
+        int period = cycle->text().toInt();
+        if (period < 50)
+            period = 50;
+        sendTimer->start(period);
+        cycle->setEnabled(false);
+        cbBitRate->setEnabled(false);
+        reFresh->setEnabled(false);
+    }
+    else
+    {
+        sendTimer->stop();
+        cycle->setEnabled(true);
+        cbBitRate->setEnabled(true);
+        reFresh->setEnabled(true);
+    }
+}
+void QtCanPlatform::on_pbRefreshDevice_clicked()
+{
+    QStringList canStr = pcan->DetectDevice();
+    for (int i = 0; i < canStr.size(); ++i)
+    {
+        cbPcan->addItem(canStr.at(i));
+    }
+}
+void QtCanPlatform::on_pbOpenPcan_clicked()
+{
+    if (pcanIsOpen)
+    {
+        pcan->CloseCan();
+        pbOpen->setText(tr("æ‰“å¼€è®¾å¤‡"));
+        cbBitRate->setEnabled(true);
+        cbPcan->setEnabled(true);
+        pbSend->setEnabled(false);
+        pcanIsOpen = false;
+        sendTimer->stop();
+    }
+    else
+    {
+        if (cbPcan->count() <= 0)
+            return;
+        int curindex = cbBitRate->currentIndex();
+        int bitRate = 250;
+        switch (curindex)
+        {
+        case 0:
+            bitRate = 200; break;
+        case 1:
+            bitRate = 250; break;
+        case 2:
+            bitRate = 500; break;
+        case 3:
+            bitRate = 800; break;
+        default:
+            bitRate = 250;
+            break;
+        }
+        bool b = pcan->ConnectDevice(cbPcan->currentIndex(), bitRate);
+        if (!b)
+        {
+            QMessageBox::warning(NULL, tr("é”™è¯¯"), tr("æ‰“å¼€CANå¤±è´¥,è¯·æ£€æµ‹è®¾å¤‡æ˜¯å¦è¢«å ç”¨æˆ–è€…å·²ç»è¿žæŽ¥ï¼Ÿ"));
+            return;
+        }
+        pbOpen->setText(tr("å…³é—­è®¾å¤‡"));
+        cbBitRate->setEnabled(false);
+        cbPcan->setEnabled(false);
+        pbSend->setEnabled(true);
+        pcanIsOpen = true;
+    }
+    
+}
+void QtCanPlatform::on_tableDoubleClicked(int, int)
+{
+    connect(tableView, SIGNAL(cellChanged(int, int)), this, SLOT(on_tableClicked(int, int)));
+}
+void QtCanPlatform::on_tableClicked(int row, int col)
+{
+    int rows = tableView->rowCount();
+    if (row > rows - 1)
+    {
+        disconnect(tableView, SIGNAL(cellChanged(int, int)), this, SLOT(on_tableClicked(int, int)));
+        return;
+    }
+    QString sendId = tableView->item(row, 2)->text();
+    QString senddt = tableView->item(row, 1)->text();
+    for (int i = 0; i < sendCanData.size(); i++)
+    {
+        if (sendId.trimmed().toInt(NULL,16) == sendCanData.at(i).CanId)
+        {
+            if (row > sendCanData.at(i).pItem.size() - 1)
+            {
+                disconnect(tableView, SIGNAL(cellChanged(int, int)), this, SLOT(on_tableClicked(int, int)));
+                return;
+            }
+            sendCanData.at(i).pItem.at(row).send = senddt.toInt();
+        }
+    }
+    disconnect(tableView, SIGNAL(cellChanged(int, int)), this, SLOT(on_tableClicked(int, int)));
+       
 }
 void QtCanPlatform::qCanSettingShow()
 {
