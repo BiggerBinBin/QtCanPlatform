@@ -18,7 +18,11 @@ QSetProperty::QSetProperty(QWidget *parent)
 
 QSetProperty::~QSetProperty()
 {
-	
+	if (table)
+	{
+		delete table; table = nullptr;
+	}
+	mcp = nullptr;
 }
 
 void QSetProperty::setIntoMap(std::map<QString, cellProperty>* cp)
