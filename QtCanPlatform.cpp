@@ -13,6 +13,7 @@
 #include <QLineEdit>
 #include <QRegExp>
 #include <QRegExpValidator>
+#include "AlgorithmSet.h"
 QtCanPlatform::QtCanPlatform(QWidget *parent)
     : QMainWindow(parent)
 {
@@ -85,6 +86,7 @@ void QtCanPlatform::initUi()
     QLabel* pcn = new QLabel(tr("选择CAN："));
     cbPcan = new QComboBox();
     pcan = new PCAN(this);
+    connect(pcan, &PCAN::getProtocolData, this, &QtCanPlatform::on_ReceiveData);
     QStringList canStr = pcan->DetectDevice();
     for (int i = 0; i < canStr.size(); ++i)
     {
@@ -409,6 +411,94 @@ void QtCanPlatform::on_tableClicked(int row, int col)
     }
     disconnect(tableView, SIGNAL(cellChanged(int, int)), this, SLOT(on_tableClicked(int, int)));
        
+}
+void QtCanPlatform::on_ReceiveData(uint fream_id, QByteArray data)
+{
+    QStringList binaryStr;
+    for (int k = 0; k < data.size(); ++k)
+    {
+        QString str = QString("%1").arg((uint8_t)data[k], 8, 2, QLatin1Char('0'));
+        binaryStr.append(str);
+    }
+    //std::vector<std::vector<parseData>>showVec;
+    for (int i = 0; i < recCanData.size(); i++)
+    {
+        uint currID = recCanData.at(i).CanId;
+        if (currID != fream_id)
+            continue;
+        std::vector<parseData>parseArr;
+
+        for (int m = 0; m < recCanData.at(i).pItem.size(); ++m)
+        {
+            int startByte  = recCanData.at(i).pItem.at(m).startByte;
+            int startBit = recCanData.at(i).pItem.at(m).startBit;
+            int startLenght = recCanData.at(i).pItem.at(m).bitLeng;
+            int precision = recCanData.at(i).pItem.at(m).precision;
+            int offset = recCanData.at(i).pItem.at(m).offset;
+            int len = startBit % 8 + startLenght;                       //判断是否跨字节
+            if (len <= 8)
+            {
+                int tmep = binaryStr[startByte].mid(8 - (startLenght+(startBit%8)), startLenght).toInt(NULL, 2) * precision + offset;
+                parseData pd;
+                pd.name = recCanData.at(i).pItem.at(m).bitName;
+                pd.value = tmep;
+                parseArr.push_back(pd);
+                
+            }
+            else if(len <= 16)
+            {
+                int temp = (binaryStr[startByte + 1].mid(8-(startLenght-(8-startBit % 8)), startLenght - (8-startBit % 8)) + binaryStr[startByte].mid(0, 8 - (startBit % 8))).toInt(NULL, 2);
+                parseData pd;
+                pd.name = recCanData.at(i).pItem.at(m).bitName;
+                pd.value = temp;
+                parseArr.push_back(pd);
+            }
+            {
+                //跨三个字节的，应该没有
+            }
+        }
+        if (YB::keyInMap(showTableD, QString::number(fream_id)))
+        {
+            showTableD[QString::number(fream_id)] = parseArr;
+        }
+        else
+        {
+            showTableD.insert({ QString::number(fream_id),parseArr });
+        }
+
+    }
+    //recCanData.clear();
+    if (!tableRecView)
+        return;
+    int rcount = tableRecView->rowCount();
+    for (int m = 0; m < rcount; m++)
+        tableRecView->removeRow(rcount - m - 1);
+    //for (int n = 0; n < showVec.size(); n++)
+    std::map<QString, std::vector<parseData>>::iterator iBegin = showTableD.begin();
+    std::map<QString, std::vector<parseData>>::iterator iEnd = showTableD.end();
+    while(iBegin!=iEnd)
+    {
+        int cr = tableRecView->rowCount();
+        // int num = showVec.at(n).size();
+        int num = iBegin->second.size();
+        for (int j = 0; j < num; j++)
+        {
+
+            //每5个换一行
+            if ((j + 1) % 6 == 0)
+                ++cr;
+            //每加一行就要设置到表格去
+            tableRecView->setRowCount(cr + 1);
+            QString tnamp = iBegin->second.at(j).name;
+            int tvalue = iBegin->second.at(j).value;
+            tableRecView->setItem(cr, 2 * (j % 5), new QTableWidgetItem(tnamp));
+            tableRecView->setItem(cr, 2 * (j % 5)+1, new QTableWidgetItem(QString::number(tvalue)));
+
+        }
+        iBegin++;
+        
+    }
+
 }
 void QtCanPlatform::qCanSettingShow()
 {

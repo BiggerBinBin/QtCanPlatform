@@ -73,6 +73,7 @@ private:
     QPushButton* reFresh = nullptr;
     QTimer* sendTimer = nullptr;
     bool pcanIsOpen = false;
+    std::map<QString, std::vector<parseData>>showTableD;
 private slots:
     void qCanSettingShow();
     void on_CurrentModelChanged(int index);
@@ -81,4 +82,5 @@ private slots:
     void on_pbOpenPcan_clicked();
     void on_tableDoubleClicked(int,int);
     void on_tableClicked(int, int);
+    void on_ReceiveData(uint frame_id, QByteArray data);
 };
