@@ -5,6 +5,7 @@
 #include <QTableWidget>
 #include "dataStruct.h"
 #include <QCloseEvent>
+
 class QSetProperty : public QWidget
 {
 	Q_OBJECT
