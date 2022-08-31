@@ -3,6 +3,11 @@
 #include <iostream>
 #include<vector>
 #include <QColor>
+struct parseData
+{
+	QString name;
+	int value;
+};
 struct cellProperty
 {
 	QString toWord;
