@@ -54,25 +54,27 @@ void qGboleData::save()
 				pItem.append(pGboleData.at(i).cItem.at(j).pItem.at(k).bitLeng);
 				pItem.append(pGboleData.at(i).cItem.at(j).pItem.at(k).precision);
 				pItem.append(pGboleData.at(i).cItem.at(j).pItem.at(k).offset);
-				std::map<QString, cellProperty>& cpro = pGboleData.at(i).cItem.at(j).pItem.at(k).itemProperty;
-
+				//std::map<QString, cellProperty>& cpro = pGboleData.at(i).cItem.at(j).pItem.at(k).itemProperty;
+				std::vector<cellProperty>& sspro = pGboleData.at(i).cItem.at(j).pItem.at(k).stl_itemProperty;
 				//用来存储属性对象的
 				QJsonObject cellPr;
-				std::map<QString, cellProperty>::iterator ibegin = cpro.begin();
-				std::map<QString, cellProperty>::iterator iend = cpro.end();
-				while(ibegin!=iend)
+				/*std::map<QString, cellProperty>::iterator ibegin = cpro.begin();
+				std::map<QString, cellProperty>::iterator iend = cpro.end();*/
+				//while(ibegin!=iend)
+				for(int v=0;v< sspro.size();v++)
 				{
 					QJsonArray itemarr;
-					itemarr.append(ibegin->second.toWord);
-					uint16_t red = ibegin->second.r;
-					uint16_t green = ibegin->second.g;
-					uint16_t blue = ibegin->second.b;
-					itemarr.append(QString::number(red));
-					itemarr.append(QString::number(green));
-					itemarr.append(QString::number(blue));
+					itemarr.append(sspro.at(v).value);		//0
+					itemarr.append(sspro.at(v).toWord);		//1
+					uint16_t red = sspro.at(v).r;
+					uint16_t green = sspro.at(v).g;
+					uint16_t blue = sspro.at(v).b;
+					itemarr.append(QString::number(red));	//2
+					itemarr.append(QString::number(green));	//3
+					itemarr.append(QString::number(blue));	//4
 					//把first当key，value是一个数组
-					cellPr.insert(ibegin->first, itemarr);
-					ibegin++;
+					cellPr.insert(QString::number(v), itemarr);
+					//ibegin++;
 				}
 				//把对象追加到数组后面，数据也能包含对象
 				pItem.append(cellPr);
@@ -197,18 +199,20 @@ void qGboleData::read()
 								{
 									cellProperty myCellP;
 									QJsonArray cpArr = cProperty[keyListFift.at(h)].toArray();
-									if (cpArr.size() < 4)
+									if (cpArr.size() < 5)
 										continue;
 									//先转换成QString，不能直接转换int
-									QString sr = cpArr[1].toString();
-									QString sg = cpArr[2].toString();
-									QString sb = cpArr[3].toString();
+									QString sr = cpArr[2].toString();
+									QString sg = cpArr[3].toString();
+									QString sb = cpArr[4].toString();
 									//使用QString转换int才正确的
 									myCellP.r = sr.toInt();
 									myCellP.g = sg.toInt();
 									myCellP.b = sb.toInt();
-									myCellP.toWord = cpArr[0].toString();
-									dtemp.itemProperty.insert({ keyListFift.at(h),myCellP });
+									myCellP.toWord = cpArr[1].toString();
+									myCellP.value = cpArr[0].toString();
+									//dtemp.itemProperty.insert({ keyListFift.at(h),myCellP });
+									dtemp.stl_itemProperty.push_back(myCellP);
 								}
 								
 							}
