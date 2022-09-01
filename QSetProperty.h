@@ -15,18 +15,20 @@ public:
 	~QSetProperty();
 	//外面传进来的map，用来保存数据
 	void setIntoMap(std::map<QString, cellProperty>* cp); 
+	void setIntoMap(std::vector<cellProperty>* cp);
 	virtual void closeEvent(QCloseEvent* event) override;
 private:
 	Ui::QSetPropertyClass ui;
 	void InitUI();
 	void ItitData();
 	QTableWidget* table=nullptr;
-	std::map<QString, cellProperty>*mcp;
+	//std::map<QString, cellProperty>*mcp;
+	std::vector<cellProperty>* stl_mcp;
 private slots:
 	void getColor();
 	void on_pbAddItem_clicked();
 	void on_pbDelItem_clicked();
 	void on_pbSaveItem_clicked();
-	void on_itemDoubleClicked();
+	void on_itemDoubleClicked(int,int);
 	void on_table_cellChanged(int,int);
 };

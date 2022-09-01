@@ -22,12 +22,12 @@ QSetProperty::~QSetProperty()
 	{
 		delete table; table = nullptr;
 	}
-	mcp = nullptr;
+	stl_mcp = nullptr;
 }
 
 void QSetProperty::setIntoMap(std::map<QString, cellProperty>* cp)
 {
-	if (!cp)
+	/*if (!cp)
 		return;
 	mcp = cp;
 	if (!table)
@@ -55,9 +55,38 @@ void QSetProperty::setIntoMap(std::map<QString, cellProperty>* cp)
 		connect(pbColor, SIGNAL(clicked()), this, SLOT(getColor()));
 		table->setCellWidget(rows, 2, pbColor);
 		iBegin++;
-	}
+	}*/
 	
 
+}
+
+void QSetProperty::setIntoMap(std::vector<cellProperty>* cp)
+{
+	if (!cp)
+		return;
+	stl_mcp = cp;
+	if (!table)
+	{
+		return;
+	}
+	int row = table->rowCount();
+	for (int i = 0; i < row; i++)
+	{
+		table->removeRow(row - i - 1);
+	}
+	for (int i = 0; i < stl_mcp->size(); i++)
+	{
+		int rows = table->rowCount();
+		table->setRowCount(rows + 1);
+		table->setItem(rows, 0, new QTableWidgetItem(stl_mcp->at(i).value));
+		table->setItem(rows, 1, new QTableWidgetItem(stl_mcp->at(i).toWord));
+		QPushButton* pbColor = new QPushButton(tr("背景色"));
+		QColor cu = QColor(stl_mcp->at(i).r, stl_mcp->at(i).g, stl_mcp->at(i).b);
+		QString rgba = "background-color:#" + QString::number(cu.rgb(), 16);
+		pbColor->setStyleSheet(rgba);
+		connect(pbColor, SIGNAL(clicked()), this, SLOT(getColor()));
+		table->setCellWidget(rows, 2, pbColor);
+	}
 }
 
 void QSetProperty::closeEvent(QCloseEvent* event)
@@ -89,6 +118,7 @@ void QSetProperty::InitUI()
 	pbLayout->addWidget(pbSaveItem);
 	pbLayout->addSpacerItem(new QSpacerItem(60, 20, QSizePolicy::Expanding));
 	table = new QTableWidget(this);
+	connect(table, SIGNAL(cellDoubleClicked(int, int)), this, SLOT(on_itemDoubleClicked(int, int)));
 	QStringList header;
 	header << tr("返回值") << tr("对应名称") << tr("显示颜色");
 	table->setColumnCount(3);
@@ -109,7 +139,7 @@ void QSetProperty::InitUI()
 void QSetProperty::ItitData()
 {
 	
-	if (!mcp)
+	if (!stl_mcp)
 		return;
 	
 }
@@ -124,7 +154,7 @@ void QSetProperty::on_pbAddItem_clicked()
 	QPushButton* pbColor = new QPushButton(tr("背景色"));
 	connect(pbColor, SIGNAL(clicked()), this, SLOT(getColor()));
 	table->setCellWidget(rows, 2, pbColor);
-	if (!mcp)
+	if (!stl_mcp)
 	{
 		QMessageBox::warning(NULL, tr("提示"), tr("数据指针未初始化，该数据不会保存"));
 		return;
@@ -134,8 +164,10 @@ void QSetProperty::on_pbAddItem_clicked()
 	cp.g = 240;
 	cp.b = 240;
 	cp.toWord = "正常";
+	cp.value = QString::number(rows);
 	//插入
-	mcp->insert({ QString::number(rows), cp });
+	stl_mcp->push_back(cp);
+	//mcp->insert({ QString::number(rows), cp });
 		
 }
 
@@ -146,19 +178,31 @@ void QSetProperty::on_pbDelItem_clicked()
 void QSetProperty::on_pbSaveItem_clicked()
 {
 }
-void QSetProperty::on_itemDoubleClicked()
+void QSetProperty::on_itemDoubleClicked(int,int)
 {
 	//要编辑必须双击，所以在双击的时候把cell变化的信号建立起来，就是编辑之后的信号了
 	connect(table, SIGNAL(cellChanged(int, int)), this, SLOT(on_table_cellChanged(int, int)));
 }
 void QSetProperty::on_table_cellChanged(int row,int col)
 {
-
+	if (!stl_mcp)
+		return;
+	if (0 == col)
+	{
+		stl_mcp->at(row).value = table->item(row, col)->text();
+	}
+	else
+	{
+		stl_mcp->at(row).toWord = table->item(row, col)->text();
+		//(*mcp)[QString::number(row)].toWord = table->item(row, col)->text();
+	}
 	//关掉它，不然在添加行的时候会触发cellChanged这个信号
 	disconnect(table, SIGNAL(cellChanged(int, int)), this, SLOT(on_table_cellChanged(int, int)));
 }
 void QSetProperty::getColor()
 {
+	if (!stl_mcp)
+		return;
 	QPushButton* send = dynamic_cast<QPushButton*>(sender());
 	if (!send)
 		return;
@@ -168,11 +212,11 @@ void QSetProperty::getColor()
 	send->setStyleSheet(rgba);
 	QModelIndex index = table->indexAt(QPoint(send->geometry().x(), send->geometry().y()));
 	int row = index.row();
-	if (!YB::keyInMap(*mcp, QString::number(row)))
-	{
-		return;
-	}
-	(*mcp)[QString::number(row)].r = color.red();
+	
+	stl_mcp->at(row).r = color.red();
+	stl_mcp->at(row).g = color.green();
+	stl_mcp->at(row).b = color.blue();
+	/*(*mcp)[QString::number(row)].r = color.red();
 	(*mcp)[QString::number(row)].g = color.green();
-	(*mcp)[QString::number(row)].b = color.blue();
+	(*mcp)[QString::number(row)].b = color.blue();*/
 }
