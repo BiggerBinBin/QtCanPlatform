@@ -435,28 +435,49 @@ void QtCanPlatform::on_ReceiveData(uint fream_id, QByteArray data)
             int startLenght = recCanData.at(i).pItem.at(m).bitLeng;
             int precision = recCanData.at(i).pItem.at(m).precision;
             int offset = recCanData.at(i).pItem.at(m).offset;
-            int len = startBit % 8 + startLenght;                       //判断是否跨字节
+            parseData pd;
+            int temp;
+            //判断是否跨字节，起止位模8，得出是当前字节的起止位，再加个长度
+            int len = startBit % 8 + startLenght;                       
             if (len <= 8)
-            {
-                int tmep = binaryStr[startByte].mid(8 - (startLenght+(startBit%8)), startLenght).toInt(NULL, 2) * precision + offset;
-                parseData pd;
-                pd.name = recCanData.at(i).pItem.at(m).bitName;
-                pd.value = tmep;
-                parseArr.push_back(pd);
-                
+            {   //不跨字节，这个就比较简单了
+                //15 14 13 12 11 10 9 8   7 6 5 4 3 2 1 0
+                //^高位在前，低位在后
+                temp = binaryStr[startByte].mid(8 - (startLenght+(startBit%8)), startLenght).toInt(NULL, 2) * precision + offset;
             }
             else if(len <= 16)
             {
-                int temp = (binaryStr[startByte + 1].mid(8-(startLenght-(8-startBit % 8)), startLenght - (8-startBit % 8)) + binaryStr[startByte].mid(0, 8 - (startBit % 8))).toInt(NULL, 2);
-                parseData pd;
-                pd.name = recCanData.at(i).pItem.at(m).bitName;
-                pd.value = temp;
-                parseArr.push_back(pd);
+                temp = (binaryStr[startByte + 1].mid(8-(startLenght-(8-startBit % 8)), startLenght - (8-startBit % 8)) + binaryStr[startByte].mid(0, 8 - (startBit % 8))).toInt(NULL, 2);
             }
             {
                 //跨三个字节的，应该没有
             }
+            pd.name = recCanData.at(i).pItem.at(m).bitName;
+            pd.value = temp;
+            pd.toWord = QString::number(temp);
+            pd.color.r = 255;
+            pd.color.g = 255;
+            pd.color.b = 255;
+           // std::map<QString, cellProperty>& tt = recCanData.at(i).pItem.at(m).itemProperty;
+            std::vector<cellProperty>& ss = recCanData.at(i).pItem.at(m).stl_itemProperty;
+           /* std::map<QString, cellProperty>::iterator ib = tt.begin();
+            std::map<QString, cellProperty>::iterator ie = tt.end();*/
+           // while (ib != ie)
+            for(int i=0;i<ss.size();i++)
+            {
+                if (ss.at(i).value.toInt() == temp)
+                {
+                    pd.color.r = ss.at(i).r;
+                    pd.color.g = ss.at(i).g;
+                    pd.color.b = ss.at(i).b;
+                    pd.toWord = ss.at(i).toWord;
+                    break;
+                }
+                
+            }
+            parseArr.push_back(pd);
         }
+        //判断map里面是否已经存在有了
         if (YB::keyInMap(showTableD, QString::number(fream_id)))
         {
             showTableD[QString::number(fream_id)] = parseArr;
@@ -490,9 +511,10 @@ void QtCanPlatform::on_ReceiveData(uint fream_id, QByteArray data)
             //每加一行就要设置到表格去
             tableRecView->setRowCount(cr + 1);
             QString tnamp = iBegin->second.at(j).name;
-            int tvalue = iBegin->second.at(j).value;
+            QString toword = iBegin->second.at(j).toWord;
             tableRecView->setItem(cr, 2 * (j % 5), new QTableWidgetItem(tnamp));
-            tableRecView->setItem(cr, 2 * (j % 5)+1, new QTableWidgetItem(QString::number(tvalue)));
+            tableRecView->setItem(cr, 2 * (j % 5)+1, new QTableWidgetItem(toword));
+            tableRecView->item(cr, 2 * (j % 5) + 1)->setBackgroundColor(QColor(iBegin->second.at(j).color.r, iBegin->second.at(j).color.g, iBegin->second.at(j).color.b));
 
         }
         iBegin++;
