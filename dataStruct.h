@@ -3,6 +3,11 @@
 #include <iostream>
 #include<vector>
 #include <QColor>
+struct RollStruct
+{
+	int value;
+	QString name;
+};
 struct YBRGB
 {
 	uchar r;
@@ -27,6 +32,7 @@ struct cellProperty
 	
 };
 struct protoItem {
+	bool isRoll;
 	int send;
 	int startByte;
 	int startBit;
@@ -34,12 +40,14 @@ struct protoItem {
 	int precision;
 	int offset;
 	QString bitName;
+	QString dataFrom;
 	std::vector<cellProperty>stl_itemProperty;
 	//std::map<QString, cellProperty>itemProperty;
 };
 struct canIdData {
 	uint8_t opt;
 	qint64 CanId;
+	QString strCanId;
 	std::vector<struct protoItem>pItem;
 };
 struct protoData {
