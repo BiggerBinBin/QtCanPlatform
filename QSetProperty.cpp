@@ -7,6 +7,7 @@
 #include <qcolor.h>
 #include <QMessageBox>
 #include "AlgorithmSet.h"
+#include "QsLog.h"
 QSetProperty::QSetProperty(QWidget *parent)
 	: QWidget(parent)
 {
@@ -120,7 +121,7 @@ void QSetProperty::InitUI()
 	table = new QTableWidget(this);
 	connect(table, SIGNAL(cellDoubleClicked(int, int)), this, SLOT(on_itemDoubleClicked(int, int)));
 	QStringList header;
-	header << tr("返回值") << tr("对应名称") << tr("显示颜色");
+	header << tr("值") << tr("代表名称") << tr("显示颜色");
 	table->setColumnCount(3);
 	table->setHorizontalHeaderLabels(header);
 	table->setSelectionBehavior(QAbstractItemView::SelectRows);
@@ -173,6 +174,31 @@ void QSetProperty::on_pbAddItem_clicked()
 
 void QSetProperty::on_pbDelItem_clicked()
 {
+	int curRow = table->currentRow();
+	if (curRow < 0)
+		return;
+	if (!stl_mcp)
+		return;
+	if (curRow > stl_mcp->size() - 1)
+		return;
+	std::vector<cellProperty>::iterator iBegin = stl_mcp->begin();
+	std::vector<cellProperty>::iterator iEnd = stl_mcp->end();
+	int  index = 0;
+	while (iBegin!=iEnd)
+	{
+		//因为push进去的顺序跟表格的顺序一样，所以当前行的位置就是vector的位置
+		//这是vector的特性，元素的顺序跟进去的次序有关系
+		if (index == curRow) {
+			stl_mcp->erase(iBegin);			//删除它
+			table->removeRow(curRow);		//同时也移除表格上的那一行
+			break;
+		}
+		else
+		{
+			iBegin++;
+			index++;
+		}
+	}
 }
 
 void QSetProperty::on_pbSaveItem_clicked()
@@ -187,15 +213,29 @@ void QSetProperty::on_table_cellChanged(int row,int col)
 {
 	if (!stl_mcp)
 		return;
-	if (0 == col)
+	if (row > stl_mcp->size() - 1 || col > 2)
 	{
-		stl_mcp->at(row).value = table->item(row, col)->text();
+		QMessageBox::warning(NULL, tr("警告"), tr("修改位置超过范围\non_table_cellChanged(int row,int col)"));
+		return;
 	}
-	else
+	try
 	{
-		stl_mcp->at(row).toWord = table->item(row, col)->text();
-		//(*mcp)[QString::number(row)].toWord = table->item(row, col)->text();
+		if (0 == col)
+		{
+			stl_mcp->at(row).value = table->item(row, col)->text();
+		}
+		else
+		{
+			stl_mcp->at(row).toWord = table->item(row, col)->text();
+			//(*mcp)[QString::number(row)].toWord = table->item(row, col)->text();
+		}
 	}
+	catch (const std::exception&e)
+	{
+		QLOG_WARN() << "修改单元格时Vector超出范围：" << e.what();
+		QMessageBox::warning(NULL, tr("警告"), tr("修改单元格时Vector超出范围\non_table_cellChanged(int row,int col)"));
+	}
+	
 	//关掉它，不然在添加行的时候会触发cellChanged这个信号
 	disconnect(table, SIGNAL(cellChanged(int, int)), this, SLOT(on_table_cellChanged(int, int)));
 }
@@ -212,10 +252,12 @@ void QSetProperty::getColor()
 	send->setStyleSheet(rgba);
 	QModelIndex index = table->indexAt(QPoint(send->geometry().x(), send->geometry().y()));
 	int row = index.row();
-	
+	if (row > stl_mcp->size() - 1)
+		return;
 	stl_mcp->at(row).r = color.red();
 	stl_mcp->at(row).g = color.green();
 	stl_mcp->at(row).b = color.blue();
+	
 	/*(*mcp)[QString::number(row)].r = color.red();
 	(*mcp)[QString::number(row)].g = color.green();
 	(*mcp)[QString::number(row)].b = color.blue();*/
