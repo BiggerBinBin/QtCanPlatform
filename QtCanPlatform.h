@@ -52,6 +52,8 @@ private:
     //UI
     QTableWidget* tableView=nullptr;
     QTableWidget* tableRecView=nullptr;
+    QTableWidget* tableRollTitle=nullptr;
+    QTableWidget* tableRollData=nullptr;
     QTextBrowser* textBrowser=nullptr;
     QCanSetting* canSetting = nullptr;
    
@@ -61,6 +63,7 @@ private:
     void sendData();
     bool intelProtocol(canIdData &cdata,uchar data[], unsigned int &fream_id);
     bool motoProtocol(canIdData& cdata,uchar data[], unsigned int& fream_id);
+    void getModelTitle();
 private:
     std::vector<canIdData>recCanData;
     std::vector<canIdData>sendCanData;
@@ -71,9 +74,14 @@ private:
     QLineEdit* cycle = nullptr;
     QComboBox* cbBitRate = nullptr;
     QPushButton* reFresh = nullptr;
+    QComboBox* cbSelectModel = nullptr;
     QTimer* sendTimer = nullptr;
     bool pcanIsOpen = false;
+    int maxTextBrowser = 0;
     std::map<QString, std::vector<parseData>>showTableD;
+    QStringList rollTitle;
+    QStringListModel* titleModel = nullptr;
+    std::vector<RollStruct>RollShowData;
 private slots:
     void qCanSettingShow();
     void on_CurrentModelChanged(int index);
@@ -83,4 +91,15 @@ private slots:
     void on_tableDoubleClicked(int,int);
     void on_tableClicked(int, int);
     void on_ReceiveData(uint frame_id, QByteArray data);
+    void on_SettingWidowsClose();
+    void on_cbSelectSendItemChanged(int);
+    void on_setInToRollData();
+signals:
+    void sigNewRoll();
+public:
+    void initLogger();
+    void destroyLogger();
+
+public slots:
+    void logSlot(const QString& message, int level);
 };

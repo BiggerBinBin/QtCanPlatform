@@ -1,4 +1,5 @@
-﻿#include "QtCanPlatform.h"
+﻿#pragma execution_character_set("utf-8")  
+#include "QtCanPlatform.h"
 #include <QComboBox>
 #include <QHBoxLayout>
 #include <QVBoxLayout>
@@ -13,14 +14,27 @@
 #include <QLineEdit>
 #include <QRegExp>
 #include <QRegExpValidator>
+#include <QHeaderView>
 #include "AlgorithmSet.h"
+#include "QsLog.h"
+#include "QsLogDest.h"
+#include <QFile>
+using namespace QsLogging;
+
+QString qmyss = "QComboBox{border: 1px solid gray;border-radius: 5px;padding:1px 2px 1px 2px;s}\
+QComboBox::drop-down{subcontrol-origin: padding;subcontrol-position: top right;width: 15px;border-left-width: 1px;border-left-color: darkgray;border-left-style: solid;border-top-right-radius: 3px;border-bottom-right-radius: 3px;}";
 QtCanPlatform::QtCanPlatform(QWidget *parent)
     : QMainWindow(parent)
 {
     ui.setupUi(this);
+    
+    initLogger();
+    this->setStyleSheet(qmyss);
     initUi();
     sendTimer = new QTimer();
     connect(sendTimer, &QTimer::timeout, this, &QtCanPlatform::sendData);
+    QLOG_INFO() << "中文世界";
+    
 }
 
 QtCanPlatform::~QtCanPlatform()
@@ -37,6 +51,7 @@ QtCanPlatform::~QtCanPlatform()
     {
         delete cbPcan; cbPcan = nullptr;
     }
+    destroyLogger();   //释放
 }
 
 void QtCanPlatform::closeEvent(QCloseEvent* event)
@@ -44,12 +59,14 @@ void QtCanPlatform::closeEvent(QCloseEvent* event)
     if (pcan)
     {
         pcan->CloseCan();
+        QLOG_INFO() << "关闭CAN设备";
     }
     event->accept();
 }
 
 void QtCanPlatform::initUi()
 {
+    //QLOG_INFO() << "初始化界面中……";
     //这个是显示内容的
     tableView = new QTableWidget();
     tableView->setColumnCount(6);
@@ -58,8 +75,10 @@ void QtCanPlatform::initUi()
     tableView->setHorizontalHeaderLabels(header);
     connect(tableView, SIGNAL(cellDoubleClicked(int, int)), this, SLOT(on_tableDoubleClicked(int, int)));
     textBrowser = new QTextBrowser();
+    textBrowser->setMinimumWidth(100);
+    textBrowser->setMaximumWidth(300);
     initData();
-    QComboBox* cbSelectModel = new QComboBox();
+    cbSelectModel = new QComboBox();
     
     qGboleData* qGb = qGboleData::getInstance();
     if (!qGb)return;
@@ -130,14 +149,37 @@ void QtCanPlatform::initUi()
     tableRecView = new QTableWidget();
     //设置表格为10列，不加这个内容不会显示的
     tableRecView->setColumnCount(10);
+    tableRollTitle = new QTableWidget();
+    tableRollTitle->setFixedHeight(30);
+    tableRollData = new QTableWidget();
+    tableRollData->horizontalHeader()->setVisible(false);
     //定义一个垂直布局
     QVBoxLayout* vLayout = new QVBoxLayout();
     vLayout->addLayout(hLayout);
-    vLayout->addWidget(tableView);
-    vLayout->addWidget(tableRecView);
-    vLayout->addWidget(textBrowser);
-    ui.centralWidget->setLayout(vLayout);
 
+    //两个显示数据的垂直在左边
+    QVBoxLayout* vLayoutTable = new QVBoxLayout();
+    vLayoutTable->addWidget(tableView);
+    vLayoutTable->addWidget(tableRecView);
+    vLayoutTable->addWidget(tableRollTitle);
+    vLayoutTable->addWidget(tableRollData);
+    vLayoutTable->setStretch(0, 3);
+    vLayoutTable->setStretch(1, 2);
+    vLayoutTable->setStretch(2, 1);
+    vLayoutTable->setStretch(3, 4);
+    //定义一个水平layout
+    QHBoxLayout* mainTLayout = new QHBoxLayout();
+    //两个显示数据的table在左
+    mainTLayout->addLayout(vLayoutTable);
+    //显示日志的在右
+    mainTLayout->addWidget(textBrowser);
+    //再跟顶部的按钮搞在一起
+    vLayout->addLayout(mainTLayout);
+    ui.centralWidget->setLayout(vLayout);
+    if(cbSelectModel->count()>0)
+        on_CurrentModelChanged(0);
+    //QLOG_INFO() << "初始化界面完成";
+    connect(this, &QtCanPlatform::sigNewRoll, this, &QtCanPlatform::on_setInToRollData);
 }
 
 void QtCanPlatform::initData()
@@ -188,11 +230,32 @@ bool QtCanPlatform::sendDataIntoTab()
        
         for (int j = 0; j < num; j++)
         {
-            QCheckBox* cb = new QCheckBox();
+            //QCheckBox* cb = new QCheckBox();
+            QComboBox* cb = new QComboBox();
+            for (int k = 0; k < sendCanData.at(i).pItem.at(j).stl_itemProperty.size();++k)
+            {
+                QString name = sendCanData.at(i).pItem.at(j).stl_itemProperty.at(k).toWord;
+                QColor bc = QColor(sendCanData.at(i).pItem.at(j).stl_itemProperty.at(k).r, sendCanData.at(i).pItem.at(j).stl_itemProperty.at(k).g, sendCanData.at(i).pItem.at(j).stl_itemProperty.at(k).b);
+                cb->addItem(name);
+                cb->setItemData(cb->count() - 1, bc, Qt::BackgroundColorRole);
+            }
+            if (cb->count() > 0)
+            {
+                int k = cb->currentIndex();
+                QColor bc = QColor(sendCanData.at(i).pItem.at(j).stl_itemProperty.at(k).r, sendCanData.at(i).pItem.at(j).stl_itemProperty.at(k).g, sendCanData.at(i).pItem.at(j).stl_itemProperty.at(k).b);
+          
+                QString backcolor = "background-color:#"+ QString("%1").arg(bc.red(), 2, 16, QLatin1Char('0'))+
+                    QString("%1").arg(bc.green(), 2, 16, QLatin1Char('0'))+
+                    QString("%1").arg(bc.blue(), 2, 16, QLatin1Char('0'));
+                cb->setStyleSheet(backcolor);
+            }
+            connect(cb, SIGNAL(currentIndexChanged(int)), this, SLOT(on_cbSelectSendItemChanged(int)));
+            
             int cr = tableView->rowCount();
             tableView->setRowCount(cr+1);
             tableView->setCellWidget(cr, 0, cb);
-            QString mt = "0x"+QString("%1").arg(sendCanData.at(i).CanId, QString::number(sendCanData.at(i).CanId).length(), 16).toUpper().trimmed();
+            //QString mt = "0x"+QString("%1").arg(sendCanData.at(i).CanId, QString::number(sendCanData.at(i).CanId).length(), 16).toUpper().trimmed();
+            QString mt = sendCanData.at(i).strCanId;
             tableView->setItem(cr, 1, new QTableWidgetItem("0"));
             tableView->setItem(cr, 2, new QTableWidgetItem(mt));
             tableView->setItem(cr, 3, new QTableWidgetItem(sendCanData.at(i).pItem.at(j).bitName));
@@ -206,6 +269,7 @@ bool QtCanPlatform::sendDataIntoTab()
 
 bool QtCanPlatform::recDataIntoTab()
 {
+    rollTitle.clear();
     recCanData.clear();
     if (!tableRecView)
         return false;
@@ -252,8 +316,15 @@ bool QtCanPlatform::recDataIntoTab()
             tableRecView->setRowCount(cr + 1);
             tableRecView->setItem(cr, 2*(j%5), new QTableWidgetItem(recCanData.at(i).pItem.at(j).bitName));
             
+            if (recCanData.at(i).pItem.at(j).isRoll)
+            {
+                rollTitle.append(recCanData.at(i).pItem.at(j).bitName);
+            }
         }
     }
+    tableRollTitle->setColumnCount(rollTitle.size());
+    tableRollTitle->clear();
+    tableRollTitle->setHorizontalHeaderLabels(rollTitle);
     return true;
 }
 void QtCanPlatform::sendData()
@@ -274,7 +345,7 @@ bool QtCanPlatform::intelProtocol(canIdData& cdata,uchar data[], unsigned int& f
 {
     if (cdata.pItem.size() <= 0)
         return false;
-    fream_id = cdata.CanId;
+    fream_id = cdata.strCanId.toUInt(NULL, 16);
     for (int i = 0; i < cdata.pItem.size() && i < 8; i++)
     {
         const protoItem &itemp = cdata.pItem.at(i);
@@ -282,19 +353,20 @@ bool QtCanPlatform::intelProtocol(canIdData& cdata,uchar data[], unsigned int& f
         int startbit = itemp.startBit;
         int lengght = itemp.bitLeng;
         int senddd = itemp.send;
+        startbyte = YB::InRang(0, 7, startbyte);
         if (lengght <= 8)
         {
             int pos = startbit % 8;             //起止位，模8，1字节8位，uchar是1节长度的
             uchar m_send = senddd << pos &0xff; //左移起止位，再&0xff，保证数据是不超过255
-            data[i] += m_send;                  //加上去，有可能其它的数据也在这个字节里
+            data[startbyte] += m_send;                  //加上去，有可能其它的数据也在这个字节里
         }
         else if(lengght<=16)
         {
             int pos = startbit % 8;
             uchar m_send = senddd << pos & 0xff; //低8位
-            data[i] += m_send;
+            data[startbyte] += m_send;
             m_send = senddd >> 8 & 0xff;         //高8位
-            data[i+1] += m_send;
+            data[startbyte+1] += m_send;
         }
     }
     return true;
@@ -302,6 +374,11 @@ bool QtCanPlatform::intelProtocol(canIdData& cdata,uchar data[], unsigned int& f
 bool QtCanPlatform::motoProtocol(canIdData& cdata,uchar data[], unsigned int& fream_id)
 {
     return false;
+}
+void QtCanPlatform::getModelTitle()
+{
+
+    rollTitle;
 }
 void QtCanPlatform::on_CurrentModelChanged(int index)
 {
@@ -383,15 +460,29 @@ void QtCanPlatform::on_pbOpenPcan_clicked()
     }
     
 }
+/*
+* @brief: 这个是为了建立单元格被编辑后的槽，因为编辑之前必须要双击。
+* @parm: row 发生变化的所在行
+* @parm: rcol 发生变化的所在列
+* return: 无
+*/
 void QtCanPlatform::on_tableDoubleClicked(int, int)
 {
     connect(tableView, SIGNAL(cellChanged(int, int)), this, SLOT(on_tableClicked(int, int)));
 }
+
+/*
+* @brief: 发送数据表的数据发生变化的槽函数
+* @parm: row 发生变化的所在行
+* @parm: rcol 发生变化的所在列
+* return: 无
+*/
 void QtCanPlatform::on_tableClicked(int row, int col)
 {
     int rows = tableView->rowCount();
     if (row > rows - 1)
     {
+        //断开信号槽，因为添加数据的时候会触发这个
         disconnect(tableView, SIGNAL(cellChanged(int, int)), this, SLOT(on_tableClicked(int, int)));
         return;
     }
@@ -399,31 +490,46 @@ void QtCanPlatform::on_tableClicked(int row, int col)
     QString senddt = tableView->item(row, 1)->text();
     for (int i = 0; i < sendCanData.size(); i++)
     {
-        if (sendId.trimmed().toInt(NULL,16) == sendCanData.at(i).CanId)
+        //找出数据所在的型号
+        if (sendId.trimmed() == sendCanData.at(i).strCanId)
         {
             if (row > sendCanData.at(i).pItem.size() - 1)
             {
+                //断开信号槽，因为添加数据的时候会触发这个
                 disconnect(tableView, SIGNAL(cellChanged(int, int)), this, SLOT(on_tableClicked(int, int)));
                 return;
             }
+            //存储修改后的值
             sendCanData.at(i).pItem.at(row).send = senddt.toInt();
         }
     }
+    //断开信号槽，因为添加数据的时候会触发这个
     disconnect(tableView, SIGNAL(cellChanged(int, int)), this, SLOT(on_tableClicked(int, int)));
        
 }
+/*
+* @brief: pcan返回数据的槽函数，并且解析
+* @parm: fream_id 报文的标识
+* @parm: data 报文数据
+* return: 无
+*/
 void QtCanPlatform::on_ReceiveData(uint fream_id, QByteArray data)
 {
+    
     QStringList binaryStr;
+    QString hex;
     for (int k = 0; k < data.size(); ++k)
     {
         QString str = QString("%1").arg((uint8_t)data[k], 8, 2, QLatin1Char('0'));
         binaryStr.append(str);
+        
+        hex+= QString("%1").arg(str.toInt(NULL, 2), 2, 16, QLatin1Char('0')).toUpper() + " ";
     }
+    QLOG_INFO() <<"收到数据了:" << fream_id << ":" << hex;
     //std::vector<std::vector<parseData>>showVec;
     for (int i = 0; i < recCanData.size(); i++)
     {
-        uint currID = recCanData.at(i).CanId;
+        uint currID = recCanData.at(i).strCanId.toUInt(NULL, 16);
         if (currID != fream_id)
             continue;
         std::vector<parseData>parseArr;
@@ -460,9 +566,23 @@ void QtCanPlatform::on_ReceiveData(uint fream_id, QByteArray data)
             pd.color.b = 255;
            // std::map<QString, cellProperty>& tt = recCanData.at(i).pItem.at(m).itemProperty;
             std::vector<cellProperty>& ss = recCanData.at(i).pItem.at(m).stl_itemProperty;
-           /* std::map<QString, cellProperty>::iterator ib = tt.begin();
-            std::map<QString, cellProperty>::iterator ie = tt.end();*/
-           // while (ib != ie)
+          
+            //如果是需要滚动显示的
+            if (recCanData.at(i).pItem.at(m).isRoll)
+            {
+                int index = 0;
+                if (YB::nameInVector(RollShowData, recCanData.at(i).pItem.at(m).bitName, index))
+                {
+                    RollShowData.at(index).value = temp;
+                }
+                else
+                {
+                    RollStruct rr;
+                    rr.name = recCanData.at(i).pItem.at(m).bitName;
+                    rr.value = temp;
+                    RollShowData.push_back(rr);
+                }
+            }
             for(int i=0;i<ss.size();i++)
             {
                 if (ss.at(i).value.toInt() == temp)
@@ -520,12 +640,117 @@ void QtCanPlatform::on_ReceiveData(uint fream_id, QByteArray data)
         iBegin++;
         
     }
+    emit sigNewRoll();
 
 }
+/*
+* @brief: 设置窗口关闭时，不管三七二十一，刷新一下显示的数据
+* @parm: 无
+* return: 无
+*/
+void QtCanPlatform::on_SettingWidowsClose()
+{
+    int index = cbSelectModel->currentIndex();
+    on_CurrentModelChanged(index);
+}
+void QtCanPlatform::on_cbSelectSendItemChanged(int index)
+{
+    QComboBox* cb = dynamic_cast<QComboBox*>(sender());
+    if (!cb)
+    {
+        QLOG_INFO() << "当前的QComboBox sender 无效";
+        return;
+    }
+    QModelIndex cbIndex = tableView->indexAt(QPoint(cb->geometry().x(), cb->geometry().y()));
+    int cbRow = cbIndex.row();
+    unsigned int cbInId = tableView->item(cbRow, 2)->text().toUInt(NULL, 16);
+    
+    for (int k = 0; k < sendCanData.size(); k++)
+    {
+        if (sendCanData.at(k).strCanId.toUInt(NULL,16) != cbInId)
+            continue;
+        if (k == 0)
+        {
+           sendCanData.at(k).pItem.at(cbRow).send = sendCanData.at(k).pItem.at(cbRow).stl_itemProperty.at(index).value.toInt();
+           tableView->setItem(cbRow,1, new QTableWidgetItem(sendCanData.at(k).pItem.at(cbRow).stl_itemProperty.at(index).value));
+           QColor bc = QColor(sendCanData.at(k).pItem.at(cbRow).stl_itemProperty.at(index).r, sendCanData.at(k).pItem.at(cbRow).stl_itemProperty.at(index).g, sendCanData.at(k).pItem.at(cbRow).stl_itemProperty.at(index).b);
+          
+           QString backcolor = "background-color:#" + QString("%1").arg(bc.red(), 2, 16, QLatin1Char('0')) +
+               QString("%1").arg(bc.green(), 2, 16, QLatin1Char('0')) +
+               QString("%1").arg(bc.blue(), 2, 16, QLatin1Char('0'));
+           cb->setStyleSheet(backcolor);
+        }
+    }
+}
+void QtCanPlatform::on_setInToRollData()
+{
+    tableRollData->setColumnCount(rollTitle.size());
+    int row = tableRollData->rowCount();
+    tableRollData->setRowCount(row + 1);
+    for (int i = 0;i< RollShowData.size(); i++)
+    {
+        tableRollData->setItem(row, i, new QTableWidgetItem(QString::number(RollShowData.at(i).value)));
+    }
+    tableRollData->scrollToBottom();
+}
+void QtCanPlatform::initLogger()
+{
+    Logger& logger = Logger::instance();    //初始化
+    logger.setLoggingLevel(QsLogging::InfoLevel);  //设置写入等级
+    QString logsfile = QApplication::applicationDirPath() + "/logs";
+    QDir dir(logsfile);
+    if (!dir.exists())
+    {
+        dir.mkpath(logsfile);
+    }
+    //设置log位置为exe所在目录
+    const QString pp = logsfile + "/log.txt";
+    //const QString sLogPath(QDir(QCoreApplication::applicationDirPath()).filePath("/logs/log.txt"));
+
+    // 2. 添加两个destination
+    DestinationPtr fileDestination(DestinationFactory::MakeFileDestination(
+        pp, EnableLogRotation, MaxSizeBytes(1024*1024*100), MaxOldLogCount(100)));
+    DestinationPtr debugDestination(DestinationFactory::MakeDebugOutputDestination());
+    //DestinationPtr functorDestination(DestinationFactory::MakeFunctorDestination(&logFunction));
+
+    //这样和槽函数连接
+    DestinationPtr sigsSlotDestination(DestinationFactory::MakeFunctorDestination(this, SLOT(logSlot(QString, int))));
+    //添加debug流向
+    logger.addDestination(debugDestination);
+    //添加文件流向
+    logger.addDestination(fileDestination);
+    //logger.addDestination(functorDestination);
+    //添加槽函数流向
+    logger.addDestination(sigsSlotDestination);
+    QLOG_INFO() << "欢迎使用CANPlatform";
+   
+}
+void QtCanPlatform::destroyLogger()
+{
+    QsLogging::Logger::destroyInstance();
+}
+void QtCanPlatform::logSlot(const QString& message, int level)
+{
+    //qUtf8Printable使用这个宏避免中文乱码
+    textBrowser->append(qUtf8Printable(message));
+    if (maxTextBrowser > 200)
+    {
+        textBrowser->clear();
+        maxTextBrowser = 0;
+    }
+        
+    maxTextBrowser++;
+}
+/*
+* @brief: 打开设置窗口，这里主要设置各类的字段
+* @parm: 无
+* return: 无
+*/
 void QtCanPlatform::qCanSettingShow()
 {
     if (!canSetting) {
         canSetting = new QCanSetting();
+        connect(canSetting, &QCanSetting::settingWidowsClose, this, &QtCanPlatform::on_SettingWidowsClose);
     }
     canSetting->show();
 }
