@@ -41,7 +41,7 @@ void qGboleData::save()
 		for (int j = 0; j < pGboleData.at(i).cItem.size(); j++)
 		{
 			QJsonObject pItemObj;
-			pItemObj.insert("CanId", pGboleData.at(i).cItem.at(j).CanId);
+			pItemObj.insert("CanId", pGboleData.at(i).cItem.at(j).strCanId);
 			pItemObj.insert("opt", pGboleData.at(i).cItem.at(j).opt);
 			QJsonObject pDItem;
 			//pItem用一个数组来储存
@@ -54,6 +54,8 @@ void qGboleData::save()
 				pItem.append(pGboleData.at(i).cItem.at(j).pItem.at(k).bitLeng);
 				pItem.append(pGboleData.at(i).cItem.at(j).pItem.at(k).precision);
 				pItem.append(pGboleData.at(i).cItem.at(j).pItem.at(k).offset);
+				pItem.append(pGboleData.at(i).cItem.at(j).pItem.at(k).isRoll);
+				pItem.append(pGboleData.at(i).cItem.at(j).pItem.at(k).dataFrom);
 				//std::map<QString, cellProperty>& cpro = pGboleData.at(i).cItem.at(j).pItem.at(k).itemProperty;
 				std::vector<cellProperty>& sspro = pGboleData.at(i).cItem.at(j).pItem.at(k).stl_itemProperty;
 				//用来存储属性对象的
@@ -164,7 +166,7 @@ void qGboleData::read()
 				//第二层表格，也就是ID层，一个ID下面有好多返回的字段值
 				canIdData ctemp;
 				//ID，也就是CAN设备的报文地址
-				ctemp.CanId = rootfour["CanId"].toInt(0);
+				ctemp.strCanId = rootfour["CanId"].toString();
 				//opt就是表明该ID是发送报文还是接收报文，1是接收，0是发送
 				ctemp.opt = rootfour["opt"].toInt(0);
 				if (rootfour["pDItem"].isObject())
@@ -178,7 +180,7 @@ void qGboleData::read()
 							continue;
 						//对应 struct protoItem
 						QJsonArray jarr = rootfift[keyListFour.at(k)].toArray();
-						if (jarr.size() < 6)
+						if (jarr.size() < 8)
 							continue;
 						protoItem dtemp;
 						dtemp.bitName = jarr[0].toString();
@@ -187,10 +189,13 @@ void qGboleData::read()
 						dtemp.bitLeng = jarr[3].toInt();
 						dtemp.precision = jarr[4].toInt();
 						dtemp.offset = jarr[5].toInt();
+						dtemp.isRoll = jarr[6].toBool();
+						dtemp.dataFrom = jarr[7].toString();
+						dtemp.send = 0;
 						//这个数据结构，主要是用来根据返回的值，显示不同的颜色
-						if (jarr[6].isObject())
+						if (jarr[8].isObject())
 						{
-							QJsonObject cProperty = jarr[6].toObject();
+							QJsonObject cProperty = jarr[8].toObject();
 							QStringList keyListFift = cProperty.keys();
 							//{返回值:["名称",r,g,b]}
 							for (int h = 0; h < keyListFift.size(); ++h)

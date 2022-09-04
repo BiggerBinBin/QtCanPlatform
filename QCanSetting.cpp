@@ -12,8 +12,9 @@
 #include <QJsonValue>		// int float double null { } [ ]
 #include <QJsonParseError>
 #include <QTextStream>
+#include <QCHeckBox>
 #include "qGboleData.h"
-
+#include "QsLog.h"
 QCanSetting::QCanSetting(QWidget *parent)
 	: QWidget(parent)
 {
@@ -40,8 +41,16 @@ QCanSetting::~QCanSetting()
 	}
 }
 
+void QCanSetting::closeEvent(QCloseEvent* event)
+{
+	event->accept();
+	emit settingWidowsClose();
+	QLOG_INFO() << "设备窗口关闭";
+}
+
 void QCanSetting::InitUi()
 {
+	QLOG_INFO() << "正在初始化设置界面……";
 	QStringList listname;
 	listname << "名称" << "协议";
 	QPushButton* pbAddModel = new QPushButton("添加型号");
@@ -138,10 +147,10 @@ void QCanSetting::InitUi()
 	hLayout->setSpacing(0);
 	//hLayout->addSpacerItem(new QSpacerItem(20, 80, QSizePolicy::Expanding));
 	listname.clear();
-	listname << tr("字段名称") << tr("起止字节") << tr("起止位") << tr("长度") << tr("精度") << tr("偏移量")<<tr("属性");
+	listname << tr("字段名称") << tr("起止字节") << tr("起止位") << tr("长度") << tr("精度") << tr("偏移量")<<tr("属性")<<tr("滚动显示")<<tr("数据来源");
 	
 	tableView = new QTableWidget();
-	tableView->setColumnCount(7);
+	tableView->setColumnCount(9);
 	tableView->setHorizontalHeaderLabels(listname);
 	tableView->setSelectionBehavior(QAbstractItemView::SelectRows);
 	connect(tableView, SIGNAL(cellDoubleClicked(int, int)), this, SLOT(on_tableView_doubleCLicked(int, int)));
@@ -159,7 +168,7 @@ void QCanSetting::InitUi()
 	hLayoutAll->setStretch(1, 1);
 	hLayoutAll->setStretch(2, 3);
 	this->setLayout(hLayoutAll);
-	
+	QLOG_INFO() << "设置界面初始化完成，Good Job！";
 }
 void QCanSetting::on_pbAddModel_clicked()
 {
@@ -297,7 +306,7 @@ void QCanSetting::on_pbAddCanId_clicked()
 	canIdView->setItem(row, 0, new QTableWidgetItem(tr("123456")));
 	canIdView->setCellWidget(row, 1, proto);
 	canIdData cdata;
-	cdata.CanId = canIdView->item(row,0)->text().toInt(NULL,16);
+	cdata.strCanId = canIdView->item(row,0)->text();
 	cdata.opt = 0;
 	qGb->pGboleData.at(curSelectRow).cItem.push_back(cdata);
 }
@@ -385,6 +394,10 @@ void QCanSetting::on_pbAddIteam_clicked()
 	QPushButton* property = new QPushButton(tr("属性"));
 	connect(property, SIGNAL(clicked()), this, SLOT(on_property_clicked()));
 	tableView->setCellWidget(row, 6, property);
+	QCheckBox* isRoll = new QCheckBox();
+	tableView->setCellWidget(row, 7, isRoll);
+	connect(isRoll, &QCheckBox::stateChanged, this, &QCanSetting::on_CheckStateChanged);
+	tableView->setItem(row, 8, new QTableWidgetItem("-1"));
 	protoItem pItem;
 	pItem.bitName	= tableView->item(row, 0)->text();
 	pItem.startByte = tableView->item(row, 1)->text().toInt(NULL, 10);
@@ -393,6 +406,8 @@ void QCanSetting::on_pbAddIteam_clicked()
 	pItem.precision = tableView->item(row, 4)->text().toInt(NULL, 10);
 	pItem.offset	= tableView->item(row, 5)->text().toInt(NULL, 10);
 	pItem.send = 0;
+	pItem.isRoll = false;
+	pItem.dataFrom = "-1";
 	try
 	{
 		qGb->pGboleData.at(curSelectRow).cItem.at(curSelectCanRow).pItem.push_back(pItem);
@@ -445,35 +460,43 @@ void QCanSetting::on_pbDelIteam_clicked()
 	}
 	//超出范围
 	short int curSelectCanRow = canIdView->currentRow();
-	if (curSelectCanRow<0 || curSelectCanRow>qGb->pGboleData.at(curSelectRow).cItem.size() - 1)
+	try
 	{
-		QMessageBox::warning(this, tr("warning"), tr("未选中CanId，不能删除，要先选中型号，然后再选中CanID，再删除"));
-		return;
-	}
-	//超出范围
-	if (index<0 || index>qGb->pGboleData.at(curSelectRow).cItem.at(curSelectCanRow).pItem.size())
-	{
-		QMessageBox::warning(this, tr("warning"), tr("数据删除出错，不在Vector里面"));
-		return;
-	}
-	//使用迭代器
-	std::vector<protoItem>::iterator itbegin= qGb->pGboleData.at(curSelectRow).cItem.at(curSelectCanRow).pItem.begin();
-	std::vector<protoItem>::iterator itend= qGb->pGboleData.at(curSelectRow).cItem.at(curSelectCanRow).pItem.end();
-	int n = 0;
-	while (itbegin != itend)
-	{
-		//找到所在位置,因为vector是有序的，添加行的同时也push到vector了，行的位置就是vector的位置
-		if (n == index)
+		if (curSelectCanRow<0 || curSelectCanRow>qGb->pGboleData.at(curSelectRow).cItem.size() - 1)
 		{
-			//使用erase移除
-			qGb->pGboleData.at(curSelectRow).cItem.at(curSelectCanRow).pItem.erase(itbegin);
-			break;
+			QMessageBox::warning(this, tr("warning"), tr("未选中CanId，不能删除，要先选中型号，然后再选中CanID，再删除"));
+			return;
 		}
-		else
+		//超出范围
+		if (index<0 || index > qGb->pGboleData.at(curSelectRow).cItem.at(curSelectCanRow).pItem.size()-1)
 		{
-			itbegin++;
-			n++;
+			QMessageBox::warning(this, tr("warning"), tr("数据删除出错，不在Vector里面"));
+			return;
 		}
+		//使用迭代器
+		std::vector<protoItem>::iterator itbegin= qGb->pGboleData.at(curSelectRow).cItem.at(curSelectCanRow).pItem.begin();
+		std::vector<protoItem>::iterator itend= qGb->pGboleData.at(curSelectRow).cItem.at(curSelectCanRow).pItem.end();
+		int n = 0;
+		while (itbegin != itend)
+		{
+			//找到所在位置,因为vector是有序的，添加行的同时也push到vector了，行的位置就是vector的位置
+			if (n == index)
+			{
+				//使用erase移除
+				qGb->pGboleData.at(curSelectRow).cItem.at(curSelectCanRow).pItem.erase(itbegin);
+				break;
+			}
+			else
+			{
+				itbegin++;
+				n++;
+			}
+		}
+	}
+	catch (const std::exception&e)
+	{
+		QLOG_WARN() << "删除行时Vector超出范围：" << e.what();
+		QMessageBox::warning(NULL, tr("警告"), tr("删除行时Vector超出范围\non_pbDelIteam_clicked"));
 	}
 }
 
@@ -551,7 +574,8 @@ void QCanSetting::on_modelView_Clicked(int row, int col)
 			proto->addItem(tr("接收"));
 			proto->addItem(tr("发送"));
 			proto->setCurrentIndex(qGb->pGboleData.at(row).cItem.at(i).opt);
-			QString mt = "0x" + QString("%1").arg(qGb->pGboleData.at(row).cItem.at(i).CanId, QString::number(qGb->pGboleData.at(row).cItem.at(i).CanId, 16).length(), 16).toUpper().trimmed();
+			//QString mt = "0x" + QString("%1").arg(qGb->pGboleData.at(row).cItem.at(i).CanId, QString::number(qGb->pGboleData.at(row).cItem.at(i).CanId, 16).length(), 16).toUpper().trimmed();
+			QString mt = qGb->pGboleData.at(row).cItem.at(i).strCanId;
 			canIdView->setItem(i, 0, new QTableWidgetItem(mt));
 			canIdView->setCellWidget(i, 1, proto);
 			connect(proto, SIGNAL(currentIndexChanged(int)), this, SLOT(on_canIdView_currentIndexChanged(int)));
@@ -619,7 +643,7 @@ void QCanSetting::on_canIdView_cellChanged(int row, int col)
 			QMessageBox::warning(this, tr("warning"), tr("修改的位置超出范围"));
 			return;
 		}
-		qGb->pGboleData.at(mCurRow).cItem.at(row).CanId = canIdView->item(row,col)->text().trimmed().toInt(nullptr, 16);
+		qGb->pGboleData.at(mCurRow).cItem.at(row).strCanId = canIdView->item(row,col)->text().trimmed();
 	}
 	catch (const std::exception&e)
 	{
@@ -678,6 +702,12 @@ void QCanSetting::on_canIdView_Clicked(int row, int col)
 			QPushButton* property = new QPushButton(tr("属性"));
 			connect(property, SIGNAL(clicked()), this, SLOT(on_property_clicked()));
 			tableView->setCellWidget(i, 6, property);
+			QCheckBox* isRoll = new QCheckBox();
+			connect(isRoll, &QCheckBox::stateChanged, this, &QCanSetting::on_CheckStateChanged);
+			if (qGb->pGboleData.at(mRow).cItem.at(row).pItem.at(i).isRoll)
+				isRoll->setCheckState(Qt::Checked);
+			tableView->setCellWidget(i, 7, isRoll);
+			tableView->setItem(i, 8, new QTableWidgetItem(qGb->pGboleData.at(mRow).cItem.at(row).pItem.at(i).dataFrom));
 		}
 	}
 	catch (const std::exception&e)
@@ -745,6 +775,9 @@ void QCanSetting::on_tableView_cellChanged(int row, int col)
 		case 5:
 			qGb->pGboleData.at(mCurRow).cItem.at(cCurRow).pItem.at(row).offset = tableView->item(row, col)->text().toInt();
 			break;
+		case 8:
+			qGb->pGboleData.at(mCurRow).cItem.at(cCurRow).pItem.at(row).dataFrom = tableView->item(row, col)->text().trimmed();
+			break;
 		default:
 			break;
 		}
@@ -801,9 +834,11 @@ void QCanSetting::on_property_clicked()
 			pp = new QSetProperty();
 		}
 		//取出该项的map
-		std::map<QString, cellProperty>&mapMM = qGb->pGboleData.at(mCurRow).cItem.at(cCurRow).pItem.at(row).itemProperty;
+		//std::map<QString, cellProperty>&mapMM = qGb->pGboleData.at(mCurRow).cItem.at(cCurRow).pItem.at(row).itemProperty;
+		//取出该项的vector
+		std::vector<cellProperty>& stlMM = qGb->pGboleData.at(mCurRow).cItem.at(cCurRow).pItem.at(row).stl_itemProperty;
 		//丢个指针进去（C/C++指针真TMD的好）
-		pp->setIntoMap(&mapMM);
+		pp->setIntoMap(&stlMM);
 		pp->setWindowFlag(Qt::Window);
 		pp->show();
 	}
@@ -814,5 +849,53 @@ void QCanSetting::on_property_clicked()
 	}
 
 	
+}
+
+void QCanSetting::on_CheckStateChanged(int isCheck)
+{
+	QCheckBox* pb = dynamic_cast<QCheckBox*>(sender());
+	if (!pb)
+		return;
+	if (!tableView)
+		return;
+	if (!canIdView)
+		return;
+	if (!modelView)
+		return;
+	QModelIndex inedx = tableView->indexAt(QPoint(pb->geometry().x(), pb->geometry().y()));
+	int row = inedx.row();
+	qGboleData* qGb = qGboleData::getInstance();
+	if (!qGb)return;
+
+	try
+	{
+		//判断第一层表格是否选中
+		int mCurRow = modelView->currentRow();
+		if (mCurRow<0 || mCurRow>qGb->pGboleData.size() - 1)
+		{
+			QMessageBox::warning(this, tr("warning"), QString(tr("未选中型号，不能修改")));
+			return;
+		}
+		//判断第二层表格是否选中
+		int cCurRow = canIdView->currentRow();
+		if (cCurRow<0 || cCurRow>qGb->pGboleData.at(mCurRow).cItem.size() - 1)
+		{
+			QMessageBox::warning(this, tr("warning"), QString(tr("未选中型号，不能修改")));
+			return;
+		}
+		//判断Button是否在第三层表格的数据范围内
+		if (row > qGb->pGboleData.at(mCurRow).cItem.at(cCurRow).pItem.size() - 1 || row < 0)
+		{
+			QMessageBox::warning(this, tr("warning"), QString(tr("字段vector超出范围：\nrow > pGboleData.at(mCurRow).cItem.at(cCurRow).pItem.size() - 1")));
+			return;
+		}
+		qGb->pGboleData.at(mCurRow).cItem.at(cCurRow).pItem.at(row).isRoll = isCheck;
+		
+	}
+	catch (const std::exception& e)
+	{
+		QMessageBox::warning(this, tr("warning"), QString(tr("Vector超出:") + e.what() + "Infunction:on_CheckStateChanged(int isCheck)"));
+		//return;
+	}
 }
 

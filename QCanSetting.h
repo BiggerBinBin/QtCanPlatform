@@ -28,6 +28,7 @@
 #pragma execution_character_set("utf-8")  
 #include "dataStruct.h"
 #include "QSetProperty.h"
+#include <QCloseEvent>
 class QCanSetting : public QWidget
 {
 	Q_OBJECT
@@ -35,7 +36,7 @@ class QCanSetting : public QWidget
 public:
 	QCanSetting(QWidget *parent = nullptr);
 	~QCanSetting();
-
+	virtual void closeEvent(QCloseEvent* event) override;
 private:
 	Ui::QCanSettingClass ui;
 	void InitUi();
@@ -50,6 +51,8 @@ private:
 	void SetTableData();
 	std::map<QString, cellProperty>ItemProperty;
 	QSetProperty *pp=nullptr;
+signals:
+	void settingWidowsClose();
 private slots:
 	//Ìí¼ÓÐÍºÅ
 	void on_pbAddModel_clicked();
@@ -93,4 +96,6 @@ private slots:
 	void on_tableView_cellChanged(int row, int col);
 
 	void on_property_clicked();
+	void on_CheckStateChanged(int);
+
 };
