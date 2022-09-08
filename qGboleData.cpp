@@ -13,7 +13,11 @@
 qGboleData* qGboleData::pGboleInstance = nullptr;
 qGboleData::qGboleData()
 {
-
+	//这个作为保存到json文件时的json对象的序号，因为json是无序的
+	//为了避免他自动排序，搞了一万个升序序号来人为制造顺序
+	//这里只搞了10000个，所以当保存的项超过10000个时，就是越界。哈哈哈哈哈哈
+	for (int i = 10000; i < 20000; ++i)
+		fIndex[i - 10000] = i;
 }
 
 void qGboleData::save()
@@ -31,6 +35,7 @@ void qGboleData::save()
 	}
 
 	QJsonObject mItemObjRoot;
+	
 	for (int i = 0; i < pGboleData.size(); i++)
 	{
 
@@ -75,18 +80,18 @@ void qGboleData::save()
 					itemarr.append(QString::number(green));	//3
 					itemarr.append(QString::number(blue));	//4
 					//把first当key，value是一个数组
-					cellPr.insert(QString::number(v), itemarr);
+					cellPr.insert(QString::number(fIndex[v]), itemarr);
 					//ibegin++;
 				}
 				//把对象追加到数组后面，数据也能包含对象
 				pItem.append(cellPr);
-				pDItem.insert(QString::number(k), pItem);
+				pDItem.insert(QString::number(fIndex[k]), pItem);
 			}
 			pItemObj.insert("pDItem", pDItem);
-			cItemObj.insert(QString::number(j), pItemObj);
+			cItemObj.insert(QString::number(fIndex[j]), pItemObj);
 		}
 		mItem.insert("mDItem", cItemObj);
-		mItemObjRoot.insert(QString::number(i), mItem);
+		mItemObjRoot.insert(QString::number(fIndex[i]), mItem);
 	}
 	// 将json对象里的数据转换为字符串
 	QJsonDocument doc;
@@ -187,7 +192,7 @@ void qGboleData::read()
 						dtemp.startByte = jarr[1].toInt();
 						dtemp.startBit = jarr[2].toInt();
 						dtemp.bitLeng = jarr[3].toInt();
-						dtemp.precision = jarr[4].toInt();
+						dtemp.precision = jarr[4].toDouble();
 						dtemp.offset = jarr[5].toInt();
 						dtemp.isRoll = jarr[6].toBool();
 						dtemp.dataFrom = jarr[7].toString();

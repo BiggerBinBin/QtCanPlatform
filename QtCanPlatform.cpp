@@ -33,7 +33,7 @@ QtCanPlatform::QtCanPlatform(QWidget *parent)
     initUi();
     sendTimer = new QTimer();
     connect(sendTimer, &QTimer::timeout, this, &QtCanPlatform::sendData);
-    QLOG_INFO() << "中文世界";
+   /* QLOG_INFO() << "中文世界";*/
     
 }
 
@@ -123,6 +123,7 @@ void QtCanPlatform::initUi()
     QLabel* Period = new QLabel(tr("报文周期："));
     cycle = new QLineEdit("1000");
     cycle->setValidator(new QIntValidator(0, 9999999, this));
+    cycle->setFixedWidth(60);
     pbOpen = new QPushButton(tr("打开设备"));
     connect(pbOpen, SIGNAL(clicked()), this, SLOT(on_pbOpenPcan_clicked()));
     //添加个水平的布局
@@ -141,8 +142,12 @@ void QtCanPlatform::initUi()
    
     //把弹簧也丢进去
     hLayout->addSpacerItem(new QSpacerItem(20, 20, QSizePolicy::Expanding));
+    QCheckBox* checkTrace = new QCheckBox();
+    checkTrace->setText(tr("数据监控   "));
+    connect(checkTrace, &QCheckBox::stateChanged, this, &QtCanPlatform::on_checkTraceChanged);
     QLabel* mLabel = new QLabel();
     mLabel->setText(tr("当前型号"));
+    hLayout->addWidget(checkTrace);
     hLayout->addWidget(mLabel);
     hLayout->addWidget(cbSelectModel);
 
@@ -164,7 +169,7 @@ void QtCanPlatform::initUi()
     vLayoutTable->addWidget(tableRollTitle);
     vLayoutTable->addWidget(tableRollData);
     vLayoutTable->setStretch(0, 3);
-    vLayoutTable->setStretch(1, 2);
+    vLayoutTable->setStretch(1, 3);
     vLayoutTable->setStretch(2, 1);
     vLayoutTable->setStretch(3, 4);
     //定义一个水平layout
@@ -306,21 +311,30 @@ bool QtCanPlatform::recDataIntoTab()
     {
         int num = recCanData.at(i).pItem.size();
         int cr = tableRecView->rowCount();
-        for (int j = 0; j <num; j++)
+        //每加一行就要设置到表格去
+        tableRecView->setRowCount(cr+1);
+        int idex = 0;
+        for (int j = 0; j <num; j++, idex++)
         {
-
-            //每5个换一行
-            if ((j + 1) % 6 == 0)
-                ++cr;
-            //每加一行就要设置到表格去
-            tableRecView->setRowCount(cr + 1);
-            tableRecView->setItem(cr, 2*(j%5), new QTableWidgetItem(recCanData.at(i).pItem.at(j).bitName));
+            if (idex > 9)
+            {
+                idex = 0;
+                cr = tableRecView->rowCount();
+                tableRecView->setRowCount(cr + 2);
+                cr += 1;
+            }
+                
+            tableRecView->setItem(cr, idex, new QTableWidgetItem(recCanData.at(i).pItem.at(j).bitName));
+            //tableRecView->setItem(cr+1, j, new QTableWidgetItem(recCanData.at(i).pItem.at(j).));
             
             if (recCanData.at(i).pItem.at(j).isRoll)
             {
                 rollTitle.append(recCanData.at(i).pItem.at(j).bitName);
             }
         }
+        cr = tableRecView->rowCount();
+        tableRecView->setRowCount(cr + 1);
+        //tableRecView->insertRow(2);
     }
     tableRollTitle->setColumnCount(rollTitle.size());
     tableRollTitle->clear();
@@ -337,6 +351,18 @@ void QtCanPlatform::sendData()
         bool b= intelProtocol(sendCanData.at(i), s_Data, fream_id);
         if (!b)
             continue;
+        if(isTrace)
+        {
+            //QStringList binaryStr;
+            QString hex;
+            for (int k = 0; k < 8; ++k)
+            {
+                QString str = QString("%1").arg((uint8_t)s_Data[k], 2, 16, QLatin1Char('0'));
+                hex += str+" ";
+            }
+            QString strId = "0x"+QString("%1").arg(fream_id, 8, 16, QLatin1Char('0')).toUpper();
+            QLOG_INFO() << "Tx:" << strId << "  " << hex;
+        }
         pcan->SendFrame(fream_id, s_Data);
     }
 
@@ -373,7 +399,410 @@ bool QtCanPlatform::intelProtocol(canIdData& cdata,uchar data[], unsigned int& f
 }
 bool QtCanPlatform::motoProtocol(canIdData& cdata,uchar data[], unsigned int& fream_id)
 {
-    return false;
+    if (cdata.pItem.size() <= 0)
+        return false;
+    fream_id = cdata.strCanId.toUInt(NULL, 16);
+    for (int i = 0; i < cdata.pItem.size() && i < 8; i++)
+    {
+        const protoItem& itemp = cdata.pItem.at(i);
+        int startbyte = itemp.startByte;
+        int startbit = itemp.startBit;
+        int lengght = itemp.bitLeng;
+        int senddd = itemp.send;
+        startbyte = YB::InRang(0, 7, startbyte);
+        if (lengght <= 8)
+        {
+            int pos = startbit % 8;             //起止位，模8，1字节8位，uchar是1节长度的
+            uchar m_send = senddd << pos & 0xff; //左移起止位，再&0xff，保证数据是不超过255
+            data[startbyte] += m_send;                  //加上去，有可能其它的数据也在这个字节里
+        }
+        else if (lengght <= 16)
+        {
+            int pos = startbit % 8;
+            uchar m_send = senddd << pos & 0xff; //低8位
+            data[startbyte] += m_send;
+            m_send = senddd >> 8 & 0xff;         //高8位
+            data[startbyte + 1] += m_send;
+        }
+    }
+    return true;
+}
+void QtCanPlatform::recAnalyseIntel(unsigned int fream_id,QByteArray data)
+{
+    QStringList binaryStr;
+    QString hex;
+    for (int k = 0; k < data.size(); ++k)
+    {
+        QString str = QString("%1").arg((uint8_t)data[k], 8, 2, QLatin1Char('0'));
+        binaryStr.append(str);
+
+        hex += QString("%1").arg(str.toInt(NULL, 2), 2, 16, QLatin1Char('0')).toUpper() + " ";
+    }
+    if (isTrace)
+    {
+        QString strId = "0x" + QString("%1").arg(fream_id, 8, 16, QLatin1Char('0')).toUpper();
+        QLOG_INFO() << "Rx:" << strId << "  " << hex;
+    }
+
+    bool isRoll = false;
+    struct dFromStru {
+        int index;
+        float f1;
+        float f2;
+        int showCount;
+    };
+    for (int i = 0; i < recCanData.size(); i++)
+    {
+        uint currID = recCanData.at(i).strCanId.toUInt(NULL, 16);
+        if (currID != fream_id)
+            continue;
+        std::vector<parseData>parseArr;
+        std::vector<dFromStru>ddFF;
+        for (int m = 0; m < recCanData.at(i).pItem.size(); ++m)
+        {
+            int startByte = recCanData.at(i).pItem.at(m).startByte;
+            int startBit = recCanData.at(i).pItem.at(m).startBit;
+            int startLenght = recCanData.at(i).pItem.at(m).bitLeng;
+            float precision = recCanData.at(i).pItem.at(m).precision;
+            int offset = recCanData.at(i).pItem.at(m).offset;
+            parseData pd;
+            int temp=0;
+            QString datafrom = recCanData.at(i).pItem.at(m).dataFrom;
+           
+            
+            //判断是否跨字节，起止位模8，得出是当前字节的起止位，再加个长度
+            if (datafrom != "-1")
+            {
+                QStringList splt = datafrom.split("*");
+                if (splt.size() > 1)
+                {
+                    dFromStru ddf;
+                    ddf.index = m;
+                    ddf.f1 = splt.at(0).toInt();
+                    ddf.f2 = splt.at(1).toInt();
+                    ddf.showCount = -1;
+                    ddFF.push_back(ddf);
+                }
+            }
+            else
+            {
+                //判断是否跨字节，起止位模8，得出是当前字节的起止位，再加个长度
+                int len = startBit % 8 + startLenght;
+                if (len <= 8)
+                {   //不跨字节，这个就比较简单了
+                    //15 14 13 12 11 10 9 8   7 6 5 4 3 2 1 0
+                    //^高位在前，低位在后
+                    temp = binaryStr[startByte].mid(8 - (startLenght + (startBit % 8)), startLenght).toInt(NULL, 2) * precision + offset;
+                }
+                else if (len <= 16)
+                {
+                    temp = (binaryStr[startByte + 1].mid(8 - (startLenght - (8 - startBit % 8)), startLenght - (8 - startBit % 8)) + binaryStr[startByte].mid(0, 8 - (startBit % 8))).toInt(NULL, 2);
+                }
+                {
+                    //跨三个字节的，应该没有
+                }
+            }
+            
+            pd.name = recCanData.at(i).pItem.at(m).bitName;
+            pd.value = temp;
+            pd.toWord = QString::number(temp);
+            pd.color.r = 255;
+            pd.color.g = 255;
+            pd.color.b = 255;
+            
+            // std::map<QString, cellProperty>& tt = recCanData.at(i).pItem.at(m).itemProperty;
+            std::vector<cellProperty>& ss = recCanData.at(i).pItem.at(m).stl_itemProperty;
+
+            //如果是需要滚动显示的
+            if (recCanData.at(i).pItem.at(m).isRoll)
+            {
+                isRoll = true;
+                int index = 0;
+                if (YB::nameInVector(RollShowData, recCanData.at(i).pItem.at(m).bitName, index))
+                {
+                    RollShowData.at(index).value = temp;
+                }
+                else
+                {
+                    RollStruct rr;
+                    rr.name = recCanData.at(i).pItem.at(m).bitName;
+                    rr.value = temp;
+                    RollShowData.push_back(rr);
+                }
+                if (datafrom != "-1" && ddFF.size() > 0)
+                    ddFF.at(ddFF.size() - 1).showCount++;
+            }
+
+            std::vector<dFromStru>::iterator iB = ddFF.begin();
+            std::vector<dFromStru>::iterator iE = ddFF.end();
+            int count0 = 0;
+            while (iB != iE)
+            {
+                int max = iB->f1 > iB->f2 ? iB->f1 : iB->f2;
+                if (m - 1 > max - 1)
+                {
+                    parseArr.at(iB->index).value = parseArr.at(iB->f1 - 1).value * parseArr.at(iB->f2 - 1).value;
+                    parseArr.at(iB->index).toWord = QString::number(parseArr.at(iB->index).value);
+                    if (RollShowData.size() - 1 >= iB->showCount)
+                    {
+                        RollShowData.at(iB->showCount).value = parseArr.at(iB->index).value;
+                    }
+                    ddFF.erase(iB);
+                    break;
+                }
+                iB++;
+            }
+            for (int i = 0; i < ss.size(); i++)
+            {
+                if (ss.at(i).value.toInt() == temp)
+                {
+                    pd.color.r = ss.at(i).r;
+                    pd.color.g = ss.at(i).g;
+                    pd.color.b = ss.at(i).b;
+                    pd.toWord = ss.at(i).toWord;
+                    break;
+                }
+
+            }
+            parseArr.push_back(pd);
+        }
+        //判断map里面是否已经存在有了
+        if (YB::keyInMap(showTableD, QString::number(fream_id)))
+        {
+            showTableD[QString::number(fream_id)] = parseArr;
+        }
+        else
+        {
+            showTableD.insert({ QString::number(fream_id),parseArr });
+        }
+
+    }
+    //recCanData.clear();
+    if (!tableRecView)
+        return;
+    int rcount = tableRecView->rowCount();
+    for (int m = 0; m < rcount; m++)
+        tableRecView->removeRow(rcount - m - 1);
+    //for (int n = 0; n < showVec.size(); n++)
+    std::map<QString, std::vector<parseData>>::iterator iBegin = showTableD.begin();
+    std::map<QString, std::vector<parseData>>::iterator iEnd = showTableD.end();
+    while (iBegin != iEnd)
+    {
+        int cr = tableRecView->rowCount();
+        //每加一行就要设置到表格去
+        tableRecView->setRowCount(cr + 2);
+        int num = iBegin->second.size();
+        int idex = 0;
+        for (int j = 0; j < num; j++, idex++)
+        {
+            if (idex > 9)
+            {
+                idex = 0;
+                cr = tableRecView->rowCount();
+                tableRecView->setRowCount(cr + 2);
+                
+            }
+
+            QString tnamp = iBegin->second.at(j).name;
+            QString toword = iBegin->second.at(j).toWord;
+            tableRecView->setItem(cr, idex, new QTableWidgetItem(tnamp));
+            tableRecView->setItem(cr + 1, idex, new QTableWidgetItem(toword));
+            tableRecView->item(cr + 1, idex)->setBackgroundColor(QColor(iBegin->second.at(j).color.r, iBegin->second.at(j).color.g, iBegin->second.at(j).color.b));
+
+        }
+        iBegin++;
+
+    }
+    if (isRoll)
+        emit sigNewRoll();
+}
+void QtCanPlatform::recAnalyseMoto(unsigned int fream_id, QByteArray data)
+{
+    QStringList binaryStr;
+    QString hex;
+    for (int k = 0; k < data.size(); ++k)
+    {
+        QString str = QString("%1").arg((uint8_t)data[k], 8, 2, QLatin1Char('0'));
+        binaryStr.append(str);
+
+        hex += QString("%1").arg(str.toInt(NULL, 2), 2, 16, QLatin1Char('0')).toUpper() + " ";
+    }
+    if (isTrace)
+    {
+        QString strId = "0x" + QString("%1").arg(fream_id, 8, 16, QLatin1Char('0')).toUpper();
+        QLOG_INFO() << "Rx:" << strId << "  " << hex;
+    }
+
+    bool isRoll = false;
+    //std::vector<std::vector<parseData>>showVec;
+    struct dFromStru {
+        int index;
+        float f1;
+        float f2;
+        int showCount;
+    };
+    for (int i = 0; i < recCanData.size(); i++)
+    {
+        uint currID = recCanData.at(i).strCanId.toUInt(NULL, 16);
+        if (currID != fream_id)
+            continue;
+        std::vector<parseData>parseArr;
+        std::vector<dFromStru>ddFF;
+        int countShow = 0;
+        for (int m = 0; m < recCanData.at(i).pItem.size(); ++m)
+        {
+            int startByte = recCanData.at(i).pItem.at(m).startByte;
+            int startBit = recCanData.at(i).pItem.at(m).startBit;
+            int startLenght = recCanData.at(i).pItem.at(m).bitLeng;
+            float precision = recCanData.at(i).pItem.at(m).precision;
+            int offset = recCanData.at(i).pItem.at(m).offset;
+            QString datafrom = recCanData.at(i).pItem.at(m).dataFrom;
+            parseData pd;
+            int temp=0;
+            //判断是否跨字节，起止位模8，得出是当前字节的起止位，再加个长度
+            if (datafrom != "-1")
+            {
+                QStringList splt = datafrom.split("*");
+                if (splt.size() > 1)
+                {
+                    dFromStru ddf;
+                    ddf.index = m;
+                    ddf.f1 = splt.at(0).toInt();
+                    ddf.f2 = splt.at(1).toInt();
+                    ddFF.push_back(ddf);
+                }
+            }
+            else
+            {
+                int len = startBit % 8 + startLenght;
+                if (len <= 8)
+                {   //不跨字节，这个就比较简单了
+                    //15 14 13 12 11 10 9 8   7 6 5 4 3 2 1 0
+                    //^高位在前，低位在后
+                    temp = binaryStr[startByte].mid(startBit % 8, startLenght).toInt(NULL, 2) * precision + offset;
+                }
+                else if (len <= 16)
+                {
+                    temp = (binaryStr[startByte].mid(0, 8 - (startBit % 8)) + binaryStr[startByte + 1].mid(startBit % 8, startLenght - (8 - startBit % 8))).toInt(NULL, 2);
+                }
+                {
+                    //跨三个字节的，应该没有
+                }
+            }
+            
+            pd.name = recCanData.at(i).pItem.at(m).bitName;
+            pd.value = temp;
+            pd.toWord = QString::number(temp);
+            pd.color.r = 255;
+            pd.color.g = 255;
+            pd.color.b = 255;
+            
+            // std::map<QString, cellProperty>& tt = recCanData.at(i).pItem.at(m).itemProperty;
+            std::vector<cellProperty>& ss = recCanData.at(i).pItem.at(m).stl_itemProperty;
+
+            //如果是需要滚动显示的
+            if (recCanData.at(i).pItem.at(m).isRoll)
+            {
+                isRoll = true;
+                int index = 0;
+                if (YB::nameInVector(RollShowData, recCanData.at(i).pItem.at(m).bitName, index))
+                {
+                    RollShowData.at(index).value = temp;
+                }
+                else
+                {
+                    RollStruct rr;
+                    rr.name = recCanData.at(i).pItem.at(m).bitName;
+                    rr.value = temp;
+                    RollShowData.push_back(rr);
+                }
+                if (datafrom != "-1" && ddFF.size()>0)
+                    ddFF.at(ddFF.size()-1).showCount++;
+            }
+
+            std::vector<dFromStru>::iterator iB = ddFF.begin();
+            std::vector<dFromStru>::iterator iE = ddFF.end();
+            int count0 = 0;
+            while (iB != iE)
+            {
+                int max = iB->f1 > iB->f2 ? iB->f1 : iB->f2;
+                if (m >= max - 1)
+                {
+                    parseArr.at(iB->index).value = parseArr.at(iB->f1 - 1).value * parseArr.at(iB->f2 - 1).value;
+                    parseArr.at(iB->index).toWord = QString::number(parseArr.at(iB->index).value);
+                    if (RollShowData.size() - 1 >= iB->showCount)
+                    {
+                        RollShowData.at(iB->showCount).value = parseArr.at(iB->index).value;
+                    }
+                    ddFF.erase(iB);
+                    break;
+                }
+                iB++;
+            }
+
+            for (int i = 0; i < ss.size(); i++)
+            {
+                if (ss.at(i).value.toInt() == temp)
+                {
+                    pd.color.r = ss.at(i).r;
+                    pd.color.g = ss.at(i).g;
+                    pd.color.b = ss.at(i).b;
+                    pd.toWord = ss.at(i).toWord;
+                    break;
+                }
+
+            }
+            parseArr.push_back(pd);
+        }
+        //判断map里面是否已经存在有了
+        if (YB::keyInMap(showTableD, QString::number(fream_id)))
+        {
+            showTableD[QString::number(fream_id)] = parseArr;
+        }
+        else
+        {
+            showTableD.insert({ QString::number(fream_id),parseArr });
+        }
+
+    }
+    //recCanData.clear();
+    if (!tableRecView)
+        return;
+    int rcount = tableRecView->rowCount();
+    for (int m = 0; m < rcount; m++)
+        tableRecView->removeRow(rcount - m - 1);
+    //for (int n = 0; n < showVec.size(); n++)
+    std::map<QString, std::vector<parseData>>::iterator iBegin = showTableD.begin();
+    std::map<QString, std::vector<parseData>>::iterator iEnd = showTableD.end();
+    while (iBegin != iEnd)
+    {
+        int cr = tableRecView->rowCount();
+        //每加一行就要设置到表格去
+        tableRecView->setRowCount(cr + 2);
+        int num = iBegin->second.size();
+        int idex = 0;
+        for (int j = 0; j < num; j++, idex++)
+        {
+            if (idex > 9)
+            {
+                idex = 0;
+                cr = tableRecView->rowCount();
+                tableRecView->setRowCount(cr + 2);
+
+            }
+
+            QString tnamp = iBegin->second.at(j).name;
+            QString toword = iBegin->second.at(j).toWord;
+            tableRecView->setItem(cr, idex, new QTableWidgetItem(tnamp));
+            tableRecView->setItem(cr + 1, idex, new QTableWidgetItem(toword));
+            tableRecView->item(cr + 1, idex)->setBackgroundColor(QColor(iBegin->second.at(j).color.r, iBegin->second.at(j).color.g, iBegin->second.at(j).color.b));
+
+        }
+        iBegin++;
+
+    }
+    if (isRoll)
+        emit sigNewRoll();
 }
 void QtCanPlatform::getModelTitle()
 {
@@ -422,6 +851,7 @@ void QtCanPlatform::on_pbOpenPcan_clicked()
         pbOpen->setText(tr("打开设备"));
         cbBitRate->setEnabled(true);
         cbPcan->setEnabled(true);
+        pbSend->setChecked(false);
         pbSend->setEnabled(false);
         pcanIsOpen = false;
         sendTimer->stop();
@@ -516,132 +946,20 @@ void QtCanPlatform::on_tableClicked(int row, int col)
 void QtCanPlatform::on_ReceiveData(uint fream_id, QByteArray data)
 {
     
-    QStringList binaryStr;
-    QString hex;
-    for (int k = 0; k < data.size(); ++k)
-    {
-        QString str = QString("%1").arg((uint8_t)data[k], 8, 2, QLatin1Char('0'));
-        binaryStr.append(str);
-        
-        hex+= QString("%1").arg(str.toInt(NULL, 2), 2, 16, QLatin1Char('0')).toUpper() + " ";
-    }
-    QLOG_INFO() <<"收到数据了:" << fream_id << ":" << hex;
-    //std::vector<std::vector<parseData>>showVec;
-    for (int i = 0; i < recCanData.size(); i++)
-    {
-        uint currID = recCanData.at(i).strCanId.toUInt(NULL, 16);
-        if (currID != fream_id)
-            continue;
-        std::vector<parseData>parseArr;
-
-        for (int m = 0; m < recCanData.at(i).pItem.size(); ++m)
-        {
-            int startByte  = recCanData.at(i).pItem.at(m).startByte;
-            int startBit = recCanData.at(i).pItem.at(m).startBit;
-            int startLenght = recCanData.at(i).pItem.at(m).bitLeng;
-            int precision = recCanData.at(i).pItem.at(m).precision;
-            int offset = recCanData.at(i).pItem.at(m).offset;
-            parseData pd;
-            int temp;
-            //判断是否跨字节，起止位模8，得出是当前字节的起止位，再加个长度
-            int len = startBit % 8 + startLenght;                       
-            if (len <= 8)
-            {   //不跨字节，这个就比较简单了
-                //15 14 13 12 11 10 9 8   7 6 5 4 3 2 1 0
-                //^高位在前，低位在后
-                temp = binaryStr[startByte].mid(8 - (startLenght+(startBit%8)), startLenght).toInt(NULL, 2) * precision + offset;
-            }
-            else if(len <= 16)
-            {
-                temp = (binaryStr[startByte + 1].mid(8-(startLenght-(8-startBit % 8)), startLenght - (8-startBit % 8)) + binaryStr[startByte].mid(0, 8 - (startBit % 8))).toInt(NULL, 2);
-            }
-            {
-                //跨三个字节的，应该没有
-            }
-            pd.name = recCanData.at(i).pItem.at(m).bitName;
-            pd.value = temp;
-            pd.toWord = QString::number(temp);
-            pd.color.r = 255;
-            pd.color.g = 255;
-            pd.color.b = 255;
-           // std::map<QString, cellProperty>& tt = recCanData.at(i).pItem.at(m).itemProperty;
-            std::vector<cellProperty>& ss = recCanData.at(i).pItem.at(m).stl_itemProperty;
-          
-            //如果是需要滚动显示的
-            if (recCanData.at(i).pItem.at(m).isRoll)
-            {
-                int index = 0;
-                if (YB::nameInVector(RollShowData, recCanData.at(i).pItem.at(m).bitName, index))
-                {
-                    RollShowData.at(index).value = temp;
-                }
-                else
-                {
-                    RollStruct rr;
-                    rr.name = recCanData.at(i).pItem.at(m).bitName;
-                    rr.value = temp;
-                    RollShowData.push_back(rr);
-                }
-            }
-            for(int i=0;i<ss.size();i++)
-            {
-                if (ss.at(i).value.toInt() == temp)
-                {
-                    pd.color.r = ss.at(i).r;
-                    pd.color.g = ss.at(i).g;
-                    pd.color.b = ss.at(i).b;
-                    pd.toWord = ss.at(i).toWord;
-                    break;
-                }
-                
-            }
-            parseArr.push_back(pd);
-        }
-        //判断map里面是否已经存在有了
-        if (YB::keyInMap(showTableD, QString::number(fream_id)))
-        {
-            showTableD[QString::number(fream_id)] = parseArr;
-        }
-        else
-        {
-            showTableD.insert({ QString::number(fream_id),parseArr });
-        }
-
-    }
-    //recCanData.clear();
-    if (!tableRecView)
+    int index = cbSelectModel->currentIndex();
+    
+    qGboleData* qGb = qGboleData::getInstance();
+    if (!qGb)return;
+    if (index > qGb->pGboleData.size()-1)
         return;
-    int rcount = tableRecView->rowCount();
-    for (int m = 0; m < rcount; m++)
-        tableRecView->removeRow(rcount - m - 1);
-    //for (int n = 0; n < showVec.size(); n++)
-    std::map<QString, std::vector<parseData>>::iterator iBegin = showTableD.begin();
-    std::map<QString, std::vector<parseData>>::iterator iEnd = showTableD.end();
-    while(iBegin!=iEnd)
+    if (0 == qGb->pGboleData.at(index).agreement)
     {
-        int cr = tableRecView->rowCount();
-        // int num = showVec.at(n).size();
-        int num = iBegin->second.size();
-        for (int j = 0; j < num; j++)
-        {
-
-            //每5个换一行
-            if ((j + 1) % 6 == 0)
-                ++cr;
-            //每加一行就要设置到表格去
-            tableRecView->setRowCount(cr + 1);
-            QString tnamp = iBegin->second.at(j).name;
-            QString toword = iBegin->second.at(j).toWord;
-            tableRecView->setItem(cr, 2 * (j % 5), new QTableWidgetItem(tnamp));
-            tableRecView->setItem(cr, 2 * (j % 5)+1, new QTableWidgetItem(toword));
-            tableRecView->item(cr, 2 * (j % 5) + 1)->setBackgroundColor(QColor(iBegin->second.at(j).color.r, iBegin->second.at(j).color.g, iBegin->second.at(j).color.b));
-
-        }
-        iBegin++;
-        
+        recAnalyseIntel(fream_id, data);
     }
-    emit sigNewRoll();
-
+    else
+    {
+        recAnalyseMoto(fream_id, data);
+    }
 }
 /*
 * @brief: 设置窗口关闭时，不管三七二十一，刷新一下显示的数据
@@ -682,6 +1000,11 @@ void QtCanPlatform::on_cbSelectSendItemChanged(int index)
         }
     }
 }
+/*
+* @brief：把要滚动显示的数据添加到表格里面
+* @param：无
+* @return：void
+*/
 void QtCanPlatform::on_setInToRollData()
 {
     tableRollData->setColumnCount(rollTitle.size());
@@ -692,6 +1015,15 @@ void QtCanPlatform::on_setInToRollData()
         tableRollData->setItem(row, i, new QTableWidgetItem(QString::number(RollShowData.at(i).value)));
     }
     tableRollData->scrollToBottom();
+}
+void QtCanPlatform::on_checkTraceChanged(int check)
+{
+    if (check)
+    {
+        isTrace = true;
+    }
+    else
+        isTrace = false;
 }
 void QtCanPlatform::initLogger()
 {

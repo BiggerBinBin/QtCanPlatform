@@ -54,21 +54,21 @@ void QCanSetting::InitUi()
 	QStringList listname;
 	listname << "名称" << "协议";
 	QPushButton* pbAddModel = new QPushButton("添加型号");
-	pbAddModel->setMinimumWidth(60);
+	pbAddModel->setFixedWidth(50);
 	connect(pbAddModel, &QPushButton::clicked, this, &QCanSetting::on_pbAddModel_clicked);
 	QPushButton* pbMoveUpModel = new QPushButton("上移");
-	pbMoveUpModel->setMinimumWidth(50);
+	pbMoveUpModel->setFixedWidth(40);
 	connect(pbMoveUpModel, &QPushButton::clicked, this, &QCanSetting::on_pbMoveUpModel_clicked);
 	QPushButton* pbMoveDownModel = new QPushButton("下移");
-	pbMoveDownModel->setMinimumWidth(50);
+	pbMoveDownModel->setFixedWidth(40);
 	connect(pbMoveDownModel, &QPushButton::clicked, this, &QCanSetting::on_pbMoveDownModel_clicked);
 	QPushButton* pbDelModel = new QPushButton("删除");
-	pbDelModel->setMinimumWidth(50);
+	pbDelModel->setFixedWidth(40);
 	connect(pbDelModel, &QPushButton::clicked, this, &QCanSetting::on_pbDelModel_clicked);
 	QPushButton* pbSaveModel = new QPushButton("保存");
-	pbSaveModel->setMinimumWidth(50);
+	pbSaveModel->setFixedWidth(40);
 	connect(pbSaveModel, &QPushButton::clicked, this, &QCanSetting::on_pbSaveModel_clicked);
-	pbSaveModel->setMinimumWidth(50);
+	//pbSaveModel->setMinimumWidth(40);
 	QHBoxLayout* hLayoutMdeol = new QHBoxLayout();
 	hLayoutMdeol->addWidget(pbAddModel);
 	hLayoutMdeol->addWidget(pbMoveUpModel);
@@ -81,7 +81,7 @@ void QCanSetting::InitUi()
 	modelView->setColumnCount(2);
 	modelView->setHorizontalHeaderLabels(listname);
 	modelView->setSelectionBehavior(QAbstractItemView::SelectRows);
-	modelView->setMaximumWidth(250);
+	modelView->setMaximumWidth(270);
 	connect(modelView, SIGNAL(cellDoubleClicked(int, int)), this, SLOT(on_modelView_doubleClicked(int, int)));
 	connect(modelView, SIGNAL(cellClicked(int, int)), this, SLOT(on_modelView_Clicked(int, int)));
 	
@@ -102,11 +102,11 @@ void QCanSetting::InitUi()
 	connect(pbDelCanId, &QPushButton::clicked, this, &QCanSetting::on_pbDelCanId_clicked);
 	QPushButton* pbSaveCanId = new QPushButton("保存");
 	connect(pbSaveCanId, &QPushButton::clicked, this, &QCanSetting::on_pbSaveCanId_clicked);
-	pbAddCanId->setMinimumWidth(60);
-	pbMoveUpCanId->setMinimumWidth(50);
-	pbMoveDownCanId->setMinimumWidth(50);
-	pbDelCanId->setMinimumWidth(50);
-	pbSaveCanId->setMinimumWidth(50);
+	pbAddCanId->setFixedWidth(50);
+	pbMoveUpCanId->setFixedWidth(40);
+	pbMoveDownCanId->setFixedWidth(40);
+	pbDelCanId->setFixedWidth(40);
+	pbSaveCanId->setFixedWidth(40);
 	QHBoxLayout* hLayoutCanId = new QHBoxLayout();
 	hLayoutCanId->addWidget(pbAddCanId);
 	hLayoutCanId->addWidget(pbMoveUpCanId);
@@ -119,7 +119,7 @@ void QCanSetting::InitUi()
 	canIdView->setColumnCount(2);
 	canIdView->setHorizontalHeaderLabels(listname);
 	canIdView->setSelectionBehavior(QAbstractItemView::SelectRows);
-	canIdView->setMaximumWidth(250);
+	canIdView->setMaximumWidth(270);
 	connect(canIdView, SIGNAL(cellDoubleClicked(int, int)), this, SLOT(on_canIdView_doubleClicked(int, int)));
 	connect(canIdView, SIGNAL(cellClicked(int, int)), this, SLOT(on_canIdView_Clicked(int, int)));
 	QVBoxLayout* vLayoutCanId = new QVBoxLayout();
@@ -144,6 +144,7 @@ void QCanSetting::InitUi()
 	hLayout->addWidget(pbMoveDownIteam);
 	hLayout->addWidget(pbDelIteam);
 	hLayout->addWidget(pbSaveIteam);
+	hLayout->addSpacerItem(new QSpacerItem(20, 20, QSizePolicy::Expanding));
 	hLayout->setSpacing(0);
 	//hLayout->addSpacerItem(new QSpacerItem(20, 80, QSizePolicy::Expanding));
 	listname.clear();
@@ -154,6 +155,7 @@ void QCanSetting::InitUi()
 	tableView->setHorizontalHeaderLabels(listname);
 	tableView->setSelectionBehavior(QAbstractItemView::SelectRows);
 	connect(tableView, SIGNAL(cellDoubleClicked(int, int)), this, SLOT(on_tableView_doubleCLicked(int, int)));
+	tableView->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 	QVBoxLayout* vLayout = new QVBoxLayout();
 	vLayout->addLayout(hLayout);
 	vLayout->addWidget(tableView);
@@ -166,8 +168,11 @@ void QCanSetting::InitUi()
 	//设置比例，1：1：3
 	hLayoutAll->setStretch(0, 1);
 	hLayoutAll->setStretch(1, 1);
-	hLayoutAll->setStretch(2, 3);
+	hLayoutAll->setStretch(2, 10);
+	hLayoutAll->setSpacing(5);
 	this->setLayout(hLayoutAll);
+	
+	
 	QLOG_INFO() << "设置界面初始化完成，Good Job！";
 }
 void QCanSetting::on_pbAddModel_clicked()
@@ -232,16 +237,60 @@ void QCanSetting::SetTableData()
 
 void QCanSetting::on_pbMoveUpModel_clicked()
 {
-	if (!modelView)
+	int curRow = modelView->currentRow();
+	
+	//最顶行或者没选中，不理
+	if (curRow < 1)
+	{
 		return;
-	short int index = modelView->currentIndex().row();
-	if (index == 0)
+	}
+	//在它上面先插入一行
+	modelView->insertRow(curRow - 1);
+	//把这一行的所有列取出来，也就两个
+	QString idtex = modelView->item(curRow + 1, 0)->text();
+	QComboBox* cb = dynamic_cast<QComboBox*>(modelView->cellWidget(curRow + 1, 1));
+	//在单元格要设置一个Item，不然直接丢元素进去
+	modelView->setItem(curRow - 1, 0, new QTableWidgetItem(idtex));
+	modelView->setCellWidget(curRow - 1, 1, cb);
+	//删除原来行，因为在它前面新增了一行，所以序号要变
+	modelView->removeRow(curRow + 1);
+
+	qGboleData* qGb = qGboleData::getInstance();
+	if (!qGb)return;
+	if (curRow > qGb->pGboleData.size() - 1)
+	{
+		QMessageBox::warning(NULL, "warnning", tr("超出范围，不能上下移动"));
 		return;
+	}
+	std::swap(qGb->pGboleData[curRow], qGb->pGboleData[curRow - 1]);
 	
 }
 
 void QCanSetting::on_pbMoveDownModel_clicked()
 {
+	int curRow = modelView->currentRow();
+	
+	//最下面行或者没选中，不理
+	if (curRow >= modelView->rowCount() - 1)
+	{
+		return;
+	}
+	
+	modelView->insertRow(curRow + 2);
+	QString idtex = modelView->item(curRow, 0)->text();
+	QComboBox* cb = dynamic_cast<QComboBox*>(modelView->cellWidget(curRow, 1));
+	modelView->setItem(curRow + 2, 0, new QTableWidgetItem(idtex));
+	modelView->setCellWidget(curRow + 2, 1, cb);
+	modelView->removeRow(curRow);
+
+	qGboleData* qGb = qGboleData::getInstance();
+	if (!qGb)return;
+	if (curRow > qGb->pGboleData.size())
+	{
+		QMessageBox::warning(NULL, "warnning", tr("超出范围，不能上下移动"));
+		return;
+	}
+	std::swap(qGb->pGboleData[curRow], qGb->pGboleData[curRow + 1]);
 }
 
 void QCanSetting::on_pbDelModel_clicked()
@@ -313,10 +362,69 @@ void QCanSetting::on_pbAddCanId_clicked()
 
 void QCanSetting::on_pbMoveUpCanId_clicked()
 {
+	int curRow = canIdView->currentRow();
+	int modelCurRow = modelView->currentRow();
+	//最顶行或者没选中，不理
+	if (curRow < 1 )
+	{
+		return;
+	}
+	if (modelCurRow < 0)
+	{
+		QMessageBox::warning(NULL, "warnning", tr("未选中型号，不能上下移动"));
+		return;
+	}
+		
+	//在它上面先插入一行
+	canIdView->insertRow(curRow - 1);
+	//把这一行的所有列取出来，也就两个
+	QString idtex = canIdView->item(curRow + 1, 0)->text();
+	QComboBox* cb = dynamic_cast<QComboBox*>(canIdView->cellWidget(curRow + 1, 1));
+	//在单元格要设置一个Item，不然直接丢元素进去
+	canIdView->setItem(curRow - 1, 0, new QTableWidgetItem(idtex));
+	canIdView->setCellWidget(curRow - 1, 1, cb);
+	//删除原来行，因为在它前面新增了一行，所以序号要变
+	canIdView->removeRow(curRow + 1);
+
+	qGboleData* qGb = qGboleData::getInstance();
+	if (!qGb)return;
+	if (curRow > qGb->pGboleData.at(modelCurRow).cItem.size() - 1)
+	{
+		QMessageBox::warning(NULL, "warnning", tr("超出范围，不能上下移动"));
+		return;
+	}
+	std::swap(qGb->pGboleData.at(modelCurRow).cItem[curRow], qGb->pGboleData.at(modelCurRow).cItem[curRow - 1]);
 }
 
 void QCanSetting::on_pbMoveDownCanId_clicked()
 {
+	int curRow = canIdView->currentRow();
+	int modelCurRow = modelView->currentRow();
+	//最下面行或者没选中，不理
+	if (curRow >= canIdView->rowCount()-1)
+	{
+		return;
+	}
+	if (modelCurRow < 0)
+	{
+		QMessageBox::warning(NULL, "warnning", tr("未选中型号，不能上下移动"));
+		return;
+	}
+	canIdView->insertRow(curRow + 2);
+	QString idtex = canIdView->item(curRow , 0)->text();
+	QComboBox* cb = dynamic_cast<QComboBox*>(canIdView->cellWidget(curRow, 1));
+	canIdView->setItem(curRow + 2, 0, new QTableWidgetItem(idtex));
+	canIdView->setCellWidget(curRow + 2, 1, cb);
+	canIdView->removeRow(curRow );
+
+	qGboleData* qGb = qGboleData::getInstance();
+	if (!qGb)return;
+	if (curRow > qGb->pGboleData.at(modelCurRow).cItem.size())
+	{
+		QMessageBox::warning(NULL, "warnning", tr("超出范围，不能上下移动"));
+		return;
+	}
+	std::swap(qGb->pGboleData.at(modelCurRow).cItem[curRow], qGb->pGboleData.at(modelCurRow).cItem[curRow + 1]);
 }
 
 void QCanSetting::on_pbDelCanId_clicked()
@@ -403,7 +511,7 @@ void QCanSetting::on_pbAddIteam_clicked()
 	pItem.startByte = tableView->item(row, 1)->text().toInt(NULL, 10);
 	pItem.startBit	= tableView->item(row, 2)->text().toInt(NULL, 10);
 	pItem.bitLeng	= tableView->item(row, 3)->text().toInt(NULL, 10);
-	pItem.precision = tableView->item(row, 4)->text().toInt(NULL, 10);
+	pItem.precision = tableView->item(row, 4)->text().toFloat();
 	pItem.offset	= tableView->item(row, 5)->text().toInt(NULL, 10);
 	pItem.send = 0;
 	pItem.isRoll = false;
@@ -424,10 +532,119 @@ void QCanSetting::on_pbAddIteam_clicked()
 
 void QCanSetting::on_pbMoveUpIteam_clicked()
 {
+	int canidCurRow = canIdView->currentRow();
+	int modelCurRow = modelView->currentRow();
+	int curRow = tableView->currentRow();
+	//最顶行或者没选中，不理
+	if (canidCurRow < 0 || modelCurRow < 0)
+	{
+		QMessageBox::warning(NULL, "warnning", tr("未选中型号或者CANID，不能上下移动"));
+		return;
+	}
+	if (curRow<1)
+	{
+		return;
+	}
+	//在它上面先插入一行
+	tableView->insertRow(curRow - 1);
+	//把这行的所有列数据取出来
+	QString str1 = tableView->item(curRow + 1, 0)->text();
+	QString str2 = tableView->item(curRow + 1, 1)->text();
+	QString str3 = tableView->item(curRow + 1, 2)->text();
+	QString str4 = tableView->item(curRow + 1, 3)->text();
+	QString str5 = tableView->item(curRow + 1, 4)->text();
+	QString str6 = tableView->item(curRow + 1, 5)->text();
+	QPushButton* qpb = dynamic_cast<QPushButton*>(tableView->cellWidget(curRow + 1, 6));
+	QCheckBox* qcb = dynamic_cast<QCheckBox*>(tableView->cellWidget(curRow + 1, 7));
+	QString str9 = tableView->item(curRow + 1, 8)->text();
+	//放到新插入的那一行
+	tableView->setItem(curRow - 1, 0, new QTableWidgetItem(str1));
+	tableView->setItem(curRow - 1, 1, new QTableWidgetItem(str2));
+	tableView->setItem(curRow - 1, 2, new QTableWidgetItem(str3));
+	tableView->setItem(curRow - 1, 3, new QTableWidgetItem(str4));
+	tableView->setItem(curRow - 1, 4, new QTableWidgetItem(str5));
+	tableView->setItem(curRow - 1, 5, new QTableWidgetItem(str6));
+	tableView->setCellWidget(curRow - 1, 6, qpb);
+	tableView->setCellWidget(curRow - 1, 7, qcb);
+	tableView->setItem(curRow - 1, 8, new QTableWidgetItem(str9));
+	tableView->setCellWidget(curRow - 1, 6, qpb);
+	tableView->removeRow(curRow + 1);
+	qGboleData* qGb = qGboleData::getInstance();
+	if (!qGb)return;
+	if (modelCurRow > qGb->pGboleData.size() - 1)
+	{
+		QMessageBox::warning(NULL, "warnning", tr("超出范围，不能上下移动"));
+		return;
+	}
+	if (canidCurRow > qGb->pGboleData.at(modelCurRow).cItem.size() - 1)
+	{
+		QMessageBox::warning(NULL, "warnning", tr("超出范围，不能上下移动"));
+		return;
+	}
+	if (curRow > qGb->pGboleData.at(modelCurRow).cItem.at(canidCurRow).pItem.size() - 1)
+	{
+		QMessageBox::warning(NULL, "warnning", tr("超出范围，不能上下移动"));
+		return;
+	}
+	std::swap(qGb->pGboleData.at(modelCurRow).cItem.at(canidCurRow).pItem[curRow], qGb->pGboleData.at(modelCurRow).cItem.at(canidCurRow).pItem[curRow - 1]);
 }
 
 void QCanSetting::on_pbMoveDownIteam_clicked()
 {
+	int canidCurRow = canIdView->currentRow();
+	int modelCurRow = modelView->currentRow();
+	int curRow = tableView->currentRow();
+	//最下面行或者没选中，不理
+	if (canidCurRow < 0 || modelCurRow < 0)
+	{
+		QMessageBox::warning(NULL, "warnning", tr("未选中型号或者CANID，不能上下移动"));
+		return;
+	}
+	if (curRow >= tableView->rowCount()-1)
+	{
+		return;
+	}
+	//在它上面先插入一行
+	tableView->insertRow(curRow + 2);
+	//把这行的所有列数据取出来
+	QString str1 = tableView->item(curRow , 0)->text();
+	QString str2 = tableView->item(curRow , 1)->text();
+	QString str3 = tableView->item(curRow , 2)->text();
+	QString str4 = tableView->item(curRow , 3)->text();
+	QString str5 = tableView->item(curRow , 4)->text();
+	QString str6 = tableView->item(curRow , 5)->text();
+	QPushButton* qpb = dynamic_cast<QPushButton*>(tableView->cellWidget(curRow , 6));
+	QCheckBox* qcb = dynamic_cast<QCheckBox*>(tableView->cellWidget(curRow , 7));
+	QString str9 = tableView->item(curRow , 8)->text();
+	//放到新插入的那一行
+	tableView->setItem(curRow + 2, 0, new QTableWidgetItem(str1));
+	tableView->setItem(curRow + 2, 1, new QTableWidgetItem(str2));
+	tableView->setItem(curRow + 2, 2, new QTableWidgetItem(str3));
+	tableView->setItem(curRow + 2, 3, new QTableWidgetItem(str4));
+	tableView->setItem(curRow + 2, 4, new QTableWidgetItem(str5));
+	tableView->setItem(curRow + 2, 5, new QTableWidgetItem(str6));
+	tableView->setCellWidget(curRow + 2, 6, qpb);
+	tableView->setCellWidget(curRow + 2, 7, qcb);
+	tableView->setItem(curRow + 2, 8, new QTableWidgetItem(str9));
+	tableView->removeRow(curRow);
+	qGboleData* qGb = qGboleData::getInstance();
+	if (!qGb)return;
+	if (modelCurRow > qGb->pGboleData.size() - 1)
+	{
+		QMessageBox::warning(NULL, "warnning", tr("超出范围，不能上下移动"));
+		return;
+	}
+	if (canidCurRow > qGb->pGboleData.at(modelCurRow).cItem.size() - 1)
+	{
+		QMessageBox::warning(NULL, "warnning", tr("超出范围，不能上下移动"));
+		return;
+	}
+	if (curRow > qGb->pGboleData.at(modelCurRow).cItem.at(canidCurRow).pItem.size())
+	{
+		QMessageBox::warning(NULL, "warnning", tr("超出范围，不能上下移动"));
+		return;
+	}
+	std::swap(qGb->pGboleData.at(modelCurRow).cItem.at(canidCurRow).pItem[curRow], qGb->pGboleData.at(modelCurRow).cItem.at(canidCurRow).pItem[curRow + 1]);
 }
 //第三层表格，删除
 void QCanSetting::on_pbDelIteam_clicked()
@@ -624,7 +841,12 @@ void QCanSetting::on_canIdView_currentIndexChanged(int index)
 	}
 
 }
-
+/*
+* @brief：第二层表格修改后的槽函数，用于保存修改后的值
+* @param row：被修改的单元格的所在行
+* @param col：被修改的单元格的所在列
+* @return：无
+*/
 void QCanSetting::on_canIdView_cellChanged(int row, int col)
 {
 	qGboleData* qGb = qGboleData::getInstance();
@@ -638,11 +860,13 @@ void QCanSetting::on_canIdView_cellChanged(int row, int col)
 	if (!canIdView) return;
 	try
 	{
+		//不在范围
 		if (row > qGb->pGboleData.at(mCurRow).cItem.size() - 1 || row <0||col!=0)
 		{
 			QMessageBox::warning(this, tr("warning"), tr("修改的位置超出范围"));
 			return;
 		}
+		//这里只有ID号是可以修改的
 		qGb->pGboleData.at(mCurRow).cItem.at(row).strCanId = canIdView->item(row,col)->text().trimmed();
 	}
 	catch (const std::exception&e)
@@ -652,7 +876,9 @@ void QCanSetting::on_canIdView_cellChanged(int row, int col)
 	//关掉这个，防止添加行setData的时候，触发这个信号
 	disconnect(canIdView, SIGNAL(itemChanged(cellChanged(int, int))), this, SLOT(on_canIdView_cellChanged(int, int)));
 }
-
+/*
+* @brief：第二层的双击事件响应，建立被编辑后的槽
+*/
 void QCanSetting::on_canIdView_doubleClicked(int, int)
 {
 	//注意QT的这个cellChanged信号，他会当setData的时候触发这个信号
@@ -703,10 +929,11 @@ void QCanSetting::on_canIdView_Clicked(int row, int col)
 			connect(property, SIGNAL(clicked()), this, SLOT(on_property_clicked()));
 			tableView->setCellWidget(i, 6, property);
 			QCheckBox* isRoll = new QCheckBox();
-			connect(isRoll, &QCheckBox::stateChanged, this, &QCanSetting::on_CheckStateChanged);
 			if (qGb->pGboleData.at(mRow).cItem.at(row).pItem.at(i).isRoll)
 				isRoll->setCheckState(Qt::Checked);
 			tableView->setCellWidget(i, 7, isRoll);
+			//这个connect一定放在setCheckState(Qt::Checked);这个函数后面，不然一调用这个函数，就会触发信号
+			connect(isRoll, &QCheckBox::stateChanged, this, &QCanSetting::on_CheckStateChanged);
 			tableView->setItem(i, 8, new QTableWidgetItem(qGb->pGboleData.at(mRow).cItem.at(row).pItem.at(i).dataFrom));
 		}
 	}
@@ -770,7 +997,7 @@ void QCanSetting::on_tableView_cellChanged(int row, int col)
 			qGb->pGboleData.at(mCurRow).cItem.at(cCurRow).pItem.at(row).bitLeng = tableView->item(row, col)->text().toInt();
 			break;
 		case 4:
-			qGb->pGboleData.at(mCurRow).cItem.at(cCurRow).pItem.at(row).precision = tableView->item(row, col)->text().toInt();
+			qGb->pGboleData.at(mCurRow).cItem.at(cCurRow).pItem.at(row).precision = tableView->item(row, col)->text().toFloat();
 			break;
 		case 5:
 			qGb->pGboleData.at(mCurRow).cItem.at(cCurRow).pItem.at(row).offset = tableView->item(row, col)->text().toInt();
@@ -889,7 +1116,7 @@ void QCanSetting::on_CheckStateChanged(int isCheck)
 			QMessageBox::warning(this, tr("warning"), QString(tr("字段vector超出范围：\nrow > pGboleData.at(mCurRow).cItem.at(cCurRow).pItem.size() - 1")));
 			return;
 		}
-		qGb->pGboleData.at(mCurRow).cItem.at(cCurRow).pItem.at(row).isRoll = isCheck;
+		qGb->pGboleData.at(mCurRow).cItem.at(cCurRow).pItem.at(row).isRoll = isCheck==2?true:false;
 		
 	}
 	catch (const std::exception& e)

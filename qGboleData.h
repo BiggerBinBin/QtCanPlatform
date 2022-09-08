@@ -54,6 +54,7 @@ private:
 	static qGboleData* pGboleInstance;
 	//static std::mutex mut;
 	std::mutex dMut;
+	uint fIndex[10000];
 signals:
 	void dataChange();
 };

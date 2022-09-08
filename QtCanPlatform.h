@@ -63,6 +63,8 @@ private:
     void sendData();
     bool intelProtocol(canIdData &cdata,uchar data[], unsigned int &fream_id);
     bool motoProtocol(canIdData& cdata,uchar data[], unsigned int& fream_id);
+    void recAnalyseIntel(unsigned int fream_id, QByteArray data);
+    void recAnalyseMoto(unsigned int fream_id, QByteArray data);
     void getModelTitle();
 private:
     std::vector<canIdData>recCanData;
@@ -78,10 +80,12 @@ private:
     QTimer* sendTimer = nullptr;
     bool pcanIsOpen = false;
     int maxTextBrowser = 0;
+    bool isTrace = false;
     std::map<QString, std::vector<parseData>>showTableD;
     QStringList rollTitle;
     QStringListModel* titleModel = nullptr;
     std::vector<RollStruct>RollShowData;
+   
 private slots:
     void qCanSettingShow();
     void on_CurrentModelChanged(int index);
@@ -94,6 +98,7 @@ private slots:
     void on_SettingWidowsClose();
     void on_cbSelectSendItemChanged(int);
     void on_setInToRollData();
+    void on_checkTraceChanged(int);
 signals:
     void sigNewRoll();
 public:
