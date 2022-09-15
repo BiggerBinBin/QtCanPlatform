@@ -32,12 +32,12 @@
   </ImportGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'" Label="QtSettings">
     <QtInstall>msvc2017_64</QtInstall>
-    <QtModules>core;gui;widgets;serialport;serialbus</QtModules>
+    <QtModules>core;gui;axcontainer;widgets;serialport;printsupport;serialbus</QtModules>
     <QtBuildConfig>debug</QtBuildConfig>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'" Label="QtSettings">
     <QtInstall>msvc2017_64</QtInstall>
-    <QtModules>core;gui;serialbus;serialport;widgets</QtModules>
+    <QtModules>core;gui;axcontainer;widgets;serialport;serialbus</QtModules>
     <QtBuildConfig>release</QtBuildConfig>
   </PropertyGroup>
   <Target Name="QtMsBuildNotFound" BeforeTargets="CustomBuild;ClCompile" Condition="!Exists('$(QtMsBuild)\qt.targets') or !Exists('$(QtMsBuild)\qt.props')">
@@ -63,13 +63,13 @@
       <AdditionalIncludeDirectories>./Qslog/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>./QsLog/bin;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>./QsLog/bin;C:\Qt\Qt5.13.2\5.13.2\msvc2017_64\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>QsLog2.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Link>
-      <AdditionalLibraryDirectories>./QsLog/bin;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>./QsLog/bin;C:\Qt\Qt5.13.2\5.13.2\msvc2017_64\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>QsLog2.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <ClCompile>
@@ -109,6 +109,7 @@
     <QtUic Include="QtCanPlatform.ui" />
     <QtMoc Include="QtCanPlatform.h" />
     <ClCompile Include="AlgorithmSet.cpp" />
+    <ClCompile Include="DataSave.cpp" />
     <ClCompile Include="PCAN.cpp" />
     <ClCompile Include="QCanSetting.cpp" />
     <ClCompile Include="qGboleData.cpp" />
@@ -121,6 +122,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AlgorithmSet.h" />
+    <QtMoc Include="DataSave.h" />
     <ClInclude Include="dataStruct.h" />
     <QtMoc Include="PCAN.h" />
     <ClInclude Include="qGboleData.h" />

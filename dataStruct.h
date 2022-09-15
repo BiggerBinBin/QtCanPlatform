@@ -5,7 +5,7 @@
 #include <QColor>
 struct RollStruct
 {
-	int value;
+	float value;
 	QString name;
 };
 struct YBRGB
@@ -17,7 +17,7 @@ struct YBRGB
 struct parseData
 {
 	QString name;
-	int value;
+	float value;
 	QString toWord;
 	struct YBRGB color;
 };
@@ -37,20 +37,24 @@ struct protoItem {
 	int startByte;
 	int startBit;
 	int bitLeng;
-	int precision;
+	float precision;
 	int offset;
 	QString bitName;
 	QString dataFrom;
 	std::vector<cellProperty>stl_itemProperty;
 	//std::map<QString, cellProperty>itemProperty;
 };
+//CAN-ID数据结构体
 struct canIdData {
+	bool isSend;
 	uint8_t opt;
 	qint64 CanId;
 	QString strCanId;
 	std::vector<struct protoItem>pItem;
 };
+//型号数据结构体
 struct protoData {
+	
 	uint8_t agreement;
 	QString modelName;
 	std::vector<canIdData>cItem;

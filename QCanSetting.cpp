@@ -116,7 +116,7 @@ void QCanSetting::InitUi()
 	hLayoutCanId->addSpacerItem(new QSpacerItem(20, 20, QSizePolicy::Expanding));
 	hLayoutCanId->setSpacing(0);
 	canIdView = new QTableWidget();
-	canIdView->setColumnCount(2);
+	canIdView->setColumnCount(3);
 	canIdView->setHorizontalHeaderLabels(listname);
 	canIdView->setSelectionBehavior(QAbstractItemView::SelectRows);
 	canIdView->setMaximumWidth(270);
@@ -354,6 +354,11 @@ void QCanSetting::on_pbAddCanId_clicked()
 
 	canIdView->setItem(row, 0, new QTableWidgetItem(tr("123456")));
 	canIdView->setCellWidget(row, 1, proto);
+
+	QCheckBox* isSend = new QCheckBox();
+	isSend->setChecked(false);
+	canIdView->setCellWidget(row, 2, isSend);
+	connect(isSend, &QCheckBox::stateChanged, this, &QCanSetting::on_canIdView_SendChanged);
 	canIdData cdata;
 	cdata.strCanId = canIdView->item(row,0)->text();
 	cdata.opt = 0;
@@ -796,6 +801,11 @@ void QCanSetting::on_modelView_Clicked(int row, int col)
 			canIdView->setItem(i, 0, new QTableWidgetItem(mt));
 			canIdView->setCellWidget(i, 1, proto);
 			connect(proto, SIGNAL(currentIndexChanged(int)), this, SLOT(on_canIdView_currentIndexChanged(int)));
+
+			QCheckBox* isSend = new QCheckBox();
+			isSend->setChecked(qGb->pGboleData.at(row).cItem.at(i).isSend);
+			canIdView->setCellWidget(i, 2, isSend);
+			connect(isSend, &QCheckBox::stateChanged, this, &QCanSetting::on_canIdView_SendChanged);
 		}
 	}
 	catch (const std::exception&e)
@@ -841,6 +851,39 @@ void QCanSetting::on_canIdView_currentIndexChanged(int index)
 	}
 
 }
+void QCanSetting::on_canIdView_SendChanged(int check)
+{
+	qGboleData* qGb = qGboleData::getInstance();
+	if (!qGb)return;
+	QCheckBox* cb = dynamic_cast<QCheckBox*>(sender());
+	if (!cb)
+		return;
+	if (!modelView) return;
+	int mCurRow = modelView->currentRow();
+	if (mCurRow < 0 || mCurRow>qGb->pGboleData.size() - 1) {
+		QMessageBox::warning(this, tr("warning"), tr("未选中型号， 不能修改CanID"));
+		return;
+	}
+	if (!canIdView) return;
+	QModelIndex pIndex = canIdView->indexAt(QPoint(cb->frameGeometry().x(), cb->frameGeometry().y()));
+	int row = pIndex.row();
+
+	if (row > qGb->pGboleData.at(mCurRow).cItem.size() - 1 || row < 0)
+	{
+		QMessageBox::warning(this, tr("warning"), tr("修改的位置超出范围"));
+		return;
+	}
+	try
+	{
+		bool b = check > 0 ? true : false;
+		qGb->pGboleData.at(mCurRow).cItem.at(row).isSend = b;
+	}
+	catch (const std::exception& e)
+	{
+		QMessageBox::warning(this, tr("warning"), QString(tr("Vector超出:") + e.what() + "Infunction:on_canIdView_currentIndexChanged"));
+	}
+}
+
 /*
 * @brief：第二层表格修改后的槽函数，用于保存修改后的值
 * @param row：被修改的单元格的所在行
@@ -1125,4 +1168,3 @@ void QCanSetting::on_CheckStateChanged(int isCheck)
 		//return;
 	}
 }
-

@@ -51,6 +51,11 @@ QtCanPlatform::~QtCanPlatform()
     {
         delete cbPcan; cbPcan = nullptr;
     }
+    if (saveData)
+    {
+        delete saveData;
+        saveData = nullptr;
+    }
     destroyLogger();   //释放
 }
 
@@ -68,11 +73,16 @@ void QtCanPlatform::initUi()
 {
     //QLOG_INFO() << "初始化界面中……";
     //这个是显示内容的
+    saveData = new DataSave(this);
     tableView = new QTableWidget();
-    tableView->setColumnCount(6);
+    tableView->setColumnCount(8);
     QStringList header;
-    header << tr("操作")<<tr("数值") << tr("地址") << tr("名称") << tr("起止字节") << tr("起止位") << tr("长度");
+    header << tr("发送") << tr("操作") << tr("数值") << tr("名称") << tr("地址") << tr("起止字节") << tr("起止位") << tr("长度");
     tableView->setHorizontalHeaderLabels(header);
+    QString stt = "QHeaderView::section {background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1,stop:0 #0078d7, stop: 0.5 #0078d7,stop: 0.6 #0078d7, stop:1 #0078d7);color: white;border:1px solid;border-color:white;font-weight: bold;}";//QHeaderView{background-color:#0078d7}
+    tableView->horizontalHeader()->setStyleSheet(stt);
+    tableView->horizontalHeader()->setMinimumHeight(25);
+    tableView->setColumnWidth(0, 40);
     connect(tableView, SIGNAL(cellDoubleClicked(int, int)), this, SLOT(on_tableDoubleClicked(int, int)));
     textBrowser = new QTextBrowser();
     textBrowser->setMinimumWidth(100);
@@ -154,10 +164,26 @@ void QtCanPlatform::initUi()
     tableRecView = new QTableWidget();
     //设置表格为10列，不加这个内容不会显示的
     tableRecView->setColumnCount(10);
+    tableRecView->horizontalHeader()->setVisible(false);
     tableRollTitle = new QTableWidget();
     tableRollTitle->setFixedHeight(30);
     tableRollData = new QTableWidget();
     tableRollData->horizontalHeader()->setVisible(false);
+    tableRollData->verticalHeader()->setVisible(false);
+    
+    QPushButton* pbSaveCanData = new QPushButton(tr("保存数据"));
+    QPushButton* pbClearCanData = new QPushButton(tr("清除数据"));
+    QHBoxLayout* canButton = new QHBoxLayout();
+    canButton->addWidget(pbSaveCanData);
+    canButton->addWidget(pbClearCanData);
+    connect(pbSaveCanData, SIGNAL(clicked()), this, SLOT(on_pbSaveCanData_clicked()));
+    connect(pbClearCanData, SIGNAL(clicked()), this, SLOT(on_pbClearCanData_clicked()));
+    canButton->addSpacerItem(new QSpacerItem(20, 20, QSizePolicy::Expanding));
+    QVBoxLayout* canVLaout = new QVBoxLayout();
+    canVLaout->addLayout(canButton);
+    canVLaout->addWidget(tableRollTitle);
+    canVLaout->addWidget(tableRollData);
+    canVLaout->setSpacing(1);
     //定义一个垂直布局
     QVBoxLayout* vLayout = new QVBoxLayout();
     vLayout->addLayout(hLayout);
@@ -166,12 +192,11 @@ void QtCanPlatform::initUi()
     QVBoxLayout* vLayoutTable = new QVBoxLayout();
     vLayoutTable->addWidget(tableView);
     vLayoutTable->addWidget(tableRecView);
-    vLayoutTable->addWidget(tableRollTitle);
-    vLayoutTable->addWidget(tableRollData);
-    vLayoutTable->setStretch(0, 3);
+    vLayoutTable->addLayout(canVLaout);
+    vLayoutTable->setStretch(0, 2);
     vLayoutTable->setStretch(1, 3);
-    vLayoutTable->setStretch(2, 1);
-    vLayoutTable->setStretch(3, 4);
+    vLayoutTable->setStretch(2, 5);
+   
     //定义一个水平layout
     QHBoxLayout* mainTLayout = new QHBoxLayout();
     //两个显示数据的table在左
@@ -235,7 +260,25 @@ bool QtCanPlatform::sendDataIntoTab()
        
         for (int j = 0; j < num; j++)
         {
-            //QCheckBox* cb = new QCheckBox();
+            int cr = tableView->rowCount();
+            tableView->setRowCount(cr + 1);
+            QCheckBox* cbSend = new QCheckBox();
+            cbSend->setBaseSize(15, 15);
+            if (sendCanData.at(i).isSend)
+            {
+                cbSend->setChecked(true);
+            }
+            //控件居中，就是让各方边距为相等
+            QWidget* widget = new QWidget;
+            QHBoxLayout* layout = new QHBoxLayout;
+            layout->setSpacing(0);
+            layout->setMargin(0);
+            layout->setAlignment(Qt::AlignCenter);
+            layout->addWidget(cbSend);
+            widget->setLayout(layout);
+            connect(cbSend, &QCheckBox::stateChanged, this, &QtCanPlatform::on_checkSendChanged);
+            tableView->setCellWidget(cr, 0, cbSend);
+            
             QComboBox* cb = new QComboBox();
             for (int k = 0; k < sendCanData.at(i).pItem.at(j).stl_itemProperty.size();++k)
             {
@@ -256,17 +299,29 @@ bool QtCanPlatform::sendDataIntoTab()
             }
             connect(cb, SIGNAL(currentIndexChanged(int)), this, SLOT(on_cbSelectSendItemChanged(int)));
             
-            int cr = tableView->rowCount();
-            tableView->setRowCount(cr+1);
-            tableView->setCellWidget(cr, 0, cb);
+           
+            tableView->setCellWidget(cr, 1, cb);
             //QString mt = "0x"+QString("%1").arg(sendCanData.at(i).CanId, QString::number(sendCanData.at(i).CanId).length(), 16).toUpper().trimmed();
             QString mt = sendCanData.at(i).strCanId;
-            tableView->setItem(cr, 1, new QTableWidgetItem("0"));
-            tableView->setItem(cr, 2, new QTableWidgetItem(mt));
-            tableView->setItem(cr, 3, new QTableWidgetItem(sendCanData.at(i).pItem.at(j).bitName));
-            tableView->setItem(cr, 4, new QTableWidgetItem(QString::number(sendCanData.at(i).pItem.at(j).startByte)));
-            tableView->setItem(cr, 5, new QTableWidgetItem(QString::number(sendCanData.at(i).pItem.at(j).startBit)));
-            tableView->setItem(cr, 6, new QTableWidgetItem(QString::number(sendCanData.at(i).pItem.at(j).bitLeng)));
+            QTableWidgetItem* it1 = new QTableWidgetItem("0");
+            it1->setTextAlignment(Qt::AlignVCenter | Qt::AlignHCenter);
+            tableView->setItem(cr, 2, it1);
+            QTableWidgetItem* it3 = new QTableWidgetItem(mt);
+            it3->setTextAlignment(Qt::AlignVCenter | Qt::AlignHCenter);
+            tableView->setItem(cr, 4, it3);
+            QTableWidgetItem* it2 = new QTableWidgetItem(sendCanData.at(i).pItem.at(j).bitName);
+            it2->setTextAlignment(Qt::AlignVCenter | Qt::AlignHCenter);
+            tableView->setItem(cr, 3, it2);
+            QTableWidgetItem* it4 = new QTableWidgetItem(QString::number(sendCanData.at(i).pItem.at(j).startByte));
+            it4->setTextAlignment(Qt::AlignVCenter | Qt::AlignHCenter);
+            tableView->setItem(cr, 5, it4);
+            QTableWidgetItem* it5 = new QTableWidgetItem(QString::number(sendCanData.at(i).pItem.at(j).startBit));
+            it5->setTextAlignment(Qt::AlignVCenter | Qt::AlignHCenter);
+            tableView->setItem(cr, 6, it5);
+            QTableWidgetItem* it6 = new QTableWidgetItem(QString::number(sendCanData.at(i).pItem.at(j).bitLeng));
+            it6->setTextAlignment(Qt::AlignVCenter | Qt::AlignHCenter);
+            tableView->setItem(cr, 7, it6);
+          
         }
    }
     return true;
@@ -274,6 +329,7 @@ bool QtCanPlatform::sendDataIntoTab()
 
 bool QtCanPlatform::recDataIntoTab()
 {
+   
     rollTitle.clear();
     recCanData.clear();
     if (!tableRecView)
@@ -281,6 +337,7 @@ bool QtCanPlatform::recDataIntoTab()
     int rcount = tableRecView->rowCount();
     for (int m = 0; m < rcount; m++)
         tableRecView->removeRow(rcount - m - 1);
+    
     qGboleData* qGb = qGboleData::getInstance();
     if (!qGb)return false;
     if (currentModel > qGb->pGboleData.size() - 1 || currentModel < 0)
@@ -306,7 +363,7 @@ bool QtCanPlatform::recDataIntoTab()
         QMessageBox::warning(this, tr("warning"), tr("该型号没有接收信号，请添加再操作"));
         return false;
     }
-
+    rollTitle.append(tr("序号"));
     for (int i = 0; i < recCanData.size(); i++)
     {
         int num = recCanData.at(i).pItem.size();
@@ -323,9 +380,13 @@ bool QtCanPlatform::recDataIntoTab()
                 tableRecView->setRowCount(cr + 2);
                 cr += 1;
             }
-                
-            tableRecView->setItem(cr, idex, new QTableWidgetItem(recCanData.at(i).pItem.at(j).bitName));
-            //tableRecView->setItem(cr+1, j, new QTableWidgetItem(recCanData.at(i).pItem.at(j).));
+            QTableWidgetItem* item = new QTableWidgetItem(recCanData.at(i).pItem.at(j).bitName);
+            item->setTextAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
+            item->font().setBold(true);
+            //item->backgroundColor().setRgb(10, 10, 240);
+            tableRecView->setItem(cr, idex, item);
+           
+            
             
             if (recCanData.at(i).pItem.at(j).isRoll)
             {
@@ -339,14 +400,72 @@ bool QtCanPlatform::recDataIntoTab()
     tableRollTitle->setColumnCount(rollTitle.size());
     tableRollTitle->clear();
     tableRollTitle->setHorizontalHeaderLabels(rollTitle);
+    QString stt = "QHeaderView::section {background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1,stop:0 #0078d7, stop: 0.5 #0078d7,stop: 0.6 #0078d7, stop:1 #0078d7);color: white;border:1px solid;border-color:white;font-weight: bold;}QHeaderView{background-color:#0078d7}";
+    tableRollTitle->horizontalHeader()->setStyleSheet(stt);
+    //QHeaderView::section {background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1,stop:0 #0078d7, stop: 0.5 #0078d7,stop: 0.6 #0078d7, stop:1 #0078d7);color: white;}
+    for (int i = 0; i < rollTitle.size(); i++)
+    {
+        tableRollTitle->setColumnWidth(i, 100);
+        
+        
+        //tableRollData->setColumnWidth(i, 40);
+    }
+    int col = tableRecView->columnCount();
+    int row = tableRecView->rowCount();
+    for (int h = 0; h < row; h++)
+    {
+        for (int g = 0; g < col; g++)
+        {
+            QTableWidgetItem* mItem = new QTableWidgetItem();
+            mItem->setTextAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
+            QFont ff;
+            ff.setBold(true);
+            mItem->setFont(ff);
+            tableRecView->setItem(h, g, mItem);
+            if (h % 2 == 0)
+            {
+                tableRecView->item(h, g)->setBackgroundColor(recBackgroudColor);
+                
+            }
+        }
+    }
+    int cr = 0;
+    for (int i = 0; i < recCanData.size(); i++)
+    {
+        int num = recCanData.at(i).pItem.size();
+        
+        int idex = 0;
+        for (int j = 0; j < num; j++, idex++)
+        {
+            if (idex > 9)
+            {
+                idex = 0;
+                cr += 2;
+            }
+            QTableWidgetItem* item = new QTableWidgetItem(recCanData.at(i).pItem.at(j).bitName);
+            item->setBackgroundColor(recBackgroudColor);
+            item->setForeground(QBrush(recFontColor));
+            item->setTextAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
+            QFont ff;
+            ff.setBold(true);
+            item->setFont(ff);
+            tableRecView->setItem(cr, idex, item);
+
+        }
+        cr += 2;
+    }
+
     return true;
 }
 void QtCanPlatform::sendData()
 {
     uchar s_Data[8];
-    memset(s_Data, 0, 8 * sizeof(uchar));
+    
     for (int i = 0; i < sendCanData.size(); i++)
     {
+        if (!sendCanData.at(i).isSend)
+            continue;
+        memset(s_Data, 0, 8 * sizeof(uchar));
         unsigned int fream_id;
         bool b= intelProtocol(sendCanData.at(i), s_Data, fream_id);
         if (!b)
@@ -363,7 +482,9 @@ void QtCanPlatform::sendData()
             QString strId = "0x"+QString("%1").arg(fream_id, 8, 16, QLatin1Char('0')).toUpper();
             QLOG_INFO() << "Tx:" << strId << "  " << hex;
         }
+       
         pcan->SendFrame(fream_id, s_Data);
+        //_sleep(20);
     }
 
 }
@@ -580,17 +701,17 @@ void QtCanPlatform::recAnalyseIntel(unsigned int fream_id,QByteArray data)
     //recCanData.clear();
     if (!tableRecView)
         return;
-    int rcount = tableRecView->rowCount();
+  /*  int rcount = tableRecView->rowCount();
     for (int m = 0; m < rcount; m++)
-        tableRecView->removeRow(rcount - m - 1);
-    //for (int n = 0; n < showVec.size(); n++)
+        tableRecView->removeRow(rcount - m - 1);*/
+
     std::map<QString, std::vector<parseData>>::iterator iBegin = showTableD.begin();
     std::map<QString, std::vector<parseData>>::iterator iEnd = showTableD.end();
+    int cr = 0;
     while (iBegin != iEnd)
     {
-        int cr = tableRecView->rowCount();
+        
         //每加一行就要设置到表格去
-        tableRecView->setRowCount(cr + 2);
         int num = iBegin->second.size();
         int idex = 0;
         for (int j = 0; j < num; j++, idex++)
@@ -598,18 +719,24 @@ void QtCanPlatform::recAnalyseIntel(unsigned int fream_id,QByteArray data)
             if (idex > 9)
             {
                 idex = 0;
-                cr = tableRecView->rowCount();
-                tableRecView->setRowCount(cr + 2);
-                
+                cr += 2;
             }
 
             QString tnamp = iBegin->second.at(j).name;
             QString toword = iBegin->second.at(j).toWord;
             tableRecView->setItem(cr, idex, new QTableWidgetItem(tnamp));
+            QFont ff;
+            ff.setBold(true);
+            tableRecView->item(cr, idex)->setFont(ff);
+            tableRecView->item(cr, idex)->setTextAlignment(Qt::AlignCenter);
+            tableRecView->item(cr, idex)->setBackgroundColor(recBackgroudColor);
+            tableRecView->item(cr, idex)->setForeground(QBrush(recFontColor));
             tableRecView->setItem(cr + 1, idex, new QTableWidgetItem(toword));
             tableRecView->item(cr + 1, idex)->setBackgroundColor(QColor(iBegin->second.at(j).color.r, iBegin->second.at(j).color.g, iBegin->second.at(j).color.b));
+            tableRecView->item(cr + 1, idex)->setTextAlignment(Qt::AlignCenter);
 
         }
+        cr += 2;
         iBegin++;
 
     }
@@ -774,30 +901,34 @@ void QtCanPlatform::recAnalyseMoto(unsigned int fream_id, QByteArray data)
     //for (int n = 0; n < showVec.size(); n++)
     std::map<QString, std::vector<parseData>>::iterator iBegin = showTableD.begin();
     std::map<QString, std::vector<parseData>>::iterator iEnd = showTableD.end();
+    int cr = 0;
     while (iBegin != iEnd)
     {
-        int cr = tableRecView->rowCount();
-        //每加一行就要设置到表格去
-        tableRecView->setRowCount(cr + 2);
         int num = iBegin->second.size();
         int idex = 0;
         for (int j = 0; j < num; j++, idex++)
         {
-            if (idex > 9)
+            if (idex > 9)   //每行10列
             {
                 idex = 0;
-                cr = tableRecView->rowCount();
-                tableRecView->setRowCount(cr + 2);
-
+                cr += 2;
             }
 
             QString tnamp = iBegin->second.at(j).name;
             QString toword = iBegin->second.at(j).toWord;
             tableRecView->setItem(cr, idex, new QTableWidgetItem(tnamp));
+            QFont ff;
+            ff.setBold(true);
+            tableRecView->item(cr, idex)->setFont(ff);
+            tableRecView->item(cr, idex)->setTextAlignment(Qt::AlignCenter);
+            tableRecView->item(cr, idex)->setBackgroundColor(recBackgroudColor);
+            tableRecView->item(cr, idex)->setForeground(QBrush(recFontColor));
             tableRecView->setItem(cr + 1, idex, new QTableWidgetItem(toword));
             tableRecView->item(cr + 1, idex)->setBackgroundColor(QColor(iBegin->second.at(j).color.r, iBegin->second.at(j).color.g, iBegin->second.at(j).color.b));
+            tableRecView->item(cr + 1, idex)->setTextAlignment(Qt::AlignCenter);
 
         }
+        cr += 2;
         iBegin++;
 
     }
@@ -923,14 +1054,19 @@ void QtCanPlatform::on_tableClicked(int row, int col)
         //找出数据所在的型号
         if (sendId.trimmed() == sendCanData.at(i).strCanId)
         {
-            if (row > sendCanData.at(i).pItem.size() - 1)
+            int num = 0;
+            for (int m = 0; m < i; m++)
+            {
+                num += sendCanData.at(m).pItem.size();
+            }
+            if (row > sendCanData.at(i).pItem.size() - 1- num)
             {
                 //断开信号槽，因为添加数据的时候会触发这个
                 disconnect(tableView, SIGNAL(cellChanged(int, int)), this, SLOT(on_tableClicked(int, int)));
                 return;
             }
             //存储修改后的值
-            sendCanData.at(i).pItem.at(row).send = senddt.toInt();
+            sendCanData.at(i).pItem.at(row-num).send = senddt.toInt();
         }
     }
     //断开信号槽，因为添加数据的时候会触发这个
@@ -971,6 +1107,9 @@ void QtCanPlatform::on_SettingWidowsClose()
     int index = cbSelectModel->currentIndex();
     on_CurrentModelChanged(index);
 }
+/*
+* @brief:发送字段的下拉框发生变化时的响应槽函数
+*/
 void QtCanPlatform::on_cbSelectSendItemChanged(int index)
 {
     QComboBox* cb = dynamic_cast<QComboBox*>(sender());
@@ -981,23 +1120,61 @@ void QtCanPlatform::on_cbSelectSendItemChanged(int index)
     }
     QModelIndex cbIndex = tableView->indexAt(QPoint(cb->geometry().x(), cb->geometry().y()));
     int cbRow = cbIndex.row();
-    unsigned int cbInId = tableView->item(cbRow, 2)->text().toUInt(NULL, 16);
+    int cbCol = cbIndex.column();
+    unsigned int cbInId = tableView->item(cbRow, 4)->text().toUInt(NULL, 16);
     
     for (int k = 0; k < sendCanData.size(); k++)
     {
         if (sendCanData.at(k).strCanId.toUInt(NULL,16) != cbInId)
             continue;
-        if (k == 0)
+        int cnum=0;
+        //这步很关键，算出前面的型号有多少个item
+        for (int m = 0; m < k ; m++)
+            cnum += sendCanData.at(m).pItem.size();
+        if (cbCol == 0)
         {
-           sendCanData.at(k).pItem.at(cbRow).send = sendCanData.at(k).pItem.at(cbRow).stl_itemProperty.at(index).value.toInt();
-           tableView->setItem(cbRow,1, new QTableWidgetItem(sendCanData.at(k).pItem.at(cbRow).stl_itemProperty.at(index).value));
-           QColor bc = QColor(sendCanData.at(k).pItem.at(cbRow).stl_itemProperty.at(index).r, sendCanData.at(k).pItem.at(cbRow).stl_itemProperty.at(index).g, sendCanData.at(k).pItem.at(cbRow).stl_itemProperty.at(index).b);
+           //当前型号的当前下标：当前行-前面的型号的item个数（cbRow - cnum）
+           sendCanData.at(k).pItem.at(cbRow - cnum).send = sendCanData.at(k).pItem.at(cbRow- cnum).stl_itemProperty.at(index).value.toInt();
+           tableView->setItem(cbRow,1, new QTableWidgetItem(sendCanData.at(k).pItem.at(cbRow - cnum).stl_itemProperty.at(index).value));
+           tableView->item(cbRow, 1)->setTextAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
+           QColor bc = QColor(sendCanData.at(k).pItem.at(cbRow - cnum).stl_itemProperty.at(index).r, sendCanData.at(k).pItem.at(cbRow - cnum).stl_itemProperty.at(index).g, sendCanData.at(k).pItem.at(cbRow- cnum).stl_itemProperty.at(index).b);
           
            QString backcolor = "background-color:#" + QString("%1").arg(bc.red(), 2, 16, QLatin1Char('0')) +
                QString("%1").arg(bc.green(), 2, 16, QLatin1Char('0')) +
                QString("%1").arg(bc.blue(), 2, 16, QLatin1Char('0'));
            cb->setStyleSheet(backcolor);
         }
+    }
+}
+void QtCanPlatform::on_checkSendChanged(int check)
+{
+    QCheckBox* cb = dynamic_cast<QCheckBox*>(sender());
+    if (!cb)
+    {
+        QLOG_INFO() << "当前的QComboBox sender 无效";
+        return;
+    }
+    QModelIndex cbIndex = tableView->indexAt(QPoint(cb->geometry().x(), cb->geometry().y()));
+    int cbRow = cbIndex.row();
+    int cbCol = cbIndex.column();
+    unsigned int cbInId = tableView->item(cbRow, 4)->text().toUInt(NULL, 16);
+    bool b = check > 0 ? true : false;
+    for (int k = 0; k < sendCanData.size(); k++)
+    {
+        if (sendCanData.at(k).strCanId.toUInt(NULL, 16) != cbInId)
+            continue;
+        sendCanData.at(k).isSend = b;
+        break;
+    }
+    int tbRowCount = tableView->rowCount();
+    for (int m = 0; m < tbRowCount; m++)
+    {
+        unsigned int cbInId2 = tableView->item(m, 4)->text().toUInt(NULL, 16);
+        if(cbInId!= cbInId2)
+            continue;
+        QCheckBox* cb2 = dynamic_cast<QCheckBox*>(tableView->cellWidget(m,0));
+        if(cb2)
+            cb2->setChecked(b);
     }
 }
 /*
@@ -1007,14 +1184,66 @@ void QtCanPlatform::on_cbSelectSendItemChanged(int index)
 */
 void QtCanPlatform::on_setInToRollData()
 {
+    //设置列数
     tableRollData->setColumnCount(rollTitle.size());
+    //顺便设置列宽
+    for (int i = 0; i < rollTitle.size(); i++)
+    {
+        tableRollData->setColumnWidth(i, 100);
+    }
     int row = tableRollData->rowCount();
+    //增加一行
     tableRollData->setRowCount(row + 1);
+    QString dTime = QDateTime::currentDateTime().toString("yyyy-MM-dd-hh-ss-zzz");
+    uint curCount = strSaveList.size()+1;
+    QString dTemp= QString::number(curCount)+","+ dTime+",";
+    excelTitle = "序号,北京时间,";
+    //序号
+    tableRollData->setItem(row, 0, new QTableWidgetItem(QString::number(curCount)));
+    tableRollData->item(row, 0)->setTextAlignment(Qt::AlignCenter);
     for (int i = 0;i< RollShowData.size(); i++)
     {
-        tableRollData->setItem(row, i, new QTableWidgetItem(QString::number(RollShowData.at(i).value)));
+        tableRollData->setItem(row, i+1, new QTableWidgetItem(QString::number(RollShowData.at(i).value)));
+        tableRollData->item(row, i + 1)->setTextAlignment(Qt::AlignCenter);
+        dTemp += QString::number(RollShowData.at(i).value) + ",";
+        //这个是保存到excel的表头
+        excelTitle += RollShowData.at(i).name + ",";
     }
+    //表格永远显示底部
     tableRollData->scrollToBottom();
+    //移除最后一个逗号
+    dTemp.remove(dTemp.size() - 1, 1);
+    excelTitle.remove(excelTitle.size() - 1, 1);
+    //放到一个list存着
+    strSaveList.append(dTemp);
+    //够数的就保存到excel
+    if (strSaveList.size() >= saveListNum)
+    {
+        saveCanData();
+    }
+}
+/*
+* @brief:保存CAN数据
+* @param:无
+* @return:无
+*/
+void QtCanPlatform::saveCanData()
+{
+    QString appPath = QApplication::applicationDirPath() + "/PCAN-DATA/";
+    QDir dd(appPath);
+    if (!dd.exists())
+    {
+        dd.mkpath(appPath);
+    }
+    appPath += QDateTime::currentDateTime().toString("yyyy-MM-dd-hh-ss-zzz") + ".xlsx";
+    if (strSaveList.size() < 1)
+        return;
+    //tableRollData->clear();
+   
+    saveData->setTitle(excelTitle);
+    saveData->SaveData(strSaveList, strSaveList.size(), appPath);
+    on_pbClearCanData_clicked();
+    //strSaveList.clear();
 }
 void QtCanPlatform::on_checkTraceChanged(int check)
 {
@@ -1024,6 +1253,18 @@ void QtCanPlatform::on_checkTraceChanged(int check)
     }
     else
         isTrace = false;
+}
+void QtCanPlatform::on_pbSaveCanData_clicked()
+{
+    saveCanData();
+}
+void QtCanPlatform::on_pbClearCanData_clicked()
+{
+    strSaveList.clear();
+    int rcount = tableRollData->rowCount();
+    for (int m = 0; m < rcount; m++)
+        tableRollData->removeRow(rcount - m - 1);
+    
 }
 void QtCanPlatform::initLogger()
 {

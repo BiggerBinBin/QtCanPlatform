@@ -29,6 +29,7 @@
 #include "dataStruct.h"
 #include "QSetProperty.h"
 #include <QCloseEvent>
+
 class QCanSetting : public QWidget
 {
 	Q_OBJECT
@@ -51,6 +52,7 @@ private:
 	void SetTableData();
 	std::map<QString, cellProperty>ItemProperty;
 	QSetProperty *pp=nullptr;
+	
 signals:
 	void settingWidowsClose();
 private slots:
@@ -90,6 +92,7 @@ private slots:
 	void on_canIdView_cellChanged(int row, int col);
 	void on_canIdView_doubleClicked(int, int);
 	void on_canIdView_Clicked(int, int);
+	void on_canIdView_SendChanged(int);
 
 	//字段表格响应槽函数
 	void on_tableView_doubleCLicked(int, int);

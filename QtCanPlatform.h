@@ -34,6 +34,7 @@
 #include <QTimer>
 #include <QPushButton>
 #include <QCloseEvent>
+#include "DataSave.h"
 #pragma execution_character_set("utf-8")  
 class QtCanPlatform : public QMainWindow
 {
@@ -66,6 +67,7 @@ private:
     void recAnalyseIntel(unsigned int fream_id, QByteArray data);
     void recAnalyseMoto(unsigned int fream_id, QByteArray data);
     void getModelTitle();
+    void saveCanData();
 private:
     std::vector<canIdData>recCanData;
     std::vector<canIdData>sendCanData;
@@ -85,6 +87,13 @@ private:
     QStringList rollTitle;
     QStringListModel* titleModel = nullptr;
     std::vector<RollStruct>RollShowData;
+    DataSave *saveData=nullptr;
+    QStringList strSaveList;
+    QString excelTitle;
+    int saveListNum = 600;
+
+    QColor recBackgroudColor = QColor(0, 120, 215);
+    QColor recFontColor = QColor(255, 250, 255);
    
 private slots:
     void qCanSettingShow();
@@ -99,6 +108,9 @@ private slots:
     void on_cbSelectSendItemChanged(int);
     void on_setInToRollData();
     void on_checkTraceChanged(int);
+    void on_pbSaveCanData_clicked();
+    void on_pbClearCanData_clicked();
+    void on_checkSendChanged(int);
 signals:
     void sigNewRoll();
 public:
