@@ -19,6 +19,7 @@
 #include "QsLog.h"
 #include "QsLogDest.h"
 #include <QFile>
+#include <QSplitter>
 using namespace QsLogging;
 
 QString qmyss = "QComboBox{border: 1px solid gray;border-radius: 5px;padding:1px 2px 1px 2px;s}\
@@ -86,7 +87,7 @@ void QtCanPlatform::initUi()
     connect(tableView, SIGNAL(cellDoubleClicked(int, int)), this, SLOT(on_tableDoubleClicked(int, int)));
     textBrowser = new QTextBrowser();
     textBrowser->setMinimumWidth(100);
-    textBrowser->setMaximumWidth(300);
+    //textBrowser->setMaximumWidth(300);
     initData();
     cbSelectModel = new QComboBox();
     
@@ -179,37 +180,62 @@ void QtCanPlatform::initUi()
     connect(pbSaveCanData, SIGNAL(clicked()), this, SLOT(on_pbSaveCanData_clicked()));
     connect(pbClearCanData, SIGNAL(clicked()), this, SLOT(on_pbClearCanData_clicked()));
     canButton->addSpacerItem(new QSpacerItem(20, 20, QSizePolicy::Expanding));
-    QVBoxLayout* canVLaout = new QVBoxLayout();
-    canVLaout->addLayout(canButton);
-    canVLaout->addWidget(tableRollTitle);
-    canVLaout->addWidget(tableRollData);
-    canVLaout->setSpacing(1);
-    //定义一个垂直布局
-    QVBoxLayout* vLayout = new QVBoxLayout();
-    vLayout->addLayout(hLayout);
+    //QVBoxLayout* canVLaout = new QVBoxLayout();
+    //canVLaout->addLayout(canButton);
+    //canVLaout->addWidget(tableRollTitle);
+    //canVLaout->addWidget(tableRollData);
+    //canVLaout->setSpacing(1);
+    ////定义一个垂直布局
+    //QVBoxLayout* vLayout = new QVBoxLayout();
+    //vLayout->addLayout(hLayout);
 
-    //两个显示数据的垂直在左边
-    QVBoxLayout* vLayoutTable = new QVBoxLayout();
-    vLayoutTable->addWidget(tableView);
-    vLayoutTable->addWidget(tableRecView);
-    vLayoutTable->addLayout(canVLaout);
-    vLayoutTable->setStretch(0, 2);
-    vLayoutTable->setStretch(1, 3);
-    vLayoutTable->setStretch(2, 5);
+    ////两个显示数据的垂直在左边
+    //QVBoxLayout* vLayoutTable = new QVBoxLayout();
+    //vLayoutTable->addWidget(tableView);
+    //vLayoutTable->addWidget(tableRecView);
+    //vLayoutTable->addLayout(canVLaout);
+    //vLayoutTable->setStretch(0, 2);
+    //vLayoutTable->setStretch(1, 3);
+    //vLayoutTable->setStretch(2, 5);
    
-    //定义一个水平layout
-    QHBoxLayout* mainTLayout = new QHBoxLayout();
-    //两个显示数据的table在左
-    mainTLayout->addLayout(vLayoutTable);
-    //显示日志的在右
-    mainTLayout->addWidget(textBrowser);
-    //再跟顶部的按钮搞在一起
-    vLayout->addLayout(mainTLayout);
-    ui.centralWidget->setLayout(vLayout);
+    ////定义一个水平layout
+    //QHBoxLayout* mainTLayout = new QHBoxLayout();
+    ////两个显示数据的table在左
+    //mainTLayout->addLayout(vLayoutTable);
+    ////显示日志的在右
+    //mainTLayout->addWidget(textBrowser);
+    ////再跟顶部的按钮搞在一起
+    //vLayout->addLayout(mainTLayout);
+    //ui.centralWidget->setLayout(vLayout);
     if(cbSelectModel->count()>0)
         on_CurrentModelChanged(0);
     //QLOG_INFO() << "初始化界面完成";
     connect(this, &QtCanPlatform::sigNewRoll, this, &QtCanPlatform::on_setInToRollData);
+    QSplitter* mainQSpli = new QSplitter(Qt::Vertical);
+    QSplitter* topSpli = new QSplitter(mainQSpli);
+    QWidget* mw = new QWidget;
+    mw->setLayout(hLayout);
+    topSpli->addWidget(mw);
+    QSplitter* mainBottom = new QSplitter(Qt::Horizontal, mainQSpli);
+   
+    QWidget* mt = new QWidget;
+    canButton->setContentsMargins(2, 10, 2, 2);
+    mt->setLayout(canButton);
+   
+    QSplitter* bottom = new QSplitter(Qt::Vertical, mainBottom);
+    bottom->addWidget(tableView);
+    bottom->addWidget(tableRecView);
+    bottom->addWidget(mt);
+    bottom->addWidget(tableRollTitle);
+    bottom->addWidget(tableRollData);
+    //bottom->setHandleWidth(2);
+    QSplitter* bootomright = new QSplitter(Qt::Vertical, mainBottom);
+    bootomright->addWidget(textBrowser);
+    mainBottom->setStretchFactor(0, 7);
+    mainBottom->setStretchFactor(1, 2);
+    QGridLayout* gg = new QGridLayout();
+    gg->addWidget(mainQSpli);
+    ui.centralWidget->setLayout(gg);
 }
 
 void QtCanPlatform::initData()
