@@ -35,6 +35,8 @@
 #include <QPushButton>
 #include <QCloseEvent>
 #include "DataSave.h"
+#include "QDeviceCtrl.h"
+#include "kvaser.h"
 #pragma execution_character_set("utf-8")  
 class QtCanPlatform : public QMainWindow
 {
@@ -58,6 +60,9 @@ private:
     QTextBrowser* textBrowser=nullptr;
     QCanSetting* canSetting = nullptr;
    
+    //control ui
+    QDeviceCtrl* dCtrl = nullptr;
+
     int currentModel = -1;
     bool sendDataIntoTab();
     bool recDataIntoTab();
@@ -68,18 +73,31 @@ private:
     void recAnalyseMoto(unsigned int fream_id, QByteArray data);
     void getModelTitle();
     void saveCanData();
+    //CRC计算
+    unsigned char crc_high_first(uchar data[], unsigned char len);
 private:
     std::vector<canIdData>recCanData;
     std::vector<canIdData>sendCanData;
+    //pcan设备指针
     PCAN *pcan = nullptr;
+    //kvaser设备指针
+    kvaser* kcan = nullptr;
+    //保存kcan的打开状态
+    const int* ckHandle = nullptr;
+    //发送按钮
     QPushButton* pbSend = nullptr;
+    //can通道选择
     QComboBox* cbPcan = nullptr;
+    //can类型选择
+    QComboBox* cbCanType = nullptr;
     QPushButton* pbOpen = nullptr;
     QLineEdit* cycle = nullptr;
     QComboBox* cbBitRate = nullptr;
     QPushButton* reFresh = nullptr;
     QComboBox* cbSelectModel = nullptr;
+    QLabel* communicaLabel = nullptr;
     QTimer* sendTimer = nullptr;
+    QTimer* lostQTimer = nullptr;
     bool pcanIsOpen = false;
     int maxTextBrowser = 0;
     bool isTrace = false;
@@ -91,7 +109,7 @@ private:
     QStringList strSaveList;
     QString excelTitle;
     int saveListNum = 600;
-
+    uint16_t lostTimeOut = 3000;
     QColor recBackgroudColor = QColor(0, 120, 215);
     QColor recFontColor = QColor(255, 250, 255);
    
@@ -104,6 +122,7 @@ private slots:
     void on_tableDoubleClicked(int,int);
     void on_tableClicked(int, int);
     void on_ReceiveData(uint frame_id, QByteArray data);
+    void on_ReceiveData(int ch,uint frame_id, QByteArray data);
     void on_SettingWidowsClose();
     void on_cbSelectSendItemChanged(int);
     void on_setInToRollData();
@@ -111,6 +130,7 @@ private slots:
     void on_pbSaveCanData_clicked();
     void on_pbClearCanData_clicked();
     void on_checkSendChanged(int);
+    void on_recTimeout();
 signals:
     void sigNewRoll();
 public:

@@ -530,7 +530,7 @@ void QCanSetting::on_pbAddIteam_clicked()
 		QMessageBox::warning(this, tr("warning"), e.what());
 	}
 	catch(...) {
-		QMessageBox::warning(this, tr("warning"),tr("pGboleData.at(curSelectRow).cItem.at(curSelectCanRow).pItem.push_back(pItem)->error"));
+		QMessageBox::warning(this, tr("warning"),("Look this:"+QString::number(curSelectRow) + " and " + QString::number(curSelectCanRow)));
 	}
 	
 }
@@ -574,6 +574,7 @@ void QCanSetting::on_pbMoveUpIteam_clicked()
 	tableView->setItem(curRow - 1, 8, new QTableWidgetItem(str9));
 	tableView->setCellWidget(curRow - 1, 6, qpb);
 	tableView->removeRow(curRow + 1);
+	
 	qGboleData* qGb = qGboleData::getInstance();
 	if (!qGb)return;
 	if (modelCurRow > qGb->pGboleData.size() - 1)

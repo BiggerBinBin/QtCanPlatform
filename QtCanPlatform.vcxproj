@@ -32,12 +32,12 @@
   </ImportGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'" Label="QtSettings">
     <QtInstall>msvc2017_64</QtInstall>
-    <QtModules>core;gui;axcontainer;widgets;serialport;printsupport;serialbus</QtModules>
+    <QtModules>core;network;gui;axcontainer;widgets;serialport;printsupport;serialbus</QtModules>
     <QtBuildConfig>debug</QtBuildConfig>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'" Label="QtSettings">
     <QtInstall>msvc2017_64</QtInstall>
-    <QtModules>core;gui;axcontainer;widgets;serialport;serialbus</QtModules>
+    <QtModules>core;network;gui;axcontainer;widgets;serialport;serialbus</QtModules>
     <QtBuildConfig>release</QtBuildConfig>
   </PropertyGroup>
   <Target Name="QtMsBuildNotFound" BeforeTargets="CustomBuild;ClCompile" Condition="!Exists('$(QtMsBuild)\qt.targets') or !Exists('$(QtMsBuild)\qt.props')">
@@ -60,20 +60,20 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>./Qslog/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>./Qslog/include;./kvaserX64/INC;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>./QsLog/bin;C:\Qt\Qt5.13.2\5.13.2\msvc2017_64\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>QsLog2.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>./QsLog/bin;C:\Qt\Qt5.13.2\5.13.2\msvc2017_64\lib;./kvaserX64/lib/X64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>QsLog2.lib;canlib32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Link>
-      <AdditionalLibraryDirectories>./QsLog/bin;C:\Qt\Qt5.13.2\5.13.2\msvc2017_64\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>QsLog2.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>./QsLog/bin;C:\Qt\Qt5.13.2\5.13.2\msvc2017_64\lib;./kvaserX64/lib/X64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>QsLog2.lib;canlib32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <ClCompile>
-      <AdditionalIncludeDirectories>./QsLog/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>./QsLog/include;./kvaserX64/INC;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'" Label="Configuration">
@@ -93,26 +93,30 @@
     <ClCompile>
       <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <DebugInformationFormat>None</DebugInformationFormat>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <Optimization>Disabled</Optimization>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
-      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <QtRcc Include="QtCanPlatform.qrc" />
     <QtUic Include="QCanSetting.ui" />
+    <QtUic Include="QDeviceCtrl.ui" />
     <QtUic Include="QSetProperty.ui" />
     <QtUic Include="QtCanPlatform.ui" />
     <QtMoc Include="QtCanPlatform.h" />
     <ClCompile Include="AlgorithmSet.cpp" />
     <ClCompile Include="DataSave.cpp" />
+    <ClCompile Include="kvaser.cpp" />
     <ClCompile Include="PCAN.cpp" />
     <ClCompile Include="QCanSetting.cpp" />
+    <ClCompile Include="QDeviceCtrl.cpp" />
     <ClCompile Include="qGboleData.cpp" />
+    <ClCompile Include="QMoudBusCtrl.cpp" />
     <ClCompile Include="QSetProperty.cpp" />
     <ClCompile Include="QtCanPlatform.cpp" />
     <ClCompile Include="main.cpp" />
@@ -122,11 +126,21 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AlgorithmSet.h" />
+    <ClInclude Include="resource.h" />
+    <QtMoc Include="QMoudBusCtrl.h" />
     <QtMoc Include="DataSave.h" />
     <ClInclude Include="dataStruct.h" />
     <QtMoc Include="PCAN.h" />
+    <QtMoc Include="QDeviceCtrl.h" />
+    <QtMoc Include="kvaser.h" />
     <ClInclude Include="qGboleData.h" />
     <QtMoc Include="QSetProperty.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="QtCanPlatform.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="app-logo.ico" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Condition="Exists('$(QtMsBuild)\qt.targets')">

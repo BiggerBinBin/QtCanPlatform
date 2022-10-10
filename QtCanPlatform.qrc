@@ -1,5 +1,6 @@
 <RCC>
     <qresource prefix="/QtCanPlatform">
         <file>Qss/pushbutton.qss</file>
+        <file>app-logo.ico</file>
     </qresource>
 </RCC>

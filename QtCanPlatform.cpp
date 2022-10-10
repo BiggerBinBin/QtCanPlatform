@@ -20,6 +20,7 @@
 #include "QsLogDest.h"
 #include <QFile>
 #include <QSplitter>
+
 using namespace QsLogging;
 
 QString qmyss = "QComboBox{border: 1px solid gray;border-radius: 5px;padding:1px 2px 1px 2px;s}\
@@ -34,6 +35,7 @@ QtCanPlatform::QtCanPlatform(QWidget *parent)
     initUi();
     sendTimer = new QTimer();
     connect(sendTimer, &QTimer::timeout, this, &QtCanPlatform::sendData);
+    this->setWindowTitle(tr("PHU-CAN-APP V0.9.13"));
    /* QLOG_INFO() << "中文世界";*/
     
 }
@@ -48,6 +50,12 @@ QtCanPlatform::~QtCanPlatform()
         delete pcan; 
         pcan = nullptr;
     }
+    if (kcan)
+    {
+        kcan->closeCAN();
+        delete kcan;
+        kcan = nullptr;
+    }
     if (cbPcan)
     {
         delete cbPcan; cbPcan = nullptr;
@@ -56,6 +64,11 @@ QtCanPlatform::~QtCanPlatform()
     {
         delete saveData;
         saveData = nullptr;
+    }
+    if (dCtrl)
+    {
+        delete dCtrl;
+        dCtrl = nullptr;
     }
     destroyLogger();   //释放
 }
@@ -72,6 +85,8 @@ void QtCanPlatform::closeEvent(QCloseEvent* event)
 
 void QtCanPlatform::initUi()
 {
+    this->setWindowIcon(QIcon(":/QtCanPlatform/app-logo.ico"));
+    lostQTimer = new QTimer();
     //QLOG_INFO() << "初始化界面中……";
     //这个是显示内容的
     saveData = new DataSave(this);
@@ -114,14 +129,20 @@ void QtCanPlatform::initUi()
     connect(pbSend, SIGNAL(clicked(bool)),this,SLOT(on_pbSend_clicked(bool)));
 
     QLabel* pcn = new QLabel(tr("选择CAN："));
+    cbCanType = new QComboBox();
+    cbCanType->addItem(tr("选择PCAN"));
+    cbCanType->addItem(tr("选择Kvaser"));
     cbPcan = new QComboBox();
+    kcan = new kvaser();
+    connect(kcan, SIGNAL(getProtocolData(int, quint32, QByteArray)), this, SLOT(on_ReceiveData(int, quint32, QByteArray)));
     pcan = new PCAN(this);
-    connect(pcan, &PCAN::getProtocolData, this, &QtCanPlatform::on_ReceiveData);
+    connect(pcan, SIGNAL(getProtocolData(quint32, QByteArray)), this, SLOT(on_ReceiveData(quint32, QByteArray)));
     QStringList canStr = pcan->DetectDevice();
     for (int i = 0; i < canStr.size(); ++i)
     {
         cbPcan->addItem(canStr.at(i));
     }
+    QLOG_INFO() << "CAN Number:" << canStr.size();
     reFresh = new QPushButton(tr("刷新设备"));
     connect(reFresh, SIGNAL(clicked()), this, SLOT(on_pbRefreshDevice_clicked()));
     //添加常用波特率
@@ -137,19 +158,23 @@ void QtCanPlatform::initUi()
     cycle->setFixedWidth(60);
     pbOpen = new QPushButton(tr("打开设备"));
     connect(pbOpen, SIGNAL(clicked()), this, SLOT(on_pbOpenPcan_clicked()));
+    QLabel* cstate = new QLabel(tr(" 通信状态："));
+    communicaLabel = new QLabel(tr("待机中…"));
+    communicaLabel->setStyleSheet("background-color:yellow");
     //添加个水平的布局
     QHBoxLayout* hLayout = new QHBoxLayout();
     //把按钮丢进去
     hLayout->addWidget(pbAddModel);
     hLayout->addWidget(pbSend);
-    hLayout->addWidget(pcn);
+    hLayout->addWidget(cbCanType);
     hLayout->addWidget(cbPcan);
     hLayout->addWidget(reFresh);
     hLayout->addWidget(cbBitRate);
     hLayout->addWidget(Period);
     hLayout->addWidget(cycle);
     hLayout->addWidget(pbOpen);
-    
+    hLayout->addWidget(cstate);
+    hLayout->addWidget(communicaLabel);
    
     //把弹簧也丢进去
     hLayout->addSpacerItem(new QSpacerItem(20, 20, QSizePolicy::Expanding));
@@ -230,9 +255,13 @@ void QtCanPlatform::initUi()
     bottom->addWidget(tableRollData);
     //bottom->setHandleWidth(2);
     QSplitter* bootomright = new QSplitter(Qt::Vertical, mainBottom);
+    dCtrl = new QDeviceCtrl();
+    bootomright->addWidget(dCtrl);
     bootomright->addWidget(textBrowser);
+    bootomright->setStretchFactor(0, 1);
+    bootomright->setStretchFactor(1, 3);
     mainBottom->setStretchFactor(0, 7);
-    mainBottom->setStretchFactor(1, 2);
+    mainBottom->setStretchFactor(1, 1);
     QGridLayout* gg = new QGridLayout();
     gg->addWidget(mainQSpli);
     ui.centralWidget->setLayout(gg);
@@ -508,8 +537,12 @@ void QtCanPlatform::sendData()
             QString strId = "0x"+QString("%1").arg(fream_id, 8, 16, QLatin1Char('0')).toUpper();
             QLOG_INFO() << "Tx:" << strId << "  " << hex;
         }
-       
-        pcan->SendFrame(fream_id, s_Data);
+        if(cbCanType->currentIndex()==0)
+            pcan->SendFrame(fream_id, s_Data);
+        else if (cbCanType->currentIndex() == 1)
+        {
+            kcan->canSendAll(fream_id, s_Data);
+        }
         //_sleep(20);
     }
 
@@ -519,6 +552,8 @@ bool QtCanPlatform::intelProtocol(canIdData& cdata,uchar data[], unsigned int& f
     if (cdata.pItem.size() <= 0)
         return false;
     fream_id = cdata.strCanId.toUInt(NULL, 16);
+    protoItem crcTemp;
+    bool crc = false;
     for (int i = 0; i < cdata.pItem.size() && i < 8; i++)
     {
         const protoItem &itemp = cdata.pItem.at(i);
@@ -526,6 +561,11 @@ bool QtCanPlatform::intelProtocol(canIdData& cdata,uchar data[], unsigned int& f
         int startbit = itemp.startBit;
         int lengght = itemp.bitLeng;
         int senddd = itemp.send;
+        if (itemp.dataFrom == "CRC")
+        {
+            crcTemp = cdata.pItem.at(i);
+            crc = true;
+        }
         startbyte = YB::InRang(0, 7, startbyte);
         if (lengght <= 8)
         {
@@ -542,6 +582,10 @@ bool QtCanPlatform::intelProtocol(canIdData& cdata,uchar data[], unsigned int& f
             data[startbyte+1] += m_send;
         }
     }
+    //目前就只有博士的有CRC
+    if (!crc)
+        return true;
+    data[crcTemp.startByte] = crc_high_first(data, 7);
     return true;
 }
 bool QtCanPlatform::motoProtocol(canIdData& cdata,uchar data[], unsigned int& fream_id)
@@ -742,9 +786,11 @@ void QtCanPlatform::recAnalyseIntel(unsigned int fream_id,QByteArray data)
         int idex = 0;
         for (int j = 0; j < num; j++, idex++)
         {
-            if (idex > 9)
+            if (idex > 9)   //一行最多放10个数据
             {
+                //满10个，从头开始
                 idex = 0;
+                //下一行的下一行，也就是隔一行，要加2；
                 cr += 2;
             }
 
@@ -961,6 +1007,30 @@ void QtCanPlatform::recAnalyseMoto(unsigned int fream_id, QByteArray data)
     if (isRoll)
         emit sigNewRoll();
 }
+
+unsigned char QtCanPlatform::crc_high_first(uchar data[], unsigned char len)
+{
+    //    unsigned char i;
+    unsigned char crc = 0xFF; /* 计算的初始crc值 */
+    uchar* ptr = &data[1];
+    //    *ptr++;
+
+    while (len--)
+    {
+        crc ^= *ptr++;  /* 每次先与需要计算的数据异或,计算完指向下一数据 */
+        for (int i = 8; i > 0; --i)   /* 下面这段计算过程与计算一个字节crc一样 */
+        {
+            if (crc & 0x80)
+                crc = (crc << 1) ^ 0x2F;
+            else
+                crc = (crc << 1);
+
+        }
+    }
+    crc ^= 0xFF;
+    qDebug() << "crc:" << crc;
+    return (crc);
+}
 void QtCanPlatform::getModelTitle()
 {
 
@@ -983,6 +1053,13 @@ void QtCanPlatform::on_pbSend_clicked(bool clicked)
         cycle->setEnabled(false);
         cbBitRate->setEnabled(false);
         reFresh->setEnabled(false);
+        //用来检测通信状态的定时器
+        if (!lostQTimer)
+        {
+            lostQTimer = new QTimer();
+            connect(lostQTimer, SIGNAL(timeout()), this, SLOT(on_recTimeout()));
+        }
+        lostQTimer->start(lostTimeOut);
     }
     else
     {
@@ -990,61 +1067,139 @@ void QtCanPlatform::on_pbSend_clicked(bool clicked)
         cycle->setEnabled(true);
         cbBitRate->setEnabled(true);
         reFresh->setEnabled(true);
+        if (lostQTimer)
+        {
+            lostQTimer->stop();
+        }
+        communicaLabel->setText(tr("待机中…"));
+        communicaLabel->setStyleSheet("background-color:yellow");
     }
 }
 void QtCanPlatform::on_pbRefreshDevice_clicked()
 {
-    QStringList canStr = pcan->DetectDevice();
-    for (int i = 0; i < canStr.size(); ++i)
+    cbPcan->clear();
+    if (cbCanType->currentIndex() == 0)
     {
-        cbPcan->addItem(canStr.at(i));
+        QStringList canStr = pcan->DetectDevice();
+        for (int i = 0; i < canStr.size(); ++i)
+        {
+            cbPcan->addItem(canStr.at(i));
+        }
     }
+    else if (cbCanType->currentIndex() == 1)
+    {
+        int n = kcan->getCanCount();
+        for (int m = 0; m < n; m++)
+        {
+            cbPcan->addItem("ch" + QString::number(m));
+        }
+    }
+    
 }
 void QtCanPlatform::on_pbOpenPcan_clicked()
 {
-    if (pcanIsOpen)
+    if (cbCanType->currentIndex() == 0)
     {
-        pcan->CloseCan();
-        pbOpen->setText(tr("打开设备"));
-        cbBitRate->setEnabled(true);
-        cbPcan->setEnabled(true);
-        pbSend->setChecked(false);
-        pbSend->setEnabled(false);
-        pcanIsOpen = false;
-        sendTimer->stop();
+        if (pcanIsOpen)
+        {
+            pcan->CloseCan();
+            pbOpen->setText(tr("打开设备"));
+            cbBitRate->setEnabled(true);
+            cbPcan->setEnabled(true);
+            pbSend->setChecked(false);
+            pbSend->setEnabled(false);
+            pcanIsOpen = false;
+            sendTimer->stop();
+        }
+        else
+        {
+            if (cbPcan->count() <= 0)
+                return;
+            int curindex = cbBitRate->currentIndex();
+            int bitRate = 250;
+            switch (curindex)
+            {
+            case 0:
+                bitRate = 200; break;
+            case 1:
+                bitRate = 250; break;
+            case 2:
+                bitRate = 500; break;
+            case 3:
+                bitRate = 800; break;
+            default:
+                bitRate = 250;
+                break;
+            }
+            bool b = pcan->ConnectDevice(cbPcan->currentIndex(), bitRate);
+            if (!b)
+            {
+                QMessageBox::warning(NULL, tr("错误"), tr("打开CAN失败,请检测设备是否被占用或者已经连接？"));
+                return;
+            }
+            pbOpen->setText(tr("关闭设备"));
+            cbBitRate->setEnabled(false);
+            cbPcan->setEnabled(false);
+            pbSend->setEnabled(true);
+            pcanIsOpen = true;
+        }
     }
-    else
+    else if (cbCanType->currentIndex() == 1)
     {
-        if (cbPcan->count() <= 0)
-            return;
-        int curindex = cbBitRate->currentIndex();
-        int bitRate = 250;
-        switch (curindex)
+        if (pcanIsOpen)
         {
-        case 0:
-            bitRate = 200; break;
-        case 1:
-            bitRate = 250; break;
-        case 2:
-            bitRate = 500; break;
-        case 3:
-            bitRate = 800; break;
-        default:
-            bitRate = 250;
-            break;
+            kcan->closeCAN();
+            pbOpen->setText(tr("打开设备"));
+            cbBitRate->setEnabled(true);
+            cbPcan->setEnabled(true);
+            pbSend->setChecked(false);
+            pbSend->setEnabled(false);
+            pcanIsOpen = false;
+            sendTimer->stop();
         }
-        bool b = pcan->ConnectDevice(cbPcan->currentIndex(), bitRate);
-        if (!b)
+        else
         {
-            QMessageBox::warning(NULL, tr("错误"), tr("打开CAN失败,请检测设备是否被占用或者已经连接？"));
-            return;
+            if (cbPcan->count() <= 0)
+                return;
+            int curindex = cbBitRate->currentIndex();
+            int bitRate = 250;
+            switch (curindex)
+            {
+            case 0:
+                bitRate = 200; break;
+            case 1:
+                bitRate = 250; break;
+            case 2:
+                bitRate = 500; break;
+            case 3:
+                bitRate = 800; break;
+            default:
+                bitRate = 250;
+                break;
+            }
+            //bool b = pcan->ConnectDevice(cbPcan->currentIndex(), bitRate);
+            QString err;
+            ckHandle =  kcan->openCanAll(bitRate, err);
+            if (!ckHandle)
+            {
+                QMessageBox::warning(NULL, tr("错误"), tr("打开KCAN失败,请检测设备是否被占用或者已经连接？"));
+                return;
+            }
+            for (int k = 0; k < 4; k++)
+            {
+                if (ckHandle[k] >= 0)
+                    QLOG_INFO() << "Open Ch" + QString::number(k) + "Success!";
+                else
+                    QLOG_INFO() << "Open Ch" + QString::number(k) + "failed!";
+            }
+            pbOpen->setText(tr("关闭设备"));
+            cbBitRate->setEnabled(false);
+            cbPcan->setEnabled(false);
+            pbSend->setEnabled(true);
+            pcanIsOpen = true;
         }
-        pbOpen->setText(tr("关闭设备"));
-        cbBitRate->setEnabled(false);
-        cbPcan->setEnabled(false);
-        pbSend->setEnabled(true);
-        pcanIsOpen = true;
     }
+   
     
 }
 /*
@@ -1073,8 +1228,8 @@ void QtCanPlatform::on_tableClicked(int row, int col)
         disconnect(tableView, SIGNAL(cellChanged(int, int)), this, SLOT(on_tableClicked(int, int)));
         return;
     }
-    QString sendId = tableView->item(row, 2)->text();
-    QString senddt = tableView->item(row, 1)->text();
+    QString sendId = tableView->item(row, 4)->text();
+    QString senddt = tableView->item(row, 2)->text();
     for (int i = 0; i < sendCanData.size(); i++)
     {
         //找出数据所在的型号
@@ -1107,12 +1262,34 @@ void QtCanPlatform::on_tableClicked(int row, int col)
 */
 void QtCanPlatform::on_ReceiveData(uint fream_id, QByteArray data)
 {
-    
+    communicaLabel->setText(tr("通信正常"));
+    communicaLabel->setStyleSheet("background-color:green");
+    lostQTimer->start(lostTimeOut);
     int index = cbSelectModel->currentIndex();
     
     qGboleData* qGb = qGboleData::getInstance();
     if (!qGb)return;
     if (index > qGb->pGboleData.size()-1)
+        return;
+    if (0 == qGb->pGboleData.at(index).agreement)
+    {
+        recAnalyseIntel(fream_id, data);
+    }
+    else
+    {
+        recAnalyseMoto(fream_id, data);
+    }
+}
+void QtCanPlatform::on_ReceiveData(int ch, uint fream_id, QByteArray data)
+{
+    communicaLabel->setText(tr("通信正常"));
+    communicaLabel->setStyleSheet("background-color:green");
+    lostQTimer->start(lostTimeOut);
+    int index = cbSelectModel->currentIndex();
+
+    qGboleData* qGb = qGboleData::getInstance();
+    if (!qGb)return;
+    if (index > qGb->pGboleData.size() - 1)
         return;
     if (0 == qGb->pGboleData.at(index).agreement)
     {
@@ -1157,19 +1334,20 @@ void QtCanPlatform::on_cbSelectSendItemChanged(int index)
         //这步很关键，算出前面的型号有多少个item
         for (int m = 0; m < k ; m++)
             cnum += sendCanData.at(m).pItem.size();
-        if (cbCol == 0)
-        {
-           //当前型号的当前下标：当前行-前面的型号的item个数（cbRow - cnum）
-           sendCanData.at(k).pItem.at(cbRow - cnum).send = sendCanData.at(k).pItem.at(cbRow- cnum).stl_itemProperty.at(index).value.toInt();
-           tableView->setItem(cbRow,1, new QTableWidgetItem(sendCanData.at(k).pItem.at(cbRow - cnum).stl_itemProperty.at(index).value));
-           tableView->item(cbRow, 1)->setTextAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
-           QColor bc = QColor(sendCanData.at(k).pItem.at(cbRow - cnum).stl_itemProperty.at(index).r, sendCanData.at(k).pItem.at(cbRow - cnum).stl_itemProperty.at(index).g, sendCanData.at(k).pItem.at(cbRow- cnum).stl_itemProperty.at(index).b);
+        if (cbCol != 1)
+            continue;
+    
+        //当前型号的当前下标：当前行-前面的型号的item个数（cbRow - cnum）
+        sendCanData.at(k).pItem.at(cbRow - cnum).send = sendCanData.at(k).pItem.at(cbRow- cnum).stl_itemProperty.at(index).value.toInt();
+        tableView->setItem(cbRow,2, new QTableWidgetItem(sendCanData.at(k).pItem.at(cbRow - cnum).stl_itemProperty.at(index).value));
+        tableView->item(cbRow, 2)->setTextAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
+        QColor bc = QColor(sendCanData.at(k).pItem.at(cbRow - cnum).stl_itemProperty.at(index).r, sendCanData.at(k).pItem.at(cbRow - cnum).stl_itemProperty.at(index).g, sendCanData.at(k).pItem.at(cbRow- cnum).stl_itemProperty.at(index).b);
           
-           QString backcolor = "background-color:#" + QString("%1").arg(bc.red(), 2, 16, QLatin1Char('0')) +
-               QString("%1").arg(bc.green(), 2, 16, QLatin1Char('0')) +
-               QString("%1").arg(bc.blue(), 2, 16, QLatin1Char('0'));
-           cb->setStyleSheet(backcolor);
-        }
+        QString backcolor = "background-color:#" + QString("%1").arg(bc.red(), 2, 16, QLatin1Char('0')) +
+            QString("%1").arg(bc.green(), 2, 16, QLatin1Char('0')) +
+            QString("%1").arg(bc.blue(), 2, 16, QLatin1Char('0'));
+        cb->setStyleSheet(backcolor);
+    
     }
 }
 void QtCanPlatform::on_checkSendChanged(int check)
@@ -1202,6 +1380,11 @@ void QtCanPlatform::on_checkSendChanged(int check)
         if(cb2)
             cb2->setChecked(b);
     }
+}
+void QtCanPlatform::on_recTimeout()
+{
+    communicaLabel->setText(tr("通信超时"));
+    communicaLabel->setStyleSheet("background-color:red");
 }
 /*
 * @brief：把要滚动显示的数据添加到表格里面

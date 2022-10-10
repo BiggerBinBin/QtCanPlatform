@@ -1,0 +1,29 @@
+<?xml version="1.0" ?>
+<applications xmlns="http://schemas.microsoft.com/windows/cpltasks/v1" 
+              xmlns:sh="http://schemas.microsoft.com/windows/tasks/v1">
+
+  <!-- Kvaser Hardware (same GUID as entered into the registry) -->
+  <application id="{1E6212D4-2784-409d-AF55-A81FCB3AE3B9}">
+
+    <!-- conftool.exe -->
+    <sh:task id="{D5B36243-828A-43ef-A518-C5D022C0B1E1}"> 
+    <!-- This is a made-up GUID, just for this task -->
+      <sh:name>View hardware information</sh:name>
+      <sh:keywords>qqq</sh:keywords>
+      <sh:command>kcanconf.exe</sh:command>
+    </sh:task>
+
+    <!-- Device Manager -->
+    <sh:task id="{3F0D3D74-FFBA-45b5-8A7A-457A49358C15}" needsElevation="true">
+      <sh:name>Run Device Manager</sh:name>
+      <sh:keywords>qqq</sh:keywords>
+      <sh:command>control.exe /name Microsoft.DeviceManager</sh:command>
+    </sh:task>
+
+    <category id="2"> <!-- 2 = "Hardware and Sound" -->
+      <sh:task idref="{D5B36243-828A-43ef-A518-C5D022C0B1E1}" />   
+      <sh:task idref="{3F0D3D74-FFBA-45b5-8A7A-457A49358C15}" />
+    </category>
+
+  </application>
+</applications>
