@@ -22,5 +22,10 @@ namespace YB {
 	}
 	
 	bool nameInVector(std::vector<RollStruct>& vec, QString name, int& index);
-	
+	inline bool isExistKey(std::map<unsigned int, QStringList>& m, unsigned int key) {
+		std::map<unsigned int, QStringList>::iterator iter;
+		iter = m.find(key);
+		if (iter != m.end()) return true;
+		else return false;
+	}
 }

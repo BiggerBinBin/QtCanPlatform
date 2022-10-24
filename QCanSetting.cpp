@@ -15,6 +15,7 @@
 #include <QCHeckBox>
 #include "qGboleData.h"
 #include "QsLog.h"
+#include <QSplitter>
 QCanSetting::QCanSetting(QWidget *parent)
 	: QWidget(parent)
 {
@@ -23,6 +24,8 @@ QCanSetting::QCanSetting(QWidget *parent)
 	this->setWindowModality(Qt::ApplicationModal);
 	InitUi();
 	InitpGboleData();
+	this->showMaximized();
+	this->setWindowTitle(tr("CAN协议设置"));
 }
 
 QCanSetting::~QCanSetting()
@@ -81,7 +84,7 @@ void QCanSetting::InitUi()
 	modelView->setColumnCount(2);
 	modelView->setHorizontalHeaderLabels(listname);
 	modelView->setSelectionBehavior(QAbstractItemView::SelectRows);
-	modelView->setMaximumWidth(270);
+	modelView->setMinimumWidth(270);
 	connect(modelView, SIGNAL(cellDoubleClicked(int, int)), this, SLOT(on_modelView_doubleClicked(int, int)));
 	connect(modelView, SIGNAL(cellClicked(int, int)), this, SLOT(on_modelView_Clicked(int, int)));
 	
@@ -91,7 +94,7 @@ void QCanSetting::InitUi()
 	vLayoutModel->addSpacerItem(new QSpacerItem(20, 80, QSizePolicy::Expanding));
 
 	listname.clear();
-	listname << "CanId" << "接收/发送";
+	listname << "CanId" << "接收/发送"<<"启用(Send时)";
 	QPushButton* pbAddCanId = new QPushButton("添加ID");
 	connect(pbAddCanId, &QPushButton::clicked, this, &QCanSetting::on_pbAddCanId_clicked);
 	QPushButton* pbMoveUpCanId = new QPushButton("上移");
@@ -119,7 +122,7 @@ void QCanSetting::InitUi()
 	canIdView->setColumnCount(3);
 	canIdView->setHorizontalHeaderLabels(listname);
 	canIdView->setSelectionBehavior(QAbstractItemView::SelectRows);
-	canIdView->setMaximumWidth(270);
+	canIdView->setMinimumWidth(350);
 	connect(canIdView, SIGNAL(cellDoubleClicked(int, int)), this, SLOT(on_canIdView_doubleClicked(int, int)));
 	connect(canIdView, SIGNAL(cellClicked(int, int)), this, SLOT(on_canIdView_Clicked(int, int)));
 	QVBoxLayout* vLayoutCanId = new QVBoxLayout();
@@ -160,17 +163,34 @@ void QCanSetting::InitUi()
 	vLayout->addLayout(hLayout);
 	vLayout->addWidget(tableView);
 	
+	QSplitter* splitterHor = new QSplitter(Qt::Horizontal);
+	QWidget* w1 = new QWidget(this);
+	QWidget* w2 = new QWidget(this);
+	QWidget* w3 = new QWidget(this);
+	w1->setLayout(vLayoutModel);
+	w2->setLayout(vLayoutCanId);
+	w3->setLayout(vLayout);
+	splitterHor->addWidget(w1);
+	splitterHor->addWidget(w2);
+	splitterHor->addWidget(w3);
+	splitterHor->setStretchFactor(0, 1);
+	splitterHor->setStretchFactor(1, 1);
+	splitterHor->setStretchFactor(2, 3);
+	QMargins M = QMargins(0, 0, 0, 0);
+	splitterHor->setContentsMargins(M);
+	QGridLayout* gg = new QGridLayout(this);
+	gg->addWidget(splitterHor);
 	//新建一个水平layout
-	QHBoxLayout* hLayoutAll = new QHBoxLayout();
-	hLayoutAll->addLayout(vLayoutModel);
-	hLayoutAll->addLayout(vLayoutCanId);
-	hLayoutAll->addLayout(vLayout);
-	//设置比例，1：1：3
-	hLayoutAll->setStretch(0, 1);
-	hLayoutAll->setStretch(1, 1);
-	hLayoutAll->setStretch(2, 10);
-	hLayoutAll->setSpacing(5);
-	this->setLayout(hLayoutAll);
+	//QHBoxLayout* hLayoutAll = new QHBoxLayout();
+	//hLayoutAll->addLayout(vLayoutModel);
+	//hLayoutAll->addLayout(vLayoutCanId);
+	//hLayoutAll->addLayout(vLayout);
+	////设置比例，1：1：3
+	//hLayoutAll->setStretch(0, 1);
+	//hLayoutAll->setStretch(1, 1);
+	//hLayoutAll->setStretch(2, 10);
+	//hLayoutAll->setSpacing(5);
+	this->setLayout(gg);
 	
 	
 	QLOG_INFO() << "设置界面初始化完成，Good Job！";
@@ -350,7 +370,7 @@ void QCanSetting::on_pbAddCanId_clicked()
 	QComboBox* proto = new QComboBox();
 	proto->addItem(tr("接收"));
 	proto->addItem(tr("发送"));
-	connect(proto, SIGNAL(currentIndexChanged(int)), this, SLOT(on_canIdView_currentIndexChanged(int)));
+	
 
 	canIdView->setItem(row, 0, new QTableWidgetItem(tr("123456")));
 	canIdView->setCellWidget(row, 1, proto);
@@ -358,11 +378,13 @@ void QCanSetting::on_pbAddCanId_clicked()
 	QCheckBox* isSend = new QCheckBox();
 	isSend->setChecked(false);
 	canIdView->setCellWidget(row, 2, isSend);
-	connect(isSend, &QCheckBox::stateChanged, this, &QCanSetting::on_canIdView_SendChanged);
+	
 	canIdData cdata;
 	cdata.strCanId = canIdView->item(row,0)->text();
 	cdata.opt = 0;
 	qGb->pGboleData.at(curSelectRow).cItem.push_back(cdata);
+	connect(isSend, &QCheckBox::stateChanged, this, &QCanSetting::on_canIdView_SendChanged);
+	connect(proto, SIGNAL(currentIndexChanged(int)), this, SLOT(on_canIdView_currentIndexChanged(int)));
 }
 
 void QCanSetting::on_pbMoveUpCanId_clicked()
@@ -574,7 +596,7 @@ void QCanSetting::on_pbMoveUpIteam_clicked()
 	tableView->setItem(curRow - 1, 8, new QTableWidgetItem(str9));
 	tableView->setCellWidget(curRow - 1, 6, qpb);
 	tableView->removeRow(curRow + 1);
-	
+	tableView->setCurrentCell(curRow - 1, 0);
 	qGboleData* qGb = qGboleData::getInstance();
 	if (!qGb)return;
 	if (modelCurRow > qGb->pGboleData.size() - 1)
@@ -633,6 +655,8 @@ void QCanSetting::on_pbMoveDownIteam_clicked()
 	tableView->setCellWidget(curRow + 2, 7, qcb);
 	tableView->setItem(curRow + 2, 8, new QTableWidgetItem(str9));
 	tableView->removeRow(curRow);
+
+	tableView->setCurrentCell(curRow + 2, 0);
 	qGboleData* qGb = qGboleData::getInstance();
 	if (!qGb)return;
 	if (modelCurRow > qGb->pGboleData.size() - 1)

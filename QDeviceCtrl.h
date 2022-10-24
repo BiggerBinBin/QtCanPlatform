@@ -7,6 +7,8 @@
 #include "QMoudBusCtrl.h"
 #include <QTimer>
 #include <QModbusDataUnit>
+#include "PCAN.h"
+#include "QProcessBuild.h"
 #pragma execution_character_set("utf-8")  
 class QDeviceCtrl : public QWidget
 {
@@ -19,6 +21,7 @@ public:
 private:
 	Ui::QDeviceCtrlClass ui;
 	QTcpSocket* tcp = nullptr;
+	PCAN* waterCan = nullptr;
 	QMoudBusCtrl* moudBus = nullptr;
 	//PLC 地址和端口号
 	QString ipAddress = "192.168.200.10";
@@ -36,12 +39,25 @@ private:
 	QTimer* timeSend = nullptr;
 	QTimer* timeGetPower = nullptr;
 	QModbusDataUnit m_mdu;
+	QModbusDataUnit m_mdu2;
+
+	QProcessBuild* qProcessB = nullptr;
+	//冷水机内循环状态，0关闭，1开启
+	uint bitInCircle = 0;
+	//冷水机外循环状态，0关闭，1开启
+	uint bitOutCircle = 0;
+
+	//连接状态,7代表3个设备都连接了，二进制：111
+	//PLC为bit[2],冷水机为bit[1]，高压电源为bit[0]
+	unsigned short int deviceState = 0;
 	//多线程函数，读取PLC中的输入点信号
 	void getInStateRun();
 	//多线程函数，读取高压电源的电压电流功率
 	void getPowerRun();
-
 	void setOffPower();
+	void getAnSetWaterRun();
+public:
+	unsigned short int getDeviceState() { return deviceState; }
 signals:
 	void timeToSend(QString str,int num);
 	void sigArealdSend(QModbusDataUnit mdu);
@@ -79,6 +95,7 @@ public slots:
 	//设置电流电压
 	void on_pbSetVoltAndCurr_clicked();
 	void on_delaySend();
+	//连接串口
 	void on_pbConnectRTU_clicked(bool isCheck);
 
 	//两个spinBox，电流电压
@@ -86,8 +103,21 @@ public slots:
 	void on_spinBoxCurrent_editingFinished();
 	//下高压
 	void on_pbOffVolt_clicked();
+	//刷新串口
 	void on_pbRefresh_clicked();
-private slots:
+
+	//接收冷水机报文
+	void onReceiveData(unsigned int fream_id, QByteArray data);
+	void on_pbStartInCricle_clicked(bool isCheck);
+	void on_pbStartOutCricle_clicked(bool isCheck);
+
+	//
+	void on_dOpenCan_clicked(bool isCheck);
+
+	//打开流程设置
+	void on_pbProcessSet_clicked();
+	
+public slots:
 	void on_sendMdu();
 	
 };

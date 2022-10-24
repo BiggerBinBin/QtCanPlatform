@@ -67,6 +67,9 @@
     <ClCompile Include="QMoudBusCtrl.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="QProcessBuild.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="QCanSetting.h">
@@ -90,6 +93,9 @@
     <QtMoc Include="QMoudBusCtrl.h">
       <Filter>Header Files</Filter>
     </QtMoc>
+    <QtMoc Include="QProcessBuild.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
   </ItemGroup>
   <ItemGroup>
     <QtUic Include="QCanSetting.ui">
@@ -99,6 +105,9 @@
       <Filter>Form Files</Filter>
     </QtUic>
     <QtUic Include="QDeviceCtrl.ui">
+      <Filter>Form Files</Filter>
+    </QtUic>
+    <QtUic Include="QProcessBuild.ui">
       <Filter>Form Files</Filter>
     </QtUic>
   </ItemGroup>

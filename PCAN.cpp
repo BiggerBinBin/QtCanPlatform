@@ -83,6 +83,7 @@ void PCAN::SendFrame(int FrameID, uchar Data[])
 
 
     QCanBusFrame frame;
+    frame.setExtendedFrameFormat(true);
     frame.setFrameId(FrameID);
 
 

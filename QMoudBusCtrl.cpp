@@ -101,12 +101,12 @@ QModbusDataUnit QMoudBusCtrl::sendReadMdu(QModbusDataUnit mdu, uint serverAdd)
 	auto* reply = modbusDevice->sendReadRequest(mdu, serverAdd);
 	if (reply)
 	{
-		/*if (!reply->isFinished())
+		if (!reply->isFinished())
 		{
 			QEventLoop loop;
 			connect(reply, &QModbusReply::finished, &loop, &QEventLoop::quit);
 			loop.exec();
-		}*/
+		}
 		isEndSend = true;
 
 		if (reply->error() == QModbusDevice::ProtocolError)

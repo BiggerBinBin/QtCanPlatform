@@ -53,13 +53,24 @@ private:
     QStringListModel *model=nullptr;
 
     //UI
+    //显示发送UI的表格
     QTableWidget* tableView=nullptr;
+    //显示接收数据UI的表格
     QTableWidget* tableRecView=nullptr;
+    //四通道，需要四个显示tablewidget
+    QTableWidget* tableArray[4];
     QTableWidget* tableRollTitle=nullptr;
     QTableWidget* tableRollData=nullptr;
+    QTableWidget* tableRollTitleArray[4];
+    QTableWidget* tableRollDataArray[4];
+    QTabWidget* tabRollBox = nullptr;
     QTextBrowser* textBrowser=nullptr;
     QCanSetting* canSetting = nullptr;
-   
+    //显示接收到的数据的tab界面
+    QTabWidget* tabRecBox = nullptr;
+    //容器，放4个QTableWidget
+    QWidget* w[4];
+    QWidget* w_rolling[4];
     //control ui
     QDeviceCtrl* dCtrl = nullptr;
 
@@ -67,14 +78,30 @@ private:
     bool sendDataIntoTab();
     bool recDataIntoTab();
     void sendData();
+    //数据解析
     bool intelProtocol(canIdData &cdata,uchar data[], unsigned int &fream_id);
     bool motoProtocol(canIdData& cdata,uchar data[], unsigned int& fream_id);
+
+    //接收到的数据解析(单通道)
     void recAnalyseIntel(unsigned int fream_id, QByteArray data);
     void recAnalyseMoto(unsigned int fream_id, QByteArray data);
+    //kvaser多通道
+    void recAnalyseIntel(int ch,unsigned int fream_id, QByteArray data);
+    void recAnalyseMoto(int ch,unsigned int fream_id, QByteArray data);
+
+    //未使用
     void getModelTitle();
+    //数据保存
     void saveCanData();
+    void saveCanDataMult();
     //CRC计算
     unsigned char crc_high_first(uchar data[], unsigned char len);
+
+    //读取配置文件 
+    void readSetFile();
+    //配置
+    void configSetFile();
+
 private:
     std::vector<canIdData>recCanData;
     std::vector<canIdData>sendCanData;
@@ -106,12 +133,31 @@ private:
     QStringListModel* titleModel = nullptr;
     std::vector<RollStruct>RollShowData;
     DataSave *saveData=nullptr;
+    //单个通道时的保存变量
     QStringList strSaveList;
+    //多通道时的数据结构
+    std::map<unsigned int, QStringList>multReceData;
+    //保存excel的表头
     QString excelTitle;
+    //自动保存的数据条数，即达到这个数量就会自动保存
     int saveListNum = 600;
     uint16_t lostTimeOut = 3000;
     QColor recBackgroudColor = QColor(0, 120, 215);
     QColor recFontColor = QColor(255, 250, 255);
+    QDateTime lastTime;
+
+    //自动判断的条件与判断值
+    int lowVolt = 350;      //低压
+    int highVolt = 750;     //高压
+    int avgPower = 7000;    //平均功率
+    int shortIndex = 7;     //短路在报文数据的下标
+    QString voltId = "0x0C004400";      //电压是在哪个报文
+    QString powerId = "0x0C004400";     //功率是在哪个报文
+    QString shortId = "0x0C004400";     //短路是在哪个报文
+    int tempture = -15;                 //进水口温度
+    int rmFirstFream = 3;               //测功率时，到达指定条件后延迟帧数
+    int agvPowerFream = 60;             //测功率时的平均帧数;
+
    
 private slots:
     void qCanSettingShow();
@@ -126,6 +172,7 @@ private slots:
     void on_SettingWidowsClose();
     void on_cbSelectSendItemChanged(int);
     void on_setInToRollData();
+    void on_setInToRollDataMult(int ch);
     void on_checkTraceChanged(int);
     void on_pbSaveCanData_clicked();
     void on_pbClearCanData_clicked();
@@ -133,6 +180,7 @@ private slots:
     void on_recTimeout();
 signals:
     void sigNewRoll();
+    void sigNewRollMult(int ch);
 public:
     void initLogger();
     void destroyLogger();

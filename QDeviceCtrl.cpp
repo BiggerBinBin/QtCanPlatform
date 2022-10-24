@@ -6,6 +6,7 @@
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QString>
+#include <QMessageBox>
 /*****************************************************
 * 控制IO_OUT,共有18个IO输出点
 * 格式为Head+Name+On/Off
@@ -85,8 +86,8 @@ QDeviceCtrl::QDeviceCtrl(QWidget *parent)
 	tcp->connectToHost(ipAddress, port);
 	std::thread t(&QDeviceCtrl::getInStateRun, this);
 	t.detach();
-	/*std::thread t2(&QDeviceCtrl::getPowerRun, this);
-	t2.detach();*/
+	std::thread t2(&QDeviceCtrl::getPowerRun, this);
+	t2.detach();
 
 	moudBus = new QMoudBusCtrl(this);
 	on_pbRefresh_clicked();
@@ -96,13 +97,22 @@ QDeviceCtrl::QDeviceCtrl(QWidget *parent)
 	connect(this, &QDeviceCtrl::sigArealdSend, this, &QDeviceCtrl::on_sendMdu);
 	timeGetPower = new  QTimer();
 	connect(timeGetPower, &QTimer::timeout, this, &QDeviceCtrl::on_sendMdu);
+
+	waterCan = new PCAN(this);
+	connect(waterCan, &PCAN::getProtocolData, this, &QDeviceCtrl::onReceiveData);
+	QStringList canStr = waterCan->DetectDevice();
+	for (int i = 0; i < canStr.size(); ++i)
+	{
+		ui.dCanDevice->addItem(canStr.at(i));
+	}
+
 	//timeGetPower->start(500);
-	ui.label_12->setVisible(false);
+	/*ui.label_12->setVisible(false);
 	ui.label_14->setVisible(false);
 	ui.label_16->setVisible(false);
 	ui.label_Volt->setVisible(false);
 	ui.label_Current->setVisible(false);
-	ui.label_Power->setVisible(false);
+	ui.label_Power->setVisible(false);*/
 }
 
 QDeviceCtrl::~QDeviceCtrl()
@@ -388,12 +398,14 @@ void QDeviceCtrl::on_pbTcpConnect_clicked(bool isClicked)
 		{
 			tcp->disconnectFromHost();
 		}
+		deviceState &= 0x3; //3为011
 	}
 	else
 	{
 		if (tcp->state() == QAbstractSocket::ConnectedState)
 		{
 			tcp->disconnectFromHost();
+			deviceState &= 0x3; //3为011
 		}
 		QString ipadd = ui.leIpAdd->text().trimmed();
 		uint16_t iport = ui.lePort->text().toUShort();
@@ -412,6 +424,7 @@ void QDeviceCtrl::on_SocketStateChanged(QAbstractSocket::SocketState bb)
 	{
 		if (!bRun)
 			return;
+		deviceState |= 0x4; //3为100
 		QLOG_INFO() << "PLC connected!";
 		ui.leIpAdd->setEnabled(false);
 		ui.lePort->setEnabled(false);
@@ -421,6 +434,7 @@ void QDeviceCtrl::on_SocketStateChanged(QAbstractSocket::SocketState bb)
 	{
 		if (!bRun)
 			return;
+		deviceState &= 0x3; //3为011
 		QLOG_INFO() << "PLC connected failure";
 		ui.leIpAdd->setEnabled(true);
 		ui.lePort->setEnabled(true);
@@ -430,6 +444,7 @@ void QDeviceCtrl::on_SocketStateChanged(QAbstractSocket::SocketState bb)
 	{
 		if (!bRun)
 			return;
+		deviceState &= 0x3; //3为011
 		QLOG_INFO() << "PLC connected close";
 		ui.leIpAdd->setEnabled(true);
 		ui.lePort->setEnabled(true);
@@ -463,7 +478,7 @@ void QDeviceCtrl::getInStateRun()
 }
 void QDeviceCtrl::getPowerRun()
 {
-	return;
+	//return;
 	while (bRun)
 	{
 		using namespace std::chrono_literals;
@@ -471,11 +486,17 @@ void QDeviceCtrl::getPowerRun()
 
 		if (!moudBus)
 			continue;
+		if (!bRun)
+			return;
 		if (!moudBus->connectState())
 			continue;
 		auto mdu = QModbusDataUnit(QModbusDataUnit::HoldingRegisters, 0x0, 6);
+		if (!bRun)
+			return;
 		while (!moudBus->isEndSendFream())
 		{
+			if (!bRun)
+				return;
 			using namespace std::chrono_literals;
 			std::this_thread::sleep_for(5ms);
 		}
@@ -490,13 +511,25 @@ void QDeviceCtrl::setOffPower()
 {
 	auto temp = QModbusDataUnit(QModbusDataUnit::HoldingRegisters, 0x7, 5);
 	temp.setValue(4, 0x0000);
-	moudBus->sendWriteMdu(temp, 0x1);
+	if(ui.cbSelectMachine->currentIndex()==0 || ui.cbSelectMachine->currentIndex() == 1)
+		moudBus->sendWriteMdu(temp, 0x1);
+	QTime tt = QTime::currentTime().addMSecs(100);
+	while (QTime::currentTime() < tt)
+	{
+		QApplication::processEvents();
+	}
+	if (ui.cbSelectMachine->currentIndex() == 0 || ui.cbSelectMachine->currentIndex() == 2)
+		moudBus->sendWriteMdu(temp, 0x2);
+}
+void QDeviceCtrl::getAnSetWaterRun()
+{
 }
 void QDeviceCtrl::_readyRead()
 {
 	
 }
 
+//读取PLC传感器
 void QDeviceCtrl::on_timeToSend(QString str,int num)
 {
 	tcp->write(str.toUtf8().data());
@@ -544,43 +577,117 @@ void QDeviceCtrl::on_timeToSend(QString str,int num)
 
 	}
 }
-
+/*
+* @brief:   设置高压电源的电流电压
+*			此高压电源有两路输出，使用同一个串口，A路的服务器地址是0x1，B路为0x2
+*			所以同样的操作，只需要把服务器地址改一下即可
+* @param:	void
+* @return:	void
+*/
 void QDeviceCtrl::on_pbSetVoltAndCurr_clicked()
 {
-	//setOffPower();
+	//初始化（数据类型，起止地址，数量），数据类型有线圈，寄存器等。
 	auto mdu = QModbusDataUnit(QModbusDataUnit::HoldingRegisters, 0x7, 5);
+	auto mdub = QModbusDataUnit(QModbusDataUnit::HoldingRegisters, 0x7, 5);
+	//获取界面上的电压流，需要乘1000，以便传输小数。
 	uint volt = ui.spinBoxVolt->text().toUInt() * 1000;
+	uint current = ui.spinBoxCurrent->text().toDouble() * 1000;
+	uint volt2 = ui.spinBoxVolt_2->text().toUInt() * 1000;
+	uint current2 = ui.spinBoxCurrent_2->text().toDouble() * 1000;
+	//数据要拆分成2字节+2字节，高位在前，低位在后
 	uint low8bit;
 	uint hight8bit;
 	uint low8bit2;
 	uint hight8bit2;
-	uint current = ui.spinBoxCurrent->text().toDouble()*1000;
+
+	uint low8bit_b;
+	uint hight8bit_b;
+	uint low8bit2_b;
+	uint hight8bit2_b;
+
+	//拆分，这里使用更Low的方法，更快的是: 低位：0xFF&volt，高位：0xFF&(volt>>16)
 	QString volt_hex = QString("%1").arg(volt, 8, 16, QLatin1Char('0'));
 	low8bit = volt_hex.right(4).toInt(nullptr, 16);
 	hight8bit = volt_hex.left(4).toInt(nullptr, 16);
 	QString currl_hex = QString("%1").arg(current, 8, 16, QLatin1Char('0'));
 	low8bit2 = currl_hex.right(4).toInt(nullptr, 16);
 	hight8bit2 = currl_hex.left(4).toInt(nullptr, 16);
+
+	QString volt_hex_b = QString("%1").arg(volt2, 8, 16, QLatin1Char('0'));
+	low8bit_b = volt_hex_b.right(4).toInt(nullptr, 16);
+	hight8bit_b = volt_hex_b.left(4).toInt(nullptr, 16);
+	QString currl_hex_b = QString("%1").arg(current2, 8, 16, QLatin1Char('0'));
+	low8bit2_b = currl_hex_b.right(4).toInt(nullptr, 16);
+	hight8bit2_b = currl_hex_b.left(4).toInt(nullptr, 16);
+
 	mdu.setValue(0, qint16(0));
 	mdu.setValue(1, qint16(0));
 	mdu.setValue(2, qint16(0));
 	mdu.setValue(3, qint16(0));
 	mdu.setValue(4, qint16(0x0000));
-	
-	moudBus->sendWriteMdu(mdu, 0x1);
+	if (0 == ui.cbSelectMachine->currentIndex())
+	{
+		QTime tt = QTime::currentTime().addMSecs(100);
+		moudBus->sendWriteMdu(mdu, 0x1);
+		while (QTime::currentTime() < tt)
+		{
+			QApplication::processEvents();
+		}
+		moudBus->sendWriteMdu(mdu, 0x2);
+
+	}
+	else if (1 == ui.cbSelectMachine->currentIndex())
+	{
+		moudBus->sendWriteMdu(mdu, 0x1);
+	}
+	else if (2 == ui.cbSelectMachine->currentIndex())
+	{
+		moudBus->sendWriteMdu(mdu, 0x2);
+	}
+		
 	mdu.setValue(0, qint16(hight8bit));
 	mdu.setValue(1, qint16(low8bit));
 	mdu.setValue(2, qint16(hight8bit2));
 	mdu.setValue(3, qint16(low8bit2));
 	mdu.setValue(4, qint16(0xFF00));
-	m_mdu = mdu;
-	timeSend->start(1500);
-}
 
+	mdub.setValue(0, qint16(hight8bit_b));
+	mdub.setValue(1, qint16(low8bit_b));
+	mdub.setValue(2, qint16(hight8bit2_b));
+	mdub.setValue(3, qint16(low8bit2_b));
+	mdub.setValue(4, qint16(0xFF00));
+	m_mdu = mdu;
+	m_mdu2 = mdub;
+	timeSend->start(500);
+}
+/*
+* @brief: timeSend定时器响应槽函数，这是为了防止过快发送，导致线路堵塞
+*/
 void QDeviceCtrl::on_delaySend()
 {
-	
-	moudBus->sendWriteMdu(m_mdu, 0x1);
+
+
+
+	if (0 == ui.cbSelectMachine->currentIndex())
+	{
+		QTime tt = QTime::currentTime().addMSecs(100);
+		moudBus->sendWriteMdu(m_mdu, 0x1);
+		while (QTime::currentTime() < tt)
+		{
+			QApplication::processEvents();
+		}
+		moudBus->sendWriteMdu(m_mdu2, 0x2);
+
+	}
+	else if (1 == ui.cbSelectMachine->currentIndex())
+	{
+		moudBus->sendWriteMdu(m_mdu, 0x1);
+	}
+	else if (2 == ui.cbSelectMachine->currentIndex())
+	{
+		moudBus->sendWriteMdu(m_mdu2, 0x2);
+	}
+	//moudBus->sendWriteMdu(m_mdu, 0x1);
 	timeSend->stop();
 }
 
@@ -591,18 +698,22 @@ void QDeviceCtrl::on_pbConnectRTU_clicked(bool isCheck)
 		if (ui.cbSerialPort->currentIndex() < 0)
 		{
 			QLOG_INFO() << "No Device!";
+			deviceState &= 0x6; //6为110
 			return;
 		}
 		QString serialName = ui.cbSerialPort->currentText();
 		bool b = moudBus->connectToDevice(serialName, ui.cbPaity->currentText().toInt(), ui.cbBudRate->currentText().toUInt(), ui.cbStopBit->currentText().toUInt(), ui.cbDataBit->currentText().toUInt());
 		if (!b)
 		{
+			deviceState &= 0x6; //6为110
 			QLOG_INFO() << "connect to  Device error!";
 			return;
 		}
+		deviceState |= 0x1; //
 	}
 	else
 	{
+		deviceState &= 0x6; //6为110
 		moudBus->disConnectDevice();
 	}
 	
@@ -650,26 +761,234 @@ void QDeviceCtrl::on_pbRefresh_clicked()
 		ui.cbSerialPort->addItem(moudBus->getSerialInfo().at(i).portName());
 	}
 }
+void QDeviceCtrl::onReceiveData(unsigned int fream_id, QByteArray data)
+{
+	if (5==fream_id)
+	{
+		
+		/*第一帧数据为：
+		  字节	定义
+			0	出口温度高字节
+			1	出口温度低字节
+			2	回口温度高字节
+			3	回口温度低字节
+			4	出口压力高字节
+			5	出口压力低字节
+			6	回口压力高字节
+			7	回口压力低字节
+		*/
+		float temp_o;
+		float temp_b;
 
+		//负数的传输方法是：原数据+0xFFFF
+		if ((uchar)data[0] > 0xF)
+		{
+			QString str = QString("%1%2").arg((uchar)data[0], 2, 16, QLatin1Char('0')).arg((uchar)data[1], 2, 16, QLatin1Char('0'));
+			int hex = 0xFFFF - str.toInt(nullptr, 16);
+			temp_o = -1*(hex / 10.0);
+		}
+		else
+		{
+			temp_o = ((float)(data[0]) * 16.0 * 16.0 + (float)(data[1])) / 10.0;		//冷水机出水温度,拼接高字节与低字节
+		}
+
+		if ((uchar)data[2] > 0xF)
+		{
+			QString str = QString("%1%2").arg((uchar)data[2], 2, 16, QLatin1Char('0')).arg((uchar)data[3], 2, 16, QLatin1Char('0'));
+			int hex = 0xFFFF - str.toInt(nullptr, 16);
+			temp_b = -1*(hex / 10.0);
+		}
+		else
+		{
+			temp_b = ((float)(data[2]) * 16.0 * 16.0 + (float)(data[3])) / 10.0;		//冷水机回水温度,拼接高字节与低字节
+		}
+		ui.label_dInTempture->setText(QString::number(temp_o, (char)103, 2)+ " °C");
+		ui.label_dOutTempture->setText(QString::number(temp_b, (char)103, 2)+" °C");
+	}
+	else if (6 == fream_id)
+	{
+		float temp_o = ((float)(data[0]) * 16.0 * 16.0 + (float)(data[1])) / 10.0;		//冷水机流量,拼接高字节与低字节
+		ui.label_dFollow->setText(QString::number(temp_o, (char)103, 2)+" L/min");
+	}
+	else if (7 == fream_id)
+	{
+		QString str=QString("%1%2").arg((uchar)data[0], 8, 2, QLatin1Char('0'));
+		int inCircle = str.mid(7, 1).toInt(nullptr, 2);
+		int outCircle = str.mid(6, 1).toInt(nullptr, 2);
+		int warm = str.mid(3, 1).toInt(nullptr, 2);
+		
+		QString inback = inCircle ? strGreen : strRed;
+		ui.label_inCircle->setStyleSheet(inback);
+
+		QString outback = outCircle ? strGreen : strRed;
+		ui.label_outCircle->setStyleSheet(outback);
+
+		QString warmback = warm ? strRed : strGreen;
+		ui.label_warm->setStyleSheet(warmback);
+
+	}
+}
+void QDeviceCtrl::on_pbStartInCricle_clicked(bool isCheck)
+{
+	uchar data[8];
+	memset(data, 0, 8 * sizeof(uchar));
+	bitInCircle = isCheck ? 1 : 0;
+	//第6个字节
+	uchar bOnorOff = bitInCircle + bitOutCircle;
+	data[6] = bOnorOff;
+	int temp = ui.lineEdit_inTemp->text().toInt();
+	int var = 0;
+	if (temp < 0)
+		var = 0xFFFF + temp * 10;
+	else
+		var = temp * 10;
+	uchar l8bit = 0xFF & var;
+	uchar h8bit = var >> 8;
+	data[1] = h8bit;
+	data[0] = l8bit;
+
+	int flow = ui.lineEdit_inFollow->text().toInt() * 10;
+	l8bit = 0xFF & flow;
+	h8bit = flow >> 8;
+	data[3] = h8bit;
+	data[2] = l8bit;
+	waterCan->SendFrame(0x1, data);
+}
+void QDeviceCtrl::on_pbStartOutCricle_clicked(bool isCheck)
+{
+	uchar data[8];
+	memset(data, 0, 8*sizeof(uchar));
+	//外循环开关在第6个字节的第1位（从0开始）
+	bitOutCircle = isCheck ? 2 : 0;
+	//第6个字节，第0位+第1位
+	uchar bOnorOff = bitInCircle + bitOutCircle;
+	data[6] = bOnorOff;
+	int temp = ui.lineEdit_inTemp->text().toInt();
+	int var = 0;
+
+	//若温度小于0，则用FFFF+温度
+	if (temp < 0)
+		var = 0xFFFF + temp * 10;	//要乘10，这样才能有小数
+	else
+		var = temp * 10;
+	//低8位
+	uchar l8bit = 0xFF & var;
+	//高8位
+	uchar h8bit = var >> 8;
+	data[1] = h8bit;
+	data[0] = l8bit;
+
+	int flow = ui.lineEdit_inFollow->text().toInt()*10;
+	l8bit = 0xFF & flow;
+	h8bit = flow >> 8;
+	data[3] = h8bit;
+	data[2] = l8bit;
+	waterCan->SendFrame(0x1, data);
+}
+void QDeviceCtrl::on_dOpenCan_clicked(bool isCheck)
+{
+	if (isCheck)
+	{
+		if (ui.dCanDevice->count() <= 0)
+			return;
+		int curindex = ui.dCanBundRate->currentIndex();
+		int bitRate = 250;
+		switch (curindex)
+		{
+		case 0:
+			bitRate = 200; break;
+		case 1:
+			bitRate = 250; break;
+		case 2:
+			bitRate = 500; break;
+		case 3:
+			bitRate = 800; break;
+		default:
+			bitRate = 250;
+			break;
+		}
+		bool b = waterCan->ConnectDevice(ui.dCanDevice->currentIndex(), bitRate);
+		
+		if (!b)
+		{
+			deviceState &= 0x5; //5为101
+			QMessageBox::warning(NULL, tr("错误"), tr("打开CAN失败,请检测设备是否被占用或者已经连接？"));
+			return;
+		}
+		deviceState |= 0x2;//2为 010
+		ui.dOpenCan->setText(tr("关闭"));
+		ui.dCanBundRate->setEnabled(false);
+		ui.dCanDevice->setEnabled(false);
+	}
+	else
+	{
+		deviceState &= 0x5; //5为101
+		waterCan->CloseCan();
+		ui.dOpenCan->setText(tr("打开"));
+		ui.dCanBundRate->setEnabled(true);
+		ui.dCanDevice->setEnabled(true);
+	}
+	/*pbSend->setEnabled(true);
+	pcanIsOpen = true;*/
+}
+void QDeviceCtrl::on_pbProcessSet_clicked()
+{
+	if (!qProcessB)
+	{
+		qProcessB = new QProcessBuild();
+	}
+	qProcessB->show();
+}
+/*
+* @brief：响应多线程发出的信号，读电压电流寄存器
+* @param：无
+* @return：void
+*/
 void QDeviceCtrl::on_sendMdu()
 {
 	if (!moudBus->connectState())
 		return;
 	auto mdu = QModbusDataUnit(QModbusDataUnit::HoldingRegisters, 0x0, 6);
-	QModbusDataUnit tmdu = moudBus->sendReadMdu(mdu, 0x1);
-	if (tmdu.registerType() != QModbusDataUnit::HoldingRegisters || tmdu.valueCount()<6)
+	if (0 == ui.cbSelectMachine->currentIndex() || 2 == ui.cbSelectMachine->currentIndex())
 	{
-		ui.label_Volt->setText("0 V");
-		ui.label_Current->setText("0 A");
-		ui.label_Power->setText("0 kW");
-		return;
+		QModbusDataUnit tmdu = moudBus->sendReadMdu(mdu, 0x1);
+		if (tmdu.registerType() != QModbusDataUnit::HoldingRegisters || tmdu.valueCount() < 6)
+		{
+			ui.label_Volt->setText("0 V");
+			ui.label_Current->setText("0 A");
+			ui.label_Power->setText("0 kW");
+			return;
+		}
+		float volt = (tmdu.value(0) * 65535.0 + tmdu.value(1)) / 1000.0;
+		float current = (tmdu.value(2) * 65535.0 + tmdu.value(3)) / 1000.0;
+		float powerState = (tmdu.value(4) * 65535.0 + tmdu.value(5)) / 1000.0;
+		ui.label_Volt->setText(QString::number(volt, 'f', 1) + "V");
+		ui.label_Current->setText(QString::number(current, 'f', 1) + "A");
+		ui.label_Power->setText(QString::number(powerState, 'f', 1) + "kW");
 	}
-	int volt = (tmdu.value(0) * 65535 + tmdu.value(1)) / 1000;
-	float current = (tmdu.value(2) * 65535 + tmdu.value(3)) / 1000.0;
-	float powerState = (tmdu.value(4) * 65535 + tmdu.value(5)) / 1000.0;
-	ui.label_Volt->setText(QString::number(volt)+" V");
-	ui.label_Current->setText(QString::number(current) + " A");
-	ui.label_Power->setText(QString::number(powerState)+" kW");
+	if (0 == ui.cbSelectMachine->currentIndex() || 2 == ui.cbSelectMachine->currentIndex())
+	{
+		QTime tt = QTime::currentTime().addMSecs(100);
+		while (QTime::currentTime() < tt)
+		{
+			QApplication::processEvents();
+		}
+		QModbusDataUnit tmdu = moudBus->sendReadMdu(mdu, 0x2);
+		if (tmdu.registerType() != QModbusDataUnit::HoldingRegisters || tmdu.valueCount() < 6)
+		{
+			ui.label_Volt_2->setText("0 V");
+			ui.label_Current_2->setText("0 A");
+			ui.label_Power_2->setText("0 kW");
+			return;
+		}
+		float volt = (tmdu.value(0) * 65535.0 + tmdu.value(1)) / 1000.0;
+		float current = (tmdu.value(2) * 65535.0 + tmdu.value(3)) / 1000.0;
+		float powerState = (tmdu.value(4) * 65535.0 + tmdu.value(5)) / 1000.0;
+		ui.label_Volt_2->setText(QString::number(volt, 'f', 1) + "V");
+		ui.label_Current_2->setText(QString::number(current, 'f', 1) + "A");
+		ui.label_Power_2->setText(QString::number(powerState, 'f', 1) + "kW");
+	}
+	
 		
 
 }
