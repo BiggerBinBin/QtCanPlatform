@@ -55,9 +55,9 @@ void QCanSetting::InitUi()
 {
 	QLOG_INFO() << "正在初始化设置界面……";
 	QStringList listname;
-	listname << "名称" << "协议";
+	listname << tr("名称") << tr("协议")<<tr("波特率")<<tr("周期ms");
 	QPushButton* pbAddModel = new QPushButton("添加型号");
-	pbAddModel->setFixedWidth(50);
+	pbAddModel->setFixedWidth(60);
 	connect(pbAddModel, &QPushButton::clicked, this, &QCanSetting::on_pbAddModel_clicked);
 	QPushButton* pbMoveUpModel = new QPushButton("上移");
 	pbMoveUpModel->setFixedWidth(40);
@@ -71,6 +71,10 @@ void QCanSetting::InitUi()
 	QPushButton* pbSaveModel = new QPushButton("保存");
 	pbSaveModel->setFixedWidth(40);
 	connect(pbSaveModel, &QPushButton::clicked, this, &QCanSetting::on_pbSaveModel_clicked);
+	QPushButton* pbCopy = new QPushButton("复制");
+	connect(pbCopy, &QPushButton::clicked, this, &QCanSetting::on_pbCopyModel_clicked);
+	pbCopy->setFixedWidth(40);
+
 	//pbSaveModel->setMinimumWidth(40);
 	QHBoxLayout* hLayoutMdeol = new QHBoxLayout();
 	hLayoutMdeol->addWidget(pbAddModel);
@@ -78,10 +82,11 @@ void QCanSetting::InitUi()
 	hLayoutMdeol->addWidget(pbMoveDownModel);
 	hLayoutMdeol->addWidget(pbDelModel);
 	hLayoutMdeol->addWidget(pbSaveModel);
+	hLayoutMdeol->addWidget(pbCopy);
 	hLayoutMdeol->addSpacerItem(new QSpacerItem(60, 20, QSizePolicy::Expanding));
 	hLayoutMdeol->setSpacing(0);
 	modelView = new QTableWidget();
-	modelView->setColumnCount(2);
+	modelView->setColumnCount(4);
 	modelView->setHorizontalHeaderLabels(listname);
 	modelView->setSelectionBehavior(QAbstractItemView::SelectRows);
 	modelView->setMinimumWidth(270);
@@ -105,7 +110,7 @@ void QCanSetting::InitUi()
 	connect(pbDelCanId, &QPushButton::clicked, this, &QCanSetting::on_pbDelCanId_clicked);
 	QPushButton* pbSaveCanId = new QPushButton("保存");
 	connect(pbSaveCanId, &QPushButton::clicked, this, &QCanSetting::on_pbSaveCanId_clicked);
-	pbAddCanId->setFixedWidth(50);
+	pbAddCanId->setFixedWidth(60);
 	pbMoveUpCanId->setFixedWidth(40);
 	pbMoveDownCanId->setFixedWidth(40);
 	pbDelCanId->setFixedWidth(40);
@@ -119,7 +124,7 @@ void QCanSetting::InitUi()
 	hLayoutCanId->addSpacerItem(new QSpacerItem(20, 20, QSizePolicy::Expanding));
 	hLayoutCanId->setSpacing(0);
 	canIdView = new QTableWidget();
-	canIdView->setColumnCount(3);
+	canIdView->setColumnCount(4);
 	canIdView->setHorizontalHeaderLabels(listname);
 	canIdView->setSelectionBehavior(QAbstractItemView::SelectRows);
 	canIdView->setMinimumWidth(350);
@@ -151,10 +156,10 @@ void QCanSetting::InitUi()
 	hLayout->setSpacing(0);
 	//hLayout->addSpacerItem(new QSpacerItem(20, 80, QSizePolicy::Expanding));
 	listname.clear();
-	listname << tr("字段名称") << tr("起止字节") << tr("起止位") << tr("长度") << tr("精度") << tr("偏移量")<<tr("属性")<<tr("滚动显示")<<tr("数据来源");
+	listname << tr("字段名称") << tr("起止字节") << tr("起止位") << tr("长度") << tr("精度") << tr("偏移量")<<tr("属性")<<tr("滚动显示")<<tr("数据来源")<<tr("16进制");
 	
 	tableView = new QTableWidget();
-	tableView->setColumnCount(9);
+	tableView->setColumnCount(10);
 	tableView->setHorizontalHeaderLabels(listname);
 	tableView->setSelectionBehavior(QAbstractItemView::SelectRows);
 	connect(tableView, SIGNAL(cellDoubleClicked(int, int)), this, SLOT(on_tableView_doubleCLicked(int, int)));
@@ -206,12 +211,23 @@ void QCanSetting::on_pbAddModel_clicked()
 	QComboBox* proto = new QComboBox();
 	proto->addItem(tr("Intel"));
 	proto->addItem(tr("Motorola"));
+	QComboBox* bundRa = new QComboBox();
+	bundRa->addItem("200kb/s");
+	bundRa->addItem("250kb/s");
+	bundRa->addItem("500kb/s");
+	bundRa->addItem("800kb/s");
+	bundRa->setCurrentIndex(1);
 	connect(proto, SIGNAL(currentIndexChanged(int)), this, SLOT(on_modelView_currentIndexChanged(int)));
+	connect(proto, SIGNAL(currentIndexChanged(int)), this, SLOT(on_modelView_bundIndexChanged(int)));
 	modelView->setItem(row, 0, new QTableWidgetItem(tr("型号")+QString::number(row)));
 	modelView->setCellWidget(row, 1, proto);
+	modelView->setCellWidget(row, 2, bundRa);
+	modelView->setItem(row, 3, new QTableWidgetItem("1000"));
 	struct protoData data;
 	data.modelName = tr("型号") + QString::number(row);
 	data.agreement = 0;
+	data.bundRate = 1;
+	data.circle = 1000;
 	qGboleData* qGb = qGboleData::getInstance();
 	if (!qGb)return;
 	qGb->pGboleData.push_back(data);
@@ -248,9 +264,34 @@ void QCanSetting::SetTableData()
 		QComboBox* proto = new QComboBox();
 		proto->addItem(tr("Intel"));
 		proto->addItem(tr("Motorola"));
+		QComboBox* bundRa = new QComboBox();
+		bundRa->addItem("200kb/s");
+		bundRa->addItem("250kb/s");
+		bundRa->addItem("500kb/s");
+		bundRa->addItem("800kb/s");
+		bundRa->setCurrentIndex(qGb->pGboleData.at(i).bundRate);
+		connect(bundRa, SIGNAL(currentIndexChanged(int)), this, SLOT(on_modelView_bundIndexChanged(int)));
 		connect(proto, SIGNAL(currentIndexChanged(int)), this, SLOT(on_modelView_currentIndexChanged(int)));
 		modelView->setItem(i, 0, new QTableWidgetItem(qGb->pGboleData.at(i).modelName));
 		modelView->setCellWidget(i, 1, proto);
+		modelView->setCellWidget(i, 2, bundRa);
+		uint circle = 1000;
+		if (qGb->pGboleData.at(i).circle < 50)
+		{
+			circle = 50;
+			qGb->pGboleData.at(i).circle = 50;
+		}	
+		else if (qGb->pGboleData.at(i).circle > 100000)
+		{
+			circle = 1000;
+			qGb->pGboleData.at(i).circle = 1000;
+		}
+		else
+		{
+			circle = qGb->pGboleData.at(i).circle;
+		}
+			
+		modelView->setItem(i, 3, new QTableWidgetItem(QString::number(circle)));
 		proto->setCurrentIndex(qGb->pGboleData.at(i).agreement);
 	}
 }
@@ -347,7 +388,17 @@ void QCanSetting::on_pbSaveModel_clicked()
 {
 	savepGboleData();
 }
-
+void QCanSetting::on_pbCopyModel_clicked()
+{
+	qGboleData* qGb = qGboleData::getInstance();
+	if (!qGb)return;
+	int curRow = modelView->currentRow();
+	if (curRow > qGb->pGboleData.size() - 1)
+		return;
+	protoData bb = qGb->pGboleData.at(curRow);
+	qGb->pGboleData.push_back(bb);
+	SetTableData();
+}
 void QCanSetting::on_pbAddCanId_clicked()
 {
 	qGboleData* qGb = qGboleData::getInstance();
@@ -533,6 +584,11 @@ void QCanSetting::on_pbAddIteam_clicked()
 	tableView->setCellWidget(row, 7, isRoll);
 	connect(isRoll, &QCheckBox::stateChanged, this, &QCanSetting::on_CheckStateChanged);
 	tableView->setItem(row, 8, new QTableWidgetItem("-1"));
+
+	QCheckBox* isHex = new QCheckBox();
+	tableView->setCellWidget(row, 9, isHex);
+	isHex->setChecked(true);
+	connect(isHex, &QCheckBox::stateChanged, this, &QCanSetting::on_isHexCheckStateChanged);
 	protoItem pItem;
 	pItem.bitName	= tableView->item(row, 0)->text();
 	pItem.startByte = tableView->item(row, 1)->text().toInt(NULL, 10);
@@ -543,6 +599,7 @@ void QCanSetting::on_pbAddIteam_clicked()
 	pItem.send = 0;
 	pItem.isRoll = false;
 	pItem.dataFrom = "-1";
+	pItem.octhex = false;
 	try
 	{
 		qGb->pGboleData.at(curSelectRow).cItem.at(curSelectCanRow).pItem.push_back(pItem);
@@ -770,16 +827,39 @@ void QCanSetting::on_modelView_currentIndexChanged(int index)
 	}
 	qGb->pGboleData.at(row).agreement = cbx->currentIndex();
 }
+void QCanSetting::on_modelView_bundIndexChanged(int index)
+{
+	qGboleData* qGb = qGboleData::getInstance();
+	if (!qGb)return;
+	//取出发出者的指针
+	QComboBox* cbx = qobject_cast<QComboBox*>(sender());
+	if (cbx == nullptr)
+		return;
+	//取按钮所在行列
+	QModelIndex idx = modelView->indexAt(QPoint(cbx->frameGeometry().x(), cbx->frameGeometry().y()));
+	int row = idx.row();
+	if (row<0 || row>qGb->pGboleData.size() - 1)
+	{
+		QMessageBox::warning(this, tr("警告"), tr("数据超出范围"));
+		return;
+	}
+	qGb->pGboleData.at(row).bundRate = cbx->currentIndex();
+}
 
 void QCanSetting::on_modelView_cellChanged(int row, int col)
 {
 	qGboleData* qGb = qGboleData::getInstance();
 	if (!qGb)return;
-	if (row<0 || row>qGb->pGboleData.size() - 1||col!=0)
+	if (row<0 || row>qGb->pGboleData.size() - 1)
 	{
 		return;
 	}
-	qGb->pGboleData.at(row).modelName = modelView->item(row,col)->text();
+	if(0==col)
+		qGb->pGboleData.at(row).modelName = modelView->item(row,col)->text();
+	else if (col == 3)
+	{
+		qGb->pGboleData.at(row).circle = modelView->item(row, col)->text().toInt();
+	}
 	//关掉这个，防止添加行setData的时候，触发这个信号
 	disconnect(modelView, SIGNAL(itemChanged(cellChanged(int, int))), this, SLOT(on_modelView_cellChanged(int, int)));
 }
@@ -831,6 +911,7 @@ void QCanSetting::on_modelView_Clicked(int row, int col)
 			isSend->setChecked(qGb->pGboleData.at(row).cItem.at(i).isSend);
 			canIdView->setCellWidget(i, 2, isSend);
 			connect(isSend, &QCheckBox::stateChanged, this, &QCanSetting::on_canIdView_SendChanged);
+
 		}
 	}
 	catch (const std::exception&e)
@@ -1003,6 +1084,10 @@ void QCanSetting::on_canIdView_Clicked(int row, int col)
 			//这个connect一定放在setCheckState(Qt::Checked);这个函数后面，不然一调用这个函数，就会触发信号
 			connect(isRoll, &QCheckBox::stateChanged, this, &QCanSetting::on_CheckStateChanged);
 			tableView->setItem(i, 8, new QTableWidgetItem(qGb->pGboleData.at(mRow).cItem.at(row).pItem.at(i).dataFrom));
+			QCheckBox* isHex = new QCheckBox();
+			tableView->setCellWidget(i, 9, isHex);
+			isHex->setChecked(qGb->pGboleData.at(mRow).cItem.at(row).pItem.at(i).octhex);
+			connect(isHex, &QCheckBox::stateChanged, this, &QCanSetting::on_isHexCheckStateChanged);
 		}
 	}
 	catch (const std::exception&e)
@@ -1186,6 +1271,53 @@ void QCanSetting::on_CheckStateChanged(int isCheck)
 		}
 		qGb->pGboleData.at(mCurRow).cItem.at(cCurRow).pItem.at(row).isRoll = isCheck==2?true:false;
 		
+	}
+	catch (const std::exception& e)
+	{
+		QMessageBox::warning(this, tr("warning"), QString(tr("Vector超出:") + e.what() + "Infunction:on_CheckStateChanged(int isCheck)"));
+		//return;
+	}
+}
+void QCanSetting::on_isHexCheckStateChanged(int isCheck)
+{
+	QCheckBox* pb = dynamic_cast<QCheckBox*>(sender());
+	if (!pb)
+		return;
+	if (!tableView)
+		return;
+	if (!canIdView)
+		return;
+	if (!modelView)
+		return;
+	QModelIndex inedx = tableView->indexAt(QPoint(pb->geometry().x(), pb->geometry().y()));
+	int row = inedx.row();
+	qGboleData* qGb = qGboleData::getInstance();
+	if (!qGb)return;
+
+	try
+	{
+		//判断第一层表格是否选中
+		int mCurRow = modelView->currentRow();
+		if (mCurRow<0 || mCurRow>qGb->pGboleData.size() - 1)
+		{
+			QMessageBox::warning(this, tr("warning"), QString(tr("未选中型号，不能修改")));
+			return;
+		}
+		//判断第二层表格是否选中
+		int cCurRow = canIdView->currentRow();
+		if (cCurRow<0 || cCurRow>qGb->pGboleData.at(mCurRow).cItem.size() - 1)
+		{
+			QMessageBox::warning(this, tr("warning"), QString(tr("未选中型号，不能修改")));
+			return;
+		}
+		//判断Button是否在第三层表格的数据范围内
+		if (row > qGb->pGboleData.at(mCurRow).cItem.at(cCurRow).pItem.size() - 1 || row < 0)
+		{
+			QMessageBox::warning(this, tr("warning"), QString(tr("字段vector超出范围：\nrow > pGboleData.at(mCurRow).cItem.at(cCurRow).pItem.size() - 1")));
+			return;
+		}
+		qGb->pGboleData.at(mCurRow).cItem.at(cCurRow).pItem.at(row).octhex = isCheck == 2 ? true : false;
+
 	}
 	catch (const std::exception& e)
 	{

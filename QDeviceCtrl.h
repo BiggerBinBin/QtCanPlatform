@@ -26,9 +26,9 @@ private:
 	//PLC 地址和端口号
 	QString ipAddress = "192.168.200.10";
 	uint16_t port = 1001;
-	bool bInState_One[7] = {false};
+	/*bool bInState_One[7] = {false};
 	bool bInState_Two[7] = { false };
-	bool bInState_Three[7] = { false };
+	bool bInState_Three[7] = { false };*/
 	QString bInName_One[7] = {"急停","复位","报警清除","启动","1#升降-上","1#升降-下","1#夹原位"};
 	QString bInName_Two[7] = {"2#升降-上","2#升降-下","2#夹原位","NONE","3#升降-上","3#升降-下","3#夹原位"};
 	QString bInName_Three[7] = {"1#夹按钮","2#夹按钮","3#夹按钮","光栅","1#确料光纤","2#确料光纤","3#确料光纤"};
@@ -47,6 +47,10 @@ private:
 	//冷水机外循环状态，0关闭，1开启
 	uint bitOutCircle = 0;
 
+	bool cbProcess1Check = false;
+	bool cbProcess2Check = false;
+	bool cbProcess3Check = false;
+
 	//连接状态,7代表3个设备都连接了，二进制：111
 	//PLC为bit[2],冷水机为bit[1]，高压电源为bit[0]
 	unsigned short int deviceState = 0;
@@ -58,9 +62,19 @@ private:
 	void getAnSetWaterRun();
 public:
 	unsigned short int getDeviceState() { return deviceState; }
+	bool getProcess1State();
+	bool getProcess2State();
+	bool getProcess3State();
+	void setWorkButton(int n);
+
+	bool bInState_One[7] = { false };
+	bool bInState_Two[7] = { false };
+	bool bInState_Three[7] = { false };
+	void closeSomething();
 signals:
 	void timeToSend(QString str,int num);
 	void sigArealdSend(QModbusDataUnit mdu);
+	void sigWorkRun(bool isCheck);
 public slots:
 
 	//1#工位
@@ -115,7 +129,12 @@ public slots:
 	void on_dOpenCan_clicked(bool isCheck);
 
 	//打开流程设置
-	void on_pbProcessSet_clicked();
+	void on_pbProcessSet_clicked(bool isCheck);
+
+	//工位的选择
+	void on_dCbProcess1_stateChanged(int state);
+	void on_dCbProcess2_stateChanged(int state);
+	void on_dCbProcess3_stateChanged(int state);
 	
 public slots:
 	void on_sendMdu();

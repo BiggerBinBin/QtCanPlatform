@@ -37,6 +37,8 @@
 #include "DataSave.h"
 #include "QDeviceCtrl.h"
 #include "kvaser.h"
+#include <QtConcurrent>
+#include <set>
 #pragma execution_character_set("utf-8")  
 class QtCanPlatform : public QMainWindow
 {
@@ -74,6 +76,9 @@ private:
     //control ui
     QDeviceCtrl* dCtrl = nullptr;
 
+    std::atomic_bool _bWork = false;
+    std::atomic_int _iSetp = 0;
+
     int currentModel = -1;
     bool sendDataIntoTab();
     bool recDataIntoTab();
@@ -101,6 +106,8 @@ private:
     void readSetFile();
     //配置
     void configSetFile();
+    //自动测试工作流程函数
+    void workRun();
 
 private:
     std::vector<canIdData>recCanData;
@@ -133,6 +140,7 @@ private:
     QStringListModel* titleModel = nullptr;
     std::vector<RollStruct>RollShowData;
     DataSave *saveData=nullptr;
+    DataSave* saveDataArr[4] = { nullptr };
     //单个通道时的保存变量
     QStringList strSaveList;
     //多通道时的数据结构
@@ -157,6 +165,14 @@ private:
     int tempture = -15;                 //进水口温度
     int rmFirstFream = 3;               //测功率时，到达指定条件后延迟帧数
     int agvPowerFream = 60;             //测功率时的平均帧数;
+    float realPower[4] = { 0 };
+    float realVolt[4] = { 0 };
+    float realWTemp[4] = { 0 };
+    QString realHvLv[4] = { ""};
+    std::vector<float>PowerArr;
+    std::set<QString>Error[4];
+
+    bool isRecordError = false;
 
    
 private slots:
@@ -178,13 +194,17 @@ private slots:
     void on_pbClearCanData_clicked();
     void on_checkSendChanged(int);
     void on_recTimeout();
+    void on_autoWork(bool isRun);
+    void on_recSigEndRunWork(int n);
 signals:
     void sigNewRoll();
     void sigNewRollMult(int ch);
+    void sigEndRunWork(int n);
 public:
     void initLogger();
     void destroyLogger();
 
 public slots:
     void logSlot(const QString& message, int level);
+    
 };

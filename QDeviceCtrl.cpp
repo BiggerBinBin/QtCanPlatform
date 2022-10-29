@@ -117,13 +117,31 @@ QDeviceCtrl::QDeviceCtrl(QWidget *parent)
 
 QDeviceCtrl::~QDeviceCtrl()
 {
+	closeSomething();
+}
+void QDeviceCtrl::closeSomething()
+{
 	bRun = false;
 	if (tcp)
 	{
-		if (tcp->state() == QAbstractSocket::ConnectedState)
-			tcp->disconnectFromHost();
-		//tcp->deleteLater();
+		tcp->disconnectFromHost();
+		delete tcp;
+		tcp = nullptr;
 	}
+	if (moudBus)
+	{
+		moudBus->disConnectDevice();
+		delete moudBus;
+		moudBus = nullptr;
+	}
+	if (waterCan)
+	{
+		waterCan->CloseCan();
+		delete waterCan;
+		waterCan = nullptr;
+	}
+	
+	
 }
 void QDeviceCtrl::on_pbGrasp_clicked(bool isClicked)
 {
@@ -483,11 +501,10 @@ void QDeviceCtrl::getPowerRun()
 	{
 		using namespace std::chrono_literals;
 		std::this_thread::sleep_for(500ms);
-
-		if (!moudBus)
-			continue;
 		if (!bRun)
 			return;
+		if (!moudBus)
+			continue;
 		if (!moudBus->connectState())
 			continue;
 		auto mdu = QModbusDataUnit(QModbusDataUnit::HoldingRegisters, 0x0, 6);
@@ -931,8 +948,10 @@ void QDeviceCtrl::on_dOpenCan_clicked(bool isCheck)
 	/*pbSend->setEnabled(true);
 	pcanIsOpen = true;*/
 }
-void QDeviceCtrl::on_pbProcessSet_clicked()
+void QDeviceCtrl::on_pbProcessSet_clicked(bool isCheck)
 {
+	emit sigWorkRun(isCheck);
+	return;
 	if (!qProcessB)
 	{
 		qProcessB = new QProcessBuild();
@@ -991,4 +1010,36 @@ void QDeviceCtrl::on_sendMdu()
 	
 		
 
+}
+void QDeviceCtrl::on_dCbProcess1_stateChanged(int state)
+{
+	cbProcess1Check = state == 2 ? true : false;
+}
+void QDeviceCtrl::on_dCbProcess2_stateChanged(int state)
+{
+	cbProcess2Check = state == 2 ? true : false;
+}
+void QDeviceCtrl::on_dCbProcess3_stateChanged(int state)
+{
+	cbProcess3Check = state == 2 ? true : false;
+}
+bool QDeviceCtrl::getProcess1State()
+{
+	return cbProcess1Check;
+}
+bool QDeviceCtrl::getProcess2State()
+{
+	return cbProcess2Check;
+}
+bool QDeviceCtrl::getProcess3State()
+{
+	return cbProcess3Check;
+}
+void QDeviceCtrl::setWorkButton(int n)
+{
+	if (0 == n)
+	{
+		ui.pbProcessSet->setChecked(false);
+		
+	}
 }

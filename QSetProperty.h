@@ -59,4 +59,5 @@ private slots:
 	void on_itemDoubleClicked(int,int);
 	//单元格修改后的槽函数
 	void on_table_cellChanged(int,int);
+	void on_check_clicked(int);
 };

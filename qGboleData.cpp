@@ -42,6 +42,8 @@ void qGboleData::save()
 		QJsonObject mItem;
 		mItem.insert("modelName", pGboleData.at(i).modelName);
 		mItem.insert("agreement", pGboleData.at(i).agreement);
+		mItem.insert("bundRate", pGboleData.at(i).bundRate);
+		mItem.insert("circle", pGboleData.at(i).circle);
 		QJsonObject cItemObj;
 		for (int j = 0; j < pGboleData.at(i).cItem.size(); j++)
 		{
@@ -62,6 +64,7 @@ void qGboleData::save()
 				pItem.append(pGboleData.at(i).cItem.at(j).pItem.at(k).offset);
 				pItem.append(pGboleData.at(i).cItem.at(j).pItem.at(k).isRoll);
 				pItem.append(pGboleData.at(i).cItem.at(j).pItem.at(k).dataFrom);
+				
 				//std::map<QString, cellProperty>& cpro = pGboleData.at(i).cItem.at(j).pItem.at(k).itemProperty;
 				std::vector<cellProperty>& sspro = pGboleData.at(i).cItem.at(j).pItem.at(k).stl_itemProperty;
 				//用来存储属性对象的
@@ -77,15 +80,18 @@ void qGboleData::save()
 					uint16_t red = sspro.at(v).r;
 					uint16_t green = sspro.at(v).g;
 					uint16_t blue = sspro.at(v).b;
+					bool isStand = sspro.at(v).isStand;
 					itemarr.append(QString::number(red));	//2
 					itemarr.append(QString::number(green));	//3
 					itemarr.append(QString::number(blue));	//4
+					itemarr.append(isStand);				//5
 					//把first当key，value是一个数组
 					cellPr.insert(QString::number(fIndex[v]), itemarr);
 					//ibegin++;
 				}
 				//把对象追加到数组后面，数据也能包含对象
 				pItem.append(cellPr);
+				pItem.append(pGboleData.at(i).cItem.at(j).pItem.at(k).octhex);
 				pDItem.insert(QString::number(fIndex[k]), pItem);
 			}
 			pItemObj.insert("pDItem", pDItem);
@@ -157,6 +163,8 @@ void qGboleData::read()
 		//把对象下面的几个值取出来
 		ptem.agreement = rootSecond["agreement"].toInt(0);
 		ptem.modelName = rootSecond["modelName"].toString();
+		ptem.bundRate = rootSecond["bundRate"].toInt(0);
+		ptem.circle = rootSecond["circle"].toInt(1000);
 		//如果还有嵌套对象
 		if (rootSecond["mDItem"].type() == QJsonValue::Object)
 		{
@@ -198,6 +206,7 @@ void qGboleData::read()
 						dtemp.offset = jarr[5].toInt();
 						dtemp.isRoll = jarr[6].toBool();
 						dtemp.dataFrom = jarr[7].toString();
+						dtemp.octhex = jarr[9].toBool();
 						dtemp.send = 0;
 						//这个数据结构，主要是用来根据返回的值，显示不同的颜色
 						if (jarr[8].isObject())
@@ -223,6 +232,7 @@ void qGboleData::read()
 									myCellP.b = sb.toInt();
 									myCellP.toWord = cpArr[1].toString();
 									myCellP.value = cpArr[0].toString();
+									myCellP.isStand = cpArr[5].toBool();
 									//dtemp.itemProperty.insert({ keyListFift.at(h),myCellP });
 									dtemp.stl_itemProperty.push_back(myCellP);
 								}

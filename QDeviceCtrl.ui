@@ -41,6 +41,48 @@
        <property name="text">
         <string>工作</string>
        </property>
+       <property name="checkable">
+        <bool>true</bool>
+       </property>
+      </widget>
+      <widget class="QCheckBox" name="dCbProcess1">
+       <property name="geometry">
+        <rect>
+         <x>120</x>
+         <y>10</y>
+         <width>51</width>
+         <height>19</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string>1#</string>
+       </property>
+      </widget>
+      <widget class="QCheckBox" name="dCbProcess2">
+       <property name="geometry">
+        <rect>
+         <x>170</x>
+         <y>10</y>
+         <width>51</width>
+         <height>19</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string>2#</string>
+       </property>
+      </widget>
+      <widget class="QCheckBox" name="dCbProcess3">
+       <property name="geometry">
+        <rect>
+         <x>220</x>
+         <y>10</y>
+         <width>51</width>
+         <height>19</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string>3#</string>
+       </property>
       </widget>
      </widget>
      <widget class="QWidget" name="tab_1">

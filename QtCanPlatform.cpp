@@ -21,6 +21,7 @@
 #include <QFile>
 #include <QSplitter>
 #include <qsettings.h>
+#include <WinBase.h>
 using namespace QsLogging;
 
 QString qmyss = "QComboBox{border: 1px solid gray;border-radius: 5px;padding:1px 2px 1px 2px;s}\
@@ -31,20 +32,23 @@ QtCanPlatform::QtCanPlatform(QWidget *parent)
     : QMainWindow(parent)
 {
     ui.setupUi(this);
-    
+    //防止休眠
+    SetThreadExecutionState(ES_CONTINUOUS | ES_DISPLAY_REQUIRED | ES_SYSTEM_REQUIRED);
     initLogger();
     this->setStyleSheet(qmyss);
     initUi();
     sendTimer = new QTimer();
     connect(sendTimer, &QTimer::timeout, this, &QtCanPlatform::sendData);
-    this->setWindowTitle(tr("PHU-CAN-APP V0.10.18"));
+    this->setWindowTitle(tr("PHU-CAN-APP V0.10.29"));
     this->showMaximized();
-   /* QLOG_INFO() << "中文世界";*/
+    connect(this, &QtCanPlatform::sigEndRunWork, this, &QtCanPlatform::on_recSigEndRunWork);
     readSetFile();
 }
 
 QtCanPlatform::~QtCanPlatform()
 {
+    //恢复休眠
+    SetThreadExecutionState(ES_CONTINUOUS);
     if (canSetting) { delete canSetting; canSetting = nullptr; }
     if (tableView) { delete tableView; tableView = nullptr; }
     if (textBrowser) { delete textBrowser; textBrowser = nullptr; }
@@ -83,6 +87,8 @@ void QtCanPlatform::closeEvent(QCloseEvent* event)
         pcan->CloseCan();
         QLOG_INFO() << "关闭CAN设备";
     }
+    if (dCtrl)
+        dCtrl->closeSomething();
     event->accept();
 }
 
@@ -93,6 +99,10 @@ void QtCanPlatform::initUi()
     //QLOG_INFO() << "初始化界面中……";
     //这个是显示内容的
     saveData = new DataSave(this);
+    for (int i = 0; i < 4; i++)
+    {
+        saveDataArr[i] = new DataSave(this);
+    }
     tableView = new QTableWidget();
     tableView->setColumnCount(8);
     QStringList header;
@@ -296,6 +306,7 @@ void QtCanPlatform::initUi()
     //bottom->setHandleWidth(2);
     QSplitter* bootomright = new QSplitter(Qt::Vertical, mainBottom);
     dCtrl = new QDeviceCtrl();
+    connect(dCtrl, &QDeviceCtrl::sigWorkRun, this, &QtCanPlatform::on_autoWork);
     bootomright->addWidget(dCtrl);
     bootomright->addWidget(textBrowser);
     bootomright->setStretchFactor(0, 1);
@@ -318,6 +329,7 @@ void QtCanPlatform::initData()
 }
 bool QtCanPlatform::sendDataIntoTab()
 {
+    
     sendCanData.clear();
     if (!tableView)
         return false;
@@ -331,9 +343,11 @@ bool QtCanPlatform::sendDataIntoTab()
         QMessageBox::warning(this, tr("warning"), tr("数据出错，当前型号不存在"));
         return false;
     }
+    
     const protoData pTemp = qGb->pGboleData.at(currentModel);
     //canIdData cTemp;
-   
+    cbBitRate->setCurrentIndex(pTemp.bundRate);
+    cycle->setText(QString::number(pTemp.circle));
     for (int i = 0; i < pTemp.cItem.size(); i++)
     {
         //取出操作为发送的信号
@@ -756,7 +770,7 @@ bool QtCanPlatform::intelProtocol(canIdData& cdata,uchar data[], unsigned int& f
         int startbyte = itemp.startByte;
         int startbit = itemp.startBit;
         int lengght = itemp.bitLeng;
-        int senddd = itemp.send;
+        int senddd = itemp.send * itemp.precision+itemp.offset;
         if (itemp.dataFrom == "CRC")
         {
             crcTemp = cdata.pItem.at(i);
@@ -795,7 +809,7 @@ bool QtCanPlatform::motoProtocol(canIdData& cdata,uchar data[], unsigned int& fr
         int startbyte = itemp.startByte;
         int startbit = itemp.startBit;
         int lengght = itemp.bitLeng;
-        int senddd = itemp.send;
+        int senddd = itemp.send * itemp.precision + itemp.offset;
         startbyte = YB::InRang(0, 7, startbyte);
         if (lengght <= 8)
         {
@@ -852,8 +866,9 @@ void QtCanPlatform::recAnalyseIntel(unsigned int fream_id,QByteArray data)
             int startLenght = recCanData.at(i).pItem.at(m).bitLeng;
             float precision = recCanData.at(i).pItem.at(m).precision;
             int offset = recCanData.at(i).pItem.at(m).offset;
+            bool octHex = recCanData.at(i).pItem.at(m).octhex;
             parseData pd;
-            int temp=0;
+            float temp=0;
             QString datafrom = recCanData.at(i).pItem.at(m).dataFrom;
            
             
@@ -879,11 +894,21 @@ void QtCanPlatform::recAnalyseIntel(unsigned int fream_id,QByteArray data)
                 {   //不跨字节，这个就比较简单了
                     //15 14 13 12 11 10 9 8   7 6 5 4 3 2 1 0
                     //^高位在前，低位在后
-                    temp = binaryStr[startByte].mid(8 - (startLenght + (startBit % 8)), startLenght).toInt(NULL, 2) * precision + offset;
+                    if (octHex)
+                    {
+                        int nn = binaryStr[startByte].mid(8 - (startLenght + (startBit % 8)), startLenght).toInt(NULL, 2);
+                        QString ss = QString("%1").arg(nn, 0, 16, QLatin1Char('0'));
+                        temp = ss .toInt() * precision + offset;
+                    }
+                    else
+                    {
+                        temp = binaryStr[startByte].mid(8 - (startLenght + (startBit % 8)), startLenght).toInt(NULL, 2) * precision + offset;
+                    }
+                    
                 }
                 else if (len <= 16)
                 {
-                    temp = (binaryStr[startByte + 1].mid(8 - (startLenght - (8 - startBit % 8)), startLenght - (8 - startBit % 8)) + binaryStr[startByte].mid(0, 8 - (startBit % 8))).toInt(NULL, 2);
+                    temp = (binaryStr[startByte + 1].mid(8 - (startLenght - (8 - startBit % 8)), startLenght - (8 - startBit % 8)) + binaryStr[startByte].mid(0, 8 - (startBit % 8))).toInt(NULL, 2) * precision + offset;
                 }
                 {
                     //跨三个字节的，应该没有
@@ -952,6 +977,21 @@ void QtCanPlatform::recAnalyseIntel(unsigned int fream_id,QByteArray data)
 
             }
             parseArr.push_back(pd);
+            if (pd.name == "功率" || pd.name == "功率kW")
+            {
+                
+                    realPower[0] = pd.value;
+            }
+            if (pd.name == "电压")
+            {
+                
+                    realVolt[0] = pd.value;
+            }
+            if (pd.name == "出口温度°C")
+            {
+                
+                    realWTemp[0] = pd.value;
+            }
         }
         //判断map里面是否已经存在有了
         if (YB::keyInMap(showTableD, QString::number(fream_id)))
@@ -1069,8 +1109,9 @@ void QtCanPlatform::recAnalyseMoto(unsigned int fream_id, QByteArray data)
             float precision = recCanData.at(i).pItem.at(m).precision;
             int offset = recCanData.at(i).pItem.at(m).offset;
             QString datafrom = recCanData.at(i).pItem.at(m).dataFrom;
+            bool octHex = recCanData.at(i).pItem.at(m).octhex;
             parseData pd;
-            int temp=0;
+            float temp=0;
             //判断是否跨字节，起止位模8，得出是当前字节的起止位，再加个长度
             if (datafrom != "-1")
             {
@@ -1091,11 +1132,33 @@ void QtCanPlatform::recAnalyseMoto(unsigned int fream_id, QByteArray data)
                 {   //不跨字节，这个就比较简单了
                     //15 14 13 12 11 10 9 8   7 6 5 4 3 2 1 0
                     //^高位在前，低位在后
-                    temp = binaryStr[startByte].mid(startBit % 8, startLenght).toInt(NULL, 2) * precision + offset;
+
+                    if (octHex)
+                    {
+                        int nn = binaryStr[startByte].mid(8 - (startLenght + (startBit % 8)), startLenght).toInt(NULL, 2);
+                        QString ss = QString("%1").arg(nn, 0, 16, QLatin1Char('0'));
+                        temp = ss.toInt() * precision + offset;
+                    }
+                    else
+                    {
+                        temp = binaryStr[startByte].mid(startBit % 8, startLenght).toInt(NULL, 2) * precision + offset;
+                    }
+                    
                 }
                 else if (len <= 16)
                 {
-                    temp = (binaryStr[startByte].mid(0, 8 - (startBit % 8)) + binaryStr[startByte + 1].mid(startBit % 8, startLenght - (8 - startBit % 8))).toInt(NULL, 2);
+
+                    if (octHex)
+                    {
+                        int nn = (binaryStr[startByte].mid(0, 8 - (startBit % 8)) + binaryStr[startByte + 1].mid(startBit % 8, startLenght - (8 - startBit % 8))).toInt(NULL, 2);
+                        QString ss = QString("%1").arg(nn, 0, 16, QLatin1Char('0'));
+                        temp = ss.toInt() * precision + offset;
+                    }
+                    else
+                    {
+                        temp = (binaryStr[startByte].mid(0, 8 - (startBit % 8)) + binaryStr[startByte + 1].mid(startBit % 8, startLenght - (8 - startBit % 8))).toInt(NULL, 2) * precision + offset;
+                    }
+                   
                 }
                 {
                     //跨三个字节的，应该没有
@@ -1104,7 +1167,7 @@ void QtCanPlatform::recAnalyseMoto(unsigned int fream_id, QByteArray data)
             
             pd.name = recCanData.at(i).pItem.at(m).bitName;
             pd.value = temp;
-            pd.toWord = QString::number(temp);
+            pd.toWord = QString::number(temp,'g',2);
             pd.color.r = 255;
             pd.color.g = 255;
             pd.color.b = 255;
@@ -1237,6 +1300,17 @@ void QtCanPlatform::recAnalyseMoto(unsigned int fream_id, QByteArray data)
 }
 void QtCanPlatform::recAnalyseIntel(int ch,unsigned int fream_id, QByteArray data)
 {
+
+    //非通用化判断
+    if (cbSelectModel->currentIndex() == 3)
+    {
+
+    }
+    else if (cbSelectModel->currentIndex() == 7)
+    {
+
+    }
+
     QStringList binaryStr;
     QString hex;
     for (int k = 0; k < data.size(); ++k)
@@ -1273,8 +1347,9 @@ void QtCanPlatform::recAnalyseIntel(int ch,unsigned int fream_id, QByteArray dat
             int startLenght = recCanData.at(i).pItem.at(m).bitLeng;
             float precision = recCanData.at(i).pItem.at(m).precision;
             int offset = recCanData.at(i).pItem.at(m).offset;
+            bool octHex = recCanData.at(i).pItem.at(m).octhex;
             parseData pd;
-            int temp = 0;
+            float temp = 0;
             QString datafrom = recCanData.at(i).pItem.at(m).dataFrom;
 
 
@@ -1300,24 +1375,47 @@ void QtCanPlatform::recAnalyseIntel(int ch,unsigned int fream_id, QByteArray dat
                 {   //不跨字节，这个就比较简单了
                     //15 14 13 12 11 10 9 8   7 6 5 4 3 2 1 0
                     //^高位在前，低位在后
-                    temp = binaryStr[startByte].mid(8 - (startLenght + (startBit % 8)), startLenght).toInt(NULL, 2) * precision + offset;
+
+                    if (octHex)
+                    {
+                        int nn = binaryStr[startByte].mid(8 - (startLenght + (startBit % 8)), startLenght).toInt(NULL, 2);
+                        QString ss  = QString("%1").arg(nn, 0, 16, QLatin1Char('0'));
+                        temp = ss.toInt() * precision + offset;
+                    }
+                    else
+                    {
+                        temp = binaryStr[startByte].mid(8 - (startLenght + (startBit % 8)), startLenght).toInt(NULL, 2) * precision + offset;
+                    }
+                    
+                
                 }
                 else if (len <= 16)
                 {
-                    temp = (binaryStr[startByte + 1].mid(8 - (startLenght - (8 - startBit % 8)), startLenght - (8 - startBit % 8)) + binaryStr[startByte].mid(0, 8 - (startBit % 8))).toInt(NULL, 2);
+                    if (octHex)
+                    {
+                        int nn = (binaryStr[startByte + 1].mid(8 - (startLenght - (8 - startBit % 8)), startLenght - (8 - startBit % 8)) + binaryStr[startByte].mid(0, 8 - (startBit % 8))).toInt(NULL, 2);
+                        QString ss = QString("%1").arg(nn, 0, 16, QLatin1Char('0'));
+                        temp = ss.toInt() * precision + offset;
+                    }
+                    else
+                    {
+                        temp = (binaryStr[startByte + 1].mid(8 - (startLenght - (8 - startBit % 8)), startLenght - (8 - startBit % 8)) + binaryStr[startByte].mid(0, 8 - (startBit % 8))).toInt(NULL, 2) * precision + offset;;
+                    }
+                    
                 }
                 {
                     //跨三个字节的，应该没有
                 }
             }
-
+            
             pd.name = recCanData.at(i).pItem.at(m).bitName;
             pd.value = temp;
-            pd.toWord = QString::number(temp);
+            pd.toWord = QString::number(temp,'g',2);
             pd.color.r = 255;
             pd.color.g = 255;
             pd.color.b = 255;
 
+            
             // std::map<QString, cellProperty>& tt = recCanData.at(i).pItem.at(m).itemProperty;
             std::vector<cellProperty>& ss = recCanData.at(i).pItem.at(m).stl_itemProperty;
 
@@ -1346,6 +1444,7 @@ void QtCanPlatform::recAnalyseIntel(int ch,unsigned int fream_id, QByteArray dat
             int count0 = 0;
             while (iB != iE)
             {
+                //数据由其它字段相乘得来，如功率 = byte[0]*byte[1]
                 int max = iB->f1 > iB->f2 ? iB->f1 : iB->f2;
                 if (m - 1 > max - 1)
                 {
@@ -1360,8 +1459,13 @@ void QtCanPlatform::recAnalyseIntel(int ch,unsigned int fream_id, QByteArray dat
                 }
                 iB++;
             }
+            int stdddd = 0;
             for (int i = 0; i < ss.size(); i++)
             {
+                if (ss.at(i).isStand)
+                {
+                    stdddd = ss.at(i).value.toInt();
+                }
                 if (ss.at(i).value.toInt() == temp)
                 {
                     pd.color.r = ss.at(i).r;
@@ -1372,7 +1476,27 @@ void QtCanPlatform::recAnalyseIntel(int ch,unsigned int fream_id, QByteArray dat
                 }
 
             }
+            
             parseArr.push_back(pd);
+            if (ss.size() > 0 && stdddd != temp && isRecordError)
+            {
+                Error[ch].insert(pd.toWord);
+            }
+            if (pd.name == "功率" || pd.name == "功率kW")
+            {
+                if(ch>=0&&ch<4)
+                    realPower[ch] = pd.value;
+            }
+            if (pd.name == "电压")
+            {
+                if (ch >= 0 && ch < 4)
+                    realVolt[ch] = pd.value;
+            }
+            if (pd.name == "出口温度°C")
+            {
+                if (ch >= 0 && ch < 4)
+                    realWTemp[ch]= pd.value;
+            }
         }
         //判断map里面是否已经存在有了
         if (YB::keyInMap(showTableD, QString::number(fream_id)))
@@ -1396,6 +1520,7 @@ void QtCanPlatform::recAnalyseIntel(int ch,unsigned int fream_id, QByteArray dat
     QString dTime = QDateTime::currentDateTime().toString("yyyy-MM-dd-hh-mm-ss-zzz");
     QDateTime dd = QDateTime::currentDateTime();
     uint curCount = tableRollDataArray[ch]->rowCount() + 1;
+
     QString dTemp = QString::number(curCount) + "," + dTime + ",";
 
     std::map<QString, std::vector<parseData>>::iterator iBegin = showTableD.begin();
@@ -1440,11 +1565,25 @@ void QtCanPlatform::recAnalyseIntel(int ch,unsigned int fream_id, QByteArray dat
     uint nn = (dd.toMSecsSinceEpoch() - lastTime.toMSecsSinceEpoch());
     lastTime = dd;
     
-    if (nn > 50)
+
+    //if (nn > 50)
     {
         if (YB::isExistKey(multReceData, ch))
         {
-            multReceData[ch].append(dTemp);
+            if (multReceData[ch].size() > 1)
+            {
+                QStringList ss = multReceData[ch].at(multReceData[ch].size() - 1).split(",");
+                QStringList ss2 = dTemp.split(",");
+                if (ss.at(0) != ss2.at(0))
+                {
+                    multReceData[ch].append(dTemp);
+                }
+            }
+            else
+            {
+                multReceData[ch].append(dTemp);
+            }
+           
         }
         else
         {
@@ -1504,9 +1643,10 @@ void QtCanPlatform::recAnalyseMoto(int ch,unsigned int fream_id, QByteArray data
             int startLenght = recCanData.at(i).pItem.at(m).bitLeng;
             float precision = recCanData.at(i).pItem.at(m).precision;
             int offset = recCanData.at(i).pItem.at(m).offset;
+            bool octHex = recCanData.at(i).pItem.at(m).octhex;
             QString datafrom = recCanData.at(i).pItem.at(m).dataFrom;
             parseData pd;
-            int temp = 0;
+            float temp = 0;
             //判断是否跨字节，起止位模8，得出是当前字节的起止位，再加个长度
             if (datafrom != "-1")
             {
@@ -1527,11 +1667,33 @@ void QtCanPlatform::recAnalyseMoto(int ch,unsigned int fream_id, QByteArray data
                 {   //不跨字节，这个就比较简单了
                     //15 14 13 12 11 10 9 8   7 6 5 4 3 2 1 0
                     //^高位在前，低位在后
-                    temp = binaryStr[startByte].mid(startBit % 8, startLenght).toInt(NULL, 2) * precision + offset;
+
+                    if (octHex)
+                    {
+                        int nn = binaryStr[startByte].mid(startBit % 8, startLenght).toInt(NULL, 2);
+                        QString ss = QString("%1").arg(nn, 0, 16, QLatin1Char('0'));
+                        temp = ss.toInt() * precision + offset;
+                        //temp = binaryStr[startByte].mid(startBit % 8, startLenght).toInt(NULL, 2) * precision + offset;
+                    }
+                    else
+                    {
+                        temp = binaryStr[startByte].mid(startBit % 8, startLenght).toInt(NULL, 2) * precision + offset;
+                    }
+                    
                 }
                 else if (len <= 16)
                 {
-                    temp = (binaryStr[startByte].mid(0, 8 - (startBit % 8)) + binaryStr[startByte + 1].mid(startBit % 8, startLenght - (8 - startBit % 8))).toInt(NULL, 2);
+                    if (octHex)
+                    {
+                        int nn = (binaryStr[startByte].mid(0, 8 - (startBit % 8)) + binaryStr[startByte + 1].mid(startBit % 8, startLenght - (8 - startBit % 8))).toInt(NULL, 2);
+                        QString ss = QString("%1").arg(nn, 0, 16, QLatin1Char('0'));
+                        temp = ss.toInt() * precision + offset;
+                    }
+                    else
+                    {
+                        temp = (binaryStr[startByte].mid(0, 8 - (startBit % 8)) + binaryStr[startByte + 1].mid(startBit % 8, startLenght - (8 - startBit % 8))).toInt(NULL, 2) * precision + offset;
+                    }
+                   
                 }
                 {
                     //跨三个字节的，应该没有
@@ -1540,7 +1702,7 @@ void QtCanPlatform::recAnalyseMoto(int ch,unsigned int fream_id, QByteArray data
 
             pd.name = recCanData.at(i).pItem.at(m).bitName;
             pd.value = temp;
-            pd.toWord = QString::number(temp);
+            pd.toWord = QString::number(temp,'g',2);
             pd.color.r = 255;
             pd.color.g = 255;
             pd.color.b = 255;
@@ -1601,6 +1763,21 @@ void QtCanPlatform::recAnalyseMoto(int ch,unsigned int fream_id, QByteArray data
 
             }
             parseArr.push_back(pd);
+            if (pd.name == "功率" || pd.name == "功率kW")
+            {
+                if (ch >= 0 && ch < 4)
+                    realPower[ch] = pd.value;
+            }
+            if (pd.name == "电压")
+            {
+                if (ch >= 0 && ch < 4)
+                    realVolt[ch] = pd.value;
+            }
+            if (pd.name == "出口温度°C")
+            {
+                if (ch >= 0 && ch < 4)
+                    realWTemp[ch] = pd.value;
+            }
         }
         //判断map里面是否已经存在有了
         if (YB::keyInMap(showTableD, QString::number(fream_id)))
@@ -1661,11 +1838,24 @@ void QtCanPlatform::recAnalyseMoto(int ch,unsigned int fream_id, QByteArray data
     dTemp.remove(dTemp.size() - 1, 1);
     uint nn = (dd.toMSecsSinceEpoch() - lastTime.toMSecsSinceEpoch());
     lastTime = dd;
-    if (nn > 50)
+    //if (nn > 50)
     {
         if (YB::isExistKey(multReceData, ch))
         {
-            multReceData[ch].append(dTemp);
+            if (multReceData[ch].size() > 1)
+            {
+                QStringList ss = multReceData[ch].at(multReceData[ch].size() - 1).split(",");
+                QStringList ss2 = dTemp.split(",");
+                if (ss.at(0) != ss2.at(0))
+                {
+                    multReceData[ch].append(dTemp);
+                }
+            }
+            else
+            {
+                multReceData[ch].append(dTemp);
+            }
+
         }
         else
         {
@@ -1904,8 +2094,8 @@ void QtCanPlatform::on_tableClicked(int row, int col)
         disconnect(tableView, SIGNAL(cellChanged(int, int)), this, SLOT(on_tableClicked(int, int)));
         return;
     }
-    QString sendId = tableView->item(row, 4)->text();
-    QString senddt = tableView->item(row, 2)->text();
+    QString sendId = tableView->item(row, 4)->text().trimmed();
+    QString senddt = tableView->item(row, 2)->text().trimmed();
     for (int i = 0; i < sendCanData.size(); i++)
     {
         //找出数据所在的型号
@@ -2182,11 +2372,13 @@ void QtCanPlatform::saveCanDataMult()
     }
     for (auto &x:multReceData)
     {
-        appPath += "通道"+QString::number(x.first+1)+"数据" + QDateTime::currentDateTime().toString("yyyy-MM-dd-hh-mm-ss-zzz") + ".xlsx";
+       QString savepath =  appPath + "通道"+QString::number(x.first+1)+"数据" + QDateTime::currentDateTime().toString("yyyy-MM-dd-hh-mm-ss-zzz") + ".xlsx";
         if (x.second.size() < 1)
             continue;
-        saveData->setTitle(excelTitle);
-        saveData->SaveData(x.second, x.second.size(), appPath);
+        saveDataArr[x.first]->setTitle(excelTitle);
+        saveDataArr[x.first]->SaveData(x.second, x.second.size(), savepath);
+        Sleep(60);
+        x.second.clear();
     }
     on_pbClearCanData_clicked();
 }
@@ -2209,7 +2401,7 @@ void QtCanPlatform::on_pbSaveCanData_clicked()
 void QtCanPlatform::on_pbClearCanData_clicked()
 {
     strSaveList.clear();
-    multReceData.clear();
+    //multReceData.clear();
     for (int k = 0; k < 4; k++)
     {
         int rcount = tableRollDataArray[k]->rowCount();
@@ -2327,4 +2519,152 @@ void QtCanPlatform::configSetFile()
     setf->setValue("shortIndex", shortIndex);
     setf->setValue("rmFirstFream", rmFirstFream);
     setf->setValue("agvPowerFream", agvPowerFream);
+}
+void QtCanPlatform::on_autoWork(bool isRun)
+{
+    if (isRun)
+    {
+        QMessageBox tip(QMessageBox::Warning, "tips", tr("请确认已经打开了设备"), QMessageBox::Yes | QMessageBox::No);
+        int ret = tip.exec();
+        if (ret != QMessageBox::Yes)
+            return;
+        _bWork = true;
+        QtConcurrent::run(this, &QtCanPlatform::workRun);
+    }
+    else
+    {
+        _bWork = false;
+        on_pbSend_clicked(false);
+        pbSend->setChecked(false);
+    }
+        //workRun();
+}
+void QtCanPlatform::on_recSigEndRunWork(int n)
+{
+    if (n == 0)
+    {
+        QLOG_INFO() << "Process Ending";
+        _bWork = false;
+        dCtrl->setWorkButton(0);
+    }
+    else
+    {
+        if (1 == n)
+        {
+            QMessageBox tip2(QMessageBox::Warning, "tips", tr("1#工位产品未放到出水孔里,请放好再重新开始"));
+            tip2.exec();
+            dCtrl->setWorkButton(0);
+
+            on_autoWork(false);
+        }
+        else if (2 == n)
+        {
+            QMessageBox tip2(QMessageBox::Warning, "tips", tr("2#工位产品未放到出水孔里,请放好再重新开始"));
+            tip2.exec();
+            dCtrl->setWorkButton(0);
+            on_autoWork(false);
+        }
+        else if (3 == n)
+        {
+            QMessageBox tip2(QMessageBox::Warning, "tips", tr("3#工位产品未放到出水孔里,请放好再重新开始"));
+            tip2.exec();
+            dCtrl->setWorkButton(0);
+            on_autoWork(false);
+        }
+        else if (4 == n)
+        {
+            QMessageBox tip2(QMessageBox::Warning, "tips", tr("未勾选工位，请至少选择一个工位"));
+            tip2.exec();
+            dCtrl->setWorkButton(0);
+            on_autoWork(false);
+
+        }
+        else if (5 == n)
+        {
+            on_pbSend_clicked(true);
+            pbSend->setChecked(true);
+        }
+    }
+}
+void QtCanPlatform::workRun()
+{
+    
+    if (!dCtrl)
+    {
+        QLOG_INFO() << "dCtrl is Nullptr";
+        return;
+    }
+    
+    //if(dCtrl->ge)
+    //1 判断哪个工位要测试
+    //2 打开相应的IO
+    //3 开冷水机，上高压电
+    //4 使能
+    if (!_bWork)
+    {
+        QLOG_INFO() << "_bWork is false";
+        return;
+    }
+    
+    bool b1 = dCtrl->getProcess1State();
+    bool b2 = dCtrl->getProcess2State();
+    bool b3 = dCtrl->getProcess3State();
+    if (!(b1 || b2 || b3))
+    {
+        emit sigEndRunWork(4);
+        return;
+    }
+    if (b1)
+    {
+        if (!dCtrl->bInState_One[5])
+        {
+            emit sigEndRunWork(1);
+            return;
+        }
+        dCtrl->on_pbCover_clicked(true);
+        dCtrl->on_pbColdWater_clicked(true);
+    }
+    if (b2)
+    {
+        if (!dCtrl->bInState_Two[1])
+        {
+            emit sigEndRunWork(2);
+            return;
+        }
+        dCtrl->on_pbCover_2_clicked(true);
+        dCtrl->on_pbColdWater_2_clicked(true);
+    }
+    if (b3)
+    {
+        if (!dCtrl->bInState_Two[5])
+        {
+            emit sigEndRunWork(2);
+            return;
+        }
+        dCtrl->on_pbCover_3_clicked(true);
+        dCtrl->on_pbColdWater_3_clicked(true);
+    }
+    emit sigEndRunWork(5);
+    Sleep(3000);
+    
+    //打开冷水机
+    emit sigEndRunWork(10);
+    //打开高压电源
+    emit sigEndRunWork(15);
+    
+    while (_bWork)
+    {
+        //等待温度
+        Sleep(100);
+    }
+
+    if (currentModel == 3)
+    {
+
+    }
+    else if (currentModel == 8)
+    {
+
+    }
+
 }

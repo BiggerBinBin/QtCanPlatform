@@ -12,6 +12,11 @@ public:
 	~DataSave();
 	void SaveData(QStringList list, int rows, QString path);
 	bool setTitle(QString title);
+	void writeExcelFast(QString fileName, QList<QList<QVariant>>& x_y);
+	void castListListVariant2Variant(QList<QList<QVariant>>& cells, QVariant& res);
+	void convert2ColName(int data, QString& res);
+	QString to26AlphabetString(int data);
+	QList<QList<QVariant>> paraString(QStringList list);
 protected:
 	void run();
 private:

@@ -8,6 +8,7 @@
 #include <QMessageBox>
 #include "AlgorithmSet.h"
 #include "QsLog.h"
+#include <QCheckBox>
 QSetProperty::QSetProperty(QWidget *parent)
 	: QWidget(parent)
 {
@@ -87,6 +88,13 @@ void QSetProperty::setIntoMap(std::vector<cellProperty>* cp)
 		pbColor->setStyleSheet(rgba);
 		connect(pbColor, SIGNAL(clicked()), this, SLOT(getColor()));
 		table->setCellWidget(rows, 2, pbColor);
+		QCheckBox* qcb = new QCheckBox();
+		if (stl_mcp->at(i).isStand)
+			qcb->setChecked(true);
+		else
+			qcb->setChecked(false);
+		table->setCellWidget(rows, 3, qcb);
+		connect(qcb, &QCheckBox::stateChanged, this, &QSetProperty::on_check_clicked);
 	}
 }
 
@@ -121,8 +129,8 @@ void QSetProperty::InitUI()
 	table = new QTableWidget(this);
 	connect(table, SIGNAL(cellDoubleClicked(int, int)), this, SLOT(on_itemDoubleClicked(int, int)));
 	QStringList header;
-	header << tr("值") << tr("代表名称") << tr("显示颜色");
-	table->setColumnCount(3);
+	header << tr("值") << tr("代表名称") << tr("显示颜色")<<tr("参考值");
+	table->setColumnCount(4);
 	table->setHorizontalHeaderLabels(header);
 	table->setSelectionBehavior(QAbstractItemView::SelectRows);
 	QLabel* tips = new QLabel(tr("设置此字段返回的值对应显示的名称,以前它显示的颜色"));
@@ -155,6 +163,10 @@ void QSetProperty::on_pbAddItem_clicked()
 	QPushButton* pbColor = new QPushButton(tr("背景色"));
 	connect(pbColor, SIGNAL(clicked()), this, SLOT(getColor()));
 	table->setCellWidget(rows, 2, pbColor);
+	QCheckBox* qcbStand = new QCheckBox();
+	qcbStand->setChecked(false);
+	table->setCellWidget(rows, 3, qcbStand);
+	connect(qcbStand, &QCheckBox::stateChanged, this, &QSetProperty::on_check_clicked);
 	if (!stl_mcp)
 	{
 		QMessageBox::warning(NULL, tr("提示"), tr("数据指针未初始化，该数据不会保存"));
@@ -166,6 +178,7 @@ void QSetProperty::on_pbAddItem_clicked()
 	cp.b = 240;
 	cp.toWord = "正常";
 	cp.value = QString::number(rows);
+	cp.isStand = false;
 	//插入
 	stl_mcp->push_back(cp);
 	//mcp->insert({ QString::number(rows), cp });
@@ -261,4 +274,38 @@ void QSetProperty::getColor()
 	/*(*mcp)[QString::number(row)].r = color.red();
 	(*mcp)[QString::number(row)].g = color.green();
 	(*mcp)[QString::number(row)].b = color.blue();*/
+}
+void QSetProperty::on_check_clicked(int check)
+{
+	if (!stl_mcp)
+		return;
+	QCheckBox* send = dynamic_cast<QCheckBox*>(sender());
+	if (!send)
+		return;
+	QModelIndex index = table->indexAt(QPoint(send->geometry().x(), send->geometry().y()));
+	int row = index.row();
+	if (row > stl_mcp->size() - 1)
+		return;
+	if (check == 2)
+	{
+		for (int m = 0; m < stl_mcp->size(); m++)
+		{
+			stl_mcp->at(m).isStand = false;
+			
+			QCheckBox *cb= dynamic_cast<QCheckBox*>(table->cellWidget(m, 3));
+			if (!cb)
+				continue;
+			disconnect(cb, &QCheckBox::stateChanged, this, &QSetProperty::on_check_clicked);
+			if(m==row)
+				cb->setChecked(true);
+			else
+				cb->setChecked(false);
+			connect(cb, &QCheckBox::stateChanged, this, &QSetProperty::on_check_clicked);
+		}
+		stl_mcp->at(row).isStand = true;
+	}
+	else
+	{
+		stl_mcp->at(row).isStand = false;
+	}
 }
