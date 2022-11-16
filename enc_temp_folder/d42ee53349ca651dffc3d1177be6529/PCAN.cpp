@@ -7,10 +7,7 @@ PCAN::PCAN(QObject *parent)
 }
 
 PCAN::~PCAN()
-{
-    isOpen = false;
-    isReceive = false;
-}
+{}
 
 QStringList PCAN::DetectDevice()
 {
@@ -43,10 +40,8 @@ bool PCAN::ConnectDevice(int usb_index, int bitrate)
     connectflag = m_canDevice->connectDevice();
     if (!connectflag) {
         qDebug() << "Connection failed!";
-        isOpen = false;
         return false;
     }
-    isOpen = true;
     isReceive = true;
     this->start();
     return true;
@@ -104,7 +99,6 @@ void PCAN::SendFrame(int FrameID, uchar Data[])
 }
 void PCAN::CloseCan()
 {
-    isOpen = false;
     isReceive = false;
     if (isRunning()) {
         m_canDevice->disconnectDevice();
@@ -120,5 +114,4 @@ void PCAN::run()
         Receive();
         msleep(50);
     }
-
 }

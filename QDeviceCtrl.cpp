@@ -94,7 +94,7 @@ QDeviceCtrl::QDeviceCtrl(QWidget *parent)
 	timeSend = new QTimer();
 	connect(timeSend, &QTimer::timeout, this, &QDeviceCtrl::on_delaySend);
 	qRegisterMetaType<QModbusDataUnit>("QModbusDataUnit");
-	connect(this, &QDeviceCtrl::sigArealdSend, this, &QDeviceCtrl::on_sendMdu);
+	//connect(this, &QDeviceCtrl::sigArealdSend, this, &QDeviceCtrl::on_sendMdu);
 	timeGetPower = new  QTimer();
 	connect(timeGetPower, &QTimer::timeout, this, &QDeviceCtrl::on_sendMdu);
 
@@ -603,6 +603,12 @@ void QDeviceCtrl::on_timeToSend(QString str,int num)
 */
 void QDeviceCtrl::on_pbSetVoltAndCurr_clicked()
 {
+	timeGetPower->stop();
+	QTime ttt = QTime::currentTime().addMSecs(1200);
+	while (QTime::currentTime() < ttt)
+	{
+		QApplication::processEvents();
+	}
 	//初始化（数据类型，起止地址，数量），数据类型有线圈，寄存器等。
 	auto mdu = QModbusDataUnit(QModbusDataUnit::HoldingRegisters, 0x7, 5);
 	auto mdub = QModbusDataUnit(QModbusDataUnit::HoldingRegisters, 0x7, 5);
@@ -630,6 +636,9 @@ void QDeviceCtrl::on_pbSetVoltAndCurr_clicked()
 	low8bit2 = currl_hex.right(4).toInt(nullptr, 16);
 	hight8bit2 = currl_hex.left(4).toInt(nullptr, 16);
 
+	low8bit2 = 0;
+	hight8bit2 = 0;
+
 	QString volt_hex_b = QString("%1").arg(volt2, 8, 16, QLatin1Char('0'));
 	low8bit_b = volt_hex_b.right(4).toInt(nullptr, 16);
 	hight8bit_b = volt_hex_b.left(4).toInt(nullptr, 16);
@@ -637,12 +646,14 @@ void QDeviceCtrl::on_pbSetVoltAndCurr_clicked()
 	low8bit2_b = currl_hex_b.right(4).toInt(nullptr, 16);
 	hight8bit2_b = currl_hex_b.left(4).toInt(nullptr, 16);
 
-	mdu.setValue(0, qint16(0));
+	low8bit2_b = 0;
+	hight8bit2_b = 0;
+	/*mdu.setValue(0, qint16(0));
 	mdu.setValue(1, qint16(0));
 	mdu.setValue(2, qint16(0));
 	mdu.setValue(3, qint16(0));
-	mdu.setValue(4, qint16(0x0000));
-	if (0 == ui.cbSelectMachine->currentIndex())
+	mdu.setValue(4, qint16(0x0000));*/
+	/*if (0 == ui.cbSelectMachine->currentIndex())
 	{
 		QTime tt = QTime::currentTime().addMSecs(100);
 		moudBus->sendWriteMdu(mdu, 0x1);
@@ -660,7 +671,7 @@ void QDeviceCtrl::on_pbSetVoltAndCurr_clicked()
 	else if (2 == ui.cbSelectMachine->currentIndex())
 	{
 		moudBus->sendWriteMdu(mdu, 0x2);
-	}
+	}*/
 		
 	mdu.setValue(0, qint16(hight8bit));
 	mdu.setValue(1, qint16(low8bit));
@@ -675,7 +686,8 @@ void QDeviceCtrl::on_pbSetVoltAndCurr_clicked()
 	mdub.setValue(4, qint16(0xFF00));
 	m_mdu = mdu;
 	m_mdu2 = mdub;
-	timeSend->start(500);
+	//timeSend->start(500);
+	on_delaySend();
 }
 /*
 * @brief: timeSend定时器响应槽函数，这是为了防止过快发送，导致线路堵塞
@@ -687,7 +699,7 @@ void QDeviceCtrl::on_delaySend()
 
 	if (0 == ui.cbSelectMachine->currentIndex())
 	{
-		QTime tt = QTime::currentTime().addMSecs(100);
+		QTime tt = QTime::currentTime().addMSecs(200);
 		moudBus->sendWriteMdu(m_mdu, 0x1);
 		while (QTime::currentTime() < tt)
 		{
@@ -706,6 +718,7 @@ void QDeviceCtrl::on_delaySend()
 	}
 	//moudBus->sendWriteMdu(m_mdu, 0x1);
 	timeSend->stop();
+	timeGetPower->start(1000);
 }
 
 void QDeviceCtrl::on_pbConnectRTU_clicked(bool isCheck)
@@ -726,10 +739,12 @@ void QDeviceCtrl::on_pbConnectRTU_clicked(bool isCheck)
 			QLOG_INFO() << "connect to  Device error!";
 			return;
 		}
+		timeGetPower->start(1000);
 		deviceState |= 0x1; //
 	}
 	else
 	{
+		timeGetPower->stop();
 		deviceState &= 0x6; //6为110
 		moudBus->disConnectDevice();
 	}
@@ -773,6 +788,7 @@ void QDeviceCtrl::on_pbOffVolt_clicked()
 
 void QDeviceCtrl::on_pbRefresh_clicked()
 {
+	ui.cbSerialPort->clear();
 	for (int i = 0; i < moudBus->getSerialInfo().size(); i++)
 	{
 		ui.cbSerialPort->addItem(moudBus->getSerialInfo().at(i).portName());
@@ -968,7 +984,7 @@ void QDeviceCtrl::on_sendMdu()
 	if (!moudBus->connectState())
 		return;
 	auto mdu = QModbusDataUnit(QModbusDataUnit::HoldingRegisters, 0x0, 6);
-	if (0 == ui.cbSelectMachine->currentIndex() || 2 == ui.cbSelectMachine->currentIndex())
+	if (0 == ui.cbSelectMachine->currentIndex() || 1 == ui.cbSelectMachine->currentIndex())
 	{
 		QModbusDataUnit tmdu = moudBus->sendReadMdu(mdu, 0x1);
 		if (tmdu.registerType() != QModbusDataUnit::HoldingRegisters || tmdu.valueCount() < 6)
@@ -976,9 +992,11 @@ void QDeviceCtrl::on_sendMdu()
 			ui.label_Volt->setText("0 V");
 			ui.label_Current->setText("0 A");
 			ui.label_Power->setText("0 kW");
+			reamHV_1 = 0.0;
 			return;
 		}
 		float volt = (tmdu.value(0) * 65535.0 + tmdu.value(1)) / 1000.0;
+		reamHV_1 = volt;
 		float current = (tmdu.value(2) * 65535.0 + tmdu.value(3)) / 1000.0;
 		float powerState = (tmdu.value(4) * 65535.0 + tmdu.value(5)) / 1000.0;
 		ui.label_Volt->setText(QString::number(volt, 'f', 1) + "V");
@@ -998,9 +1016,11 @@ void QDeviceCtrl::on_sendMdu()
 			ui.label_Volt_2->setText("0 V");
 			ui.label_Current_2->setText("0 A");
 			ui.label_Power_2->setText("0 kW");
+			reamHV_2 = 0.0;
 			return;
 		}
 		float volt = (tmdu.value(0) * 65535.0 + tmdu.value(1)) / 1000.0;
+		reamHV_2 = volt;
 		float current = (tmdu.value(2) * 65535.0 + tmdu.value(3)) / 1000.0;
 		float powerState = (tmdu.value(4) * 65535.0 + tmdu.value(5)) / 1000.0;
 		ui.label_Volt_2->setText(QString::number(volt, 'f', 1) + "V");
@@ -1023,6 +1043,14 @@ void QDeviceCtrl::on_dCbProcess3_stateChanged(int state)
 {
 	cbProcess3Check = state == 2 ? true : false;
 }
+void QDeviceCtrl::on_linedSetp_editingFinished()
+{
+	int  setp = ui.linedSetp->text().toInt();
+	if (setp < 1)
+		setp = 1;
+	ui.spinBoxVolt->setSingleStep(setp);
+	ui.spinBoxVolt_2->setSingleStep(setp);
+}
 bool QDeviceCtrl::getProcess1State()
 {
 	return cbProcess1Check;
@@ -1042,4 +1070,16 @@ void QDeviceCtrl::setWorkButton(int n)
 		ui.pbProcessSet->setChecked(false);
 		
 	}
+}
+void QDeviceCtrl::setHV_1(int hv, float current)
+{
+	ui.spinBoxVolt->setValue(hv);
+	ui.spinBoxCurrent->setValue(current);
+	on_pbSetVoltAndCurr_clicked();
+}
+void QDeviceCtrl::setHV_2(int hv, float current)
+{
+	ui.spinBoxVolt_2->setValue(hv);
+	ui.spinBoxCurrent_2->setValue(current);
+	on_pbSetVoltAndCurr_clicked();
 }

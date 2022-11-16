@@ -153,12 +153,6 @@ void QtCanPlatform::initUi()
     cbCanType->addItem(tr("选择PCAN"));
     cbCanType->addItem(tr("选择Kvaser"));
     cbPcan = new QComboBox();
-   
-    for (int i = 0; i < 4; i++)
-    {
-        pcanArr[i] = new PCAN(this);
-        connect(pcanArr[i], SIGNAL(getProtocolData(quint32, QByteArray)), this, SLOT(on_ReceiveDataMulti(quint32, QByteArray)));
-    }
     kcan = new kvaser();
     connect(kcan, SIGNAL(getProtocolData(int, quint32, QByteArray)), this, SLOT(on_ReceiveData(int, quint32, QByteArray)));
     pcan = new PCAN(this);

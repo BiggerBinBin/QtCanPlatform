@@ -214,6 +214,7 @@ void kvaser::canSendAll(uint fream_id, uchar data[])
         if(kHandle[i]<0)
             continue;
         canStatus sta =  canWrite(kHandle[i],fream_id,data,8,canMSG_EXT);
+        msleep(2);
         if(sta!=canOK)
         {
             qDebug()<<"Channel "<<i<<" send failure";
@@ -232,9 +233,10 @@ void kvaser::run()
         unsigned int dlc;
         unsigned int flag;
         unsigned long time = 0;
-        QByteArray data;
+        
         for(int k=0;k<chanCount;++k)
         {
+            QByteArray data;
             if(kHandle[k]<0)
                 continue;
             status = canRead(kHandle[k],&id,&msg,&dlc,&flag,&time);
@@ -248,7 +250,7 @@ void kvaser::run()
                 emit getProtocolData(k,id,data);
             }
         }
-        msleep(2);
+        msleep(5);
 
     }
 }

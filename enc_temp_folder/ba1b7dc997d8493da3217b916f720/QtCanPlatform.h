@@ -117,7 +117,6 @@ private:
     std::vector<canIdData>sendCanData;
     //pcan设备指针
     PCAN *pcan = nullptr;
-    PCAN *pcanArr[4] = { nullptr };
     //kvaser设备指针
     kvaser* kcan = nullptr;
     //保存kcan的打开状态
@@ -208,7 +207,6 @@ private slots:
     void on_tableClicked(int, int);
     //CAN 数据接收
     void on_ReceiveData(uint frame_id, QByteArray data);
-    void on_ReceiveDataMulti(uint frame_id, QByteArray data);
     void on_ReceiveData(int ch,uint frame_id, QByteArray data);
     //CAN协议设置的窗口关闭响应，用来刷新设置的数据
     void on_SettingWidowsClose();

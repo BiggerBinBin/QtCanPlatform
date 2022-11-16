@@ -42,10 +42,8 @@ public:
     QCanBusDevice* m_canDevice = nullptr;
     const QString plugin = "peakcan";
     QString errorString;
-    bool IsOpen() { return isOpen; };
 private:
     void run();
-    bool isOpen = false;
 signals:
     void getProtocolData(uint frame_id, QByteArray data);
 };

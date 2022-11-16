@@ -51,6 +51,9 @@ private:
 	bool cbProcess2Check = false;
 	bool cbProcess3Check = false;
 
+	float reamHV_1 = 0;
+	float reamHV_2 = 0;
+
 	//连接状态,7代表3个设备都连接了，二进制：111
 	//PLC为bit[2],冷水机为bit[1]，高压电源为bit[0]
 	unsigned short int deviceState = 0;
@@ -65,7 +68,12 @@ public:
 	bool getProcess1State();
 	bool getProcess2State();
 	bool getProcess3State();
+	float getHV_1() { return reamHV_1; }
+	float getHV_2() { return reamHV_2; }
 	void setWorkButton(int n);
+
+	void setHV_1(int hv, float current);
+	void setHV_2(int hv, float current);
 
 	bool bInState_One[7] = { false };
 	bool bInState_Two[7] = { false };
@@ -135,6 +143,8 @@ public slots:
 	void on_dCbProcess1_stateChanged(int state);
 	void on_dCbProcess2_stateChanged(int state);
 	void on_dCbProcess3_stateChanged(int state);
+
+	void on_linedSetp_editingFinished();
 	
 public slots:
 	void on_sendMdu();
