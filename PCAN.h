@@ -34,6 +34,7 @@ public:
 	~PCAN();
     QStringList DetectDevice();
     bool ConnectDevice(int usb_index, int bitrate);
+    bool ConnectDevice(QString usb_name, int bitrate);
     void Receive();
     void SendFrame(int FrameID, uchar Data[]);
     void CloseCan();

@@ -315,7 +315,7 @@ void QCanSetting::on_pbMoveUpModel_clicked()
 	modelView->setCellWidget(curRow - 1, 1, cb);
 	//删除原来行，因为在它前面新增了一行，所以序号要变
 	modelView->removeRow(curRow + 1);
-
+	modelView->setCurrentCell(curRow - 1, 0);
 	qGboleData* qGb = qGboleData::getInstance();
 	if (!qGb)return;
 	if (curRow > qGb->pGboleData.size() - 1)
@@ -343,7 +343,7 @@ void QCanSetting::on_pbMoveDownModel_clicked()
 	modelView->setItem(curRow + 2, 0, new QTableWidgetItem(idtex));
 	modelView->setCellWidget(curRow + 2, 1, cb);
 	modelView->removeRow(curRow);
-
+	modelView->setCurrentCell(curRow + 2, 0);
 	qGboleData* qGb = qGboleData::getInstance();
 	if (!qGb)return;
 	if (curRow > qGb->pGboleData.size())

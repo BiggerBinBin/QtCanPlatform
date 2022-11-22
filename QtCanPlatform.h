@@ -39,6 +39,7 @@
 #include "kvaser.h"
 #include <QtConcurrent>
 #include <set>
+#include <QProgressDialog.h>
 #pragma execution_character_set("utf-8")  
 class QtCanPlatform : public QMainWindow
 {
@@ -68,6 +69,7 @@ private:
     QTabWidget* tabRollBox = nullptr;
     QTextBrowser* textBrowser=nullptr;
     QCanSetting* canSetting = nullptr;
+    QProgressDialog* progress = nullptr;
     //显示接收到的数据的tab界面
     QTabWidget* tabRecBox = nullptr;
     //容器，放4个QTableWidget
@@ -128,6 +130,7 @@ private:
     QComboBox* cbPcan = nullptr;
     //can类型选择
     QComboBox* cbCanType = nullptr;
+    QComboBox* cbIsMutil = nullptr;
     QPushButton* pbOpen = nullptr;
     QLineEdit* cycle = nullptr;
     QComboBox* cbBitRate = nullptr;
@@ -136,6 +139,7 @@ private:
     QLabel* communicaLabel = nullptr;
     QTimer* sendTimer = nullptr;
     QTimer* lostQTimer = nullptr;
+    QTimer* lostQTimerArr[4] = { nullptr };
     bool pcanIsOpen = false;
     int maxTextBrowser = 0;
     bool isTrace = false;
@@ -190,6 +194,11 @@ private:
     QLabel labelVer4;
     //博世获取版本号命令
     uchar data_ver[8] = { 0x06,0x20,0x22,0x10,0x24,0x09,0x24,0x06 };
+
+    //存储自动化测试结果
+    QString phuRes_1 = "";
+    QString phuRes_2 = "";
+    QString phuRes_3 = "";
    
 private slots:
     //CAN协议设置
@@ -227,6 +236,7 @@ private slots:
     void on_checkSendChanged(int);
     //接收超时函数
     void on_recTimeout();
+    void on_recTimeoutMutil();
     //自动化工作
     void on_autoWork(bool isRun);
     //自动化工作线程发出的信号的接收函数
@@ -235,6 +245,8 @@ private slots:
     void on_lineEdit_editingFinished();
     //获取版本号（博世专用）
     void on_pbGetVer_clicked(bool);
+
+    void on_pbClearLogShow_clicked();
 signals:
     void sigNewRoll();
     void sigNewRollMult(int ch);

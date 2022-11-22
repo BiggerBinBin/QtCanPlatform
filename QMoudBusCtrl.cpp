@@ -106,6 +106,8 @@ QModbusDataUnit QMoudBusCtrl::sendReadMdu(QModbusDataUnit mdu, uint serverAdd)
 			QEventLoop loop;
 			connect(reply, &QModbusReply::finished, &loop, &QEventLoop::quit);
 			loop.exec();
+			if (!modbusDevice)
+				return QModbusDataUnit();
 		}
 		isEndSend = true;
 

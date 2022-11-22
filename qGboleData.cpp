@@ -195,7 +195,7 @@ void qGboleData::read()
 							continue;
 						//∂‘”¶ struct protoItem
 						QJsonArray jarr = rootfift[keyListFour.at(k)].toArray();
-						if (jarr.size() < 8)
+						if (jarr.size() < 9)
 							continue;
 						protoItem dtemp;
 						dtemp.bitName = jarr[0].toString();

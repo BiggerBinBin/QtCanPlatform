@@ -1,5 +1,5 @@
 #include "PCAN.h"
-
+#include "QsLog.h"
 PCAN::PCAN(QObject *parent)
 	: QThread(parent)
 {
@@ -39,11 +39,57 @@ bool PCAN::ConnectDevice(int usb_index, int bitrate)
     bitrate = bitrate * 1000;
     bool connectflag = false;
     m_canDevice = QCanBus::instance()->createDevice(plugin, m_interfaces.at(usb_index).name(), &errorString);
+    if (!m_canDevice)
+    {
+        QLOG_WARN() << "Connection failed: usb_index-"<< usb_index;
+        QLOG_WARN() << "Err: "<< errorString;
+        isOpen = false;
+        return false;
+    }
     m_canDevice->setConfigurationParameter(QCanBusDevice::BitRateKey, QVariant(bitrate));
     connectflag = m_canDevice->connectDevice();
     if (!connectflag) {
-        qDebug() << "Connection failed!";
+        QLOG_WARN() << "Connection failed: usb_index-" << usb_index;
+        QLOG_WARN() << "Err: " << errorString;
         isOpen = false;
+        return false;
+    }
+    isOpen = true;
+    isReceive = true;
+    this->start();
+    return true;
+}
+bool PCAN::ConnectDevice(QString usb_name, int bitrate)
+{
+    if (m_interfaces.empty())
+        return false;
+    bitrate = bitrate * 1000;
+    bool connectflag = false;
+    try
+    {
+        m_canDevice = QCanBus::instance()->createDevice(plugin, usb_name, &errorString);
+        if (!m_canDevice)
+        {
+            QLOG_WARN() << "Connection failed: " << usb_name;
+            QLOG_WARN() << "Err: " << errorString;
+            isOpen = false;
+            return false;
+        }
+        m_canDevice->setConfigurationParameter(QCanBusDevice::BitRateKey, QVariant(bitrate));
+        connectflag = m_canDevice->connectDevice();
+        if (!connectflag) {
+            QLOG_WARN() << "Connection failed: " << usb_name;
+            QLOG_WARN() << "Err: " << errorString;
+            isOpen = false;
+            return false;
+        }
+    }
+    catch (const std::exception& e)
+    {
+        QLOG_WARN() << "Connection failed: " << usb_name;
+        QLOG_WARN() << "Err: " << e.what();
+        isOpen = false;
+        isReceive = false;
         return false;
     }
     isOpen = true;

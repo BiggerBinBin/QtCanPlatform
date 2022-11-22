@@ -39,12 +39,13 @@ QtCanPlatform::QtCanPlatform(QWidget *parent)
     initUi();
     sendTimer = new QTimer();
     connect(sendTimer, &QTimer::timeout, this, &QtCanPlatform::sendData);
-    this->setWindowTitle(tr("PHU-CAN-APP V0.11.11"));
+    this->setWindowTitle(tr("PHU-CAN-APP V1.0.11"));
     this->showMaximized();
     connect(this, &QtCanPlatform::sigEndRunWork, this, &QtCanPlatform::on_recSigEndRunWork);
     readSetFile();
     //博世的获取版本定时器
     t_GetVer = new QTimer(this);
+
 }
 
 QtCanPlatform::~QtCanPlatform()
@@ -58,6 +59,10 @@ QtCanPlatform::~QtCanPlatform()
     if (pcan) {
         delete pcan; 
         pcan = nullptr;
+    }
+    for (int i = 0; i < 4; i++)
+    {
+        if (pcanArr[i]) { delete pcanArr[i]; pcanArr[i] = nullptr; }
     }
     if (kcan)
     {
@@ -84,6 +89,10 @@ QtCanPlatform::~QtCanPlatform()
         delete t_GetVer;
         t_GetVer = nullptr;
     }
+    if (progress)
+    {
+        delete progress; progress = nullptr;
+    }
     destroyLogger();   //释放
 }
 
@@ -93,6 +102,10 @@ void QtCanPlatform::closeEvent(QCloseEvent* event)
     {
         pcan->CloseCan();
         QLOG_INFO() << "关闭CAN设备";
+    }
+    for (int i = 0; i < 4; i++)
+    {
+        if (pcanArr[i]) { pcanArr[i]->CloseCan(); }
     }
     if (dCtrl)
         dCtrl->closeSomething();
@@ -122,6 +135,8 @@ void QtCanPlatform::initUi()
     connect(tableView, SIGNAL(cellDoubleClicked(int, int)), this, SLOT(on_tableDoubleClicked(int, int)));
     textBrowser = new QTextBrowser();
     textBrowser->setMinimumWidth(100);
+    QPushButton* pbClearText = new QPushButton(this);
+    connect(pbClearText, &QPushButton::clicked, this, &QtCanPlatform::on_pbClearLogShow_clicked);
     //textBrowser->setMaximumWidth(300);
     initData();
     cbSelectModel = new QComboBox();
@@ -156,14 +171,18 @@ void QtCanPlatform::initUi()
    
     for (int i = 0; i < 4; i++)
     {
+        lostQTimerArr[i] = new QTimer(this);
         pcanArr[i] = new PCAN(this);
+        pcanArr[i]->DetectDevice();
         connect(pcanArr[i], SIGNAL(getProtocolData(quint32, QByteArray)), this, SLOT(on_ReceiveDataMulti(quint32, QByteArray)));
+        connect(lostQTimerArr[i], &QTimer::timeout, this, &QtCanPlatform::on_recTimeoutMutil);
     }
     kcan = new kvaser();
     connect(kcan, SIGNAL(getProtocolData(int, quint32, QByteArray)), this, SLOT(on_ReceiveData(int, quint32, QByteArray)));
     pcan = new PCAN(this);
     connect(pcan, SIGNAL(getProtocolData(quint32, QByteArray)), this, SLOT(on_ReceiveData(quint32, QByteArray)));
-    QStringList canStr = pcan->DetectDevice();
+    pcan->DetectDevice();
+    QStringList canStr = pcanArr[0]->DetectDevice();
     for (int i = 0; i < canStr.size(); ++i)
     {
         cbPcan->addItem(canStr.at(i));
@@ -182,6 +201,10 @@ void QtCanPlatform::initUi()
     cycle = new QLineEdit("1000");
     cycle->setValidator(new QIntValidator(0, 9999999, this));
     cycle->setFixedWidth(60);
+    cbIsMutil = new QComboBox();
+    cbIsMutil->addItem(tr("打开单个"));
+    cbIsMutil->addItem(tr("打开全部"));
+    cbIsMutil->setCurrentIndex(0);
     pbOpen = new QPushButton(tr("打开设备"));
     connect(pbOpen, SIGNAL(clicked()), this, SLOT(on_pbOpenPcan_clicked()));
     QLabel* cstate = new QLabel(tr(" 通信状态："));
@@ -198,6 +221,7 @@ void QtCanPlatform::initUi()
     hLayout->addWidget(cbBitRate);
     hLayout->addWidget(Period);
     hLayout->addWidget(cycle);
+    hLayout->addWidget(cbIsMutil);
     hLayout->addWidget(pbOpen);
     hLayout->addWidget(cstate);
     hLayout->addWidget(communicaLabel);
@@ -242,6 +266,8 @@ void QtCanPlatform::initUi()
         tabRecBox->addTab(w[i], tr("通道") + QString::number(i+1));
         tabRecBox->widget(i)->setLayout(vLayoutTable);
 
+       
+
         QVBoxLayout* vLayoutTable2 = new QVBoxLayout();
         w_rolling[i] =  new QTableWidget(this);
         tableRollDataArray[i]= new QTableWidget(this);
@@ -255,6 +281,7 @@ void QtCanPlatform::initUi()
         vLayoutTable2->addWidget(tableRollDataArray[i]);
         tabRollBox->addTab(w_rolling[i], tr("通道") + QString::number(i + 1));
         tabRollBox->widget(i)->setLayout(vLayoutTable2);
+        
     }
    
     
@@ -332,15 +359,30 @@ void QtCanPlatform::initUi()
     QSplitter* bootomright = new QSplitter(Qt::Vertical, mainBottom);
     dCtrl = new QDeviceCtrl();
     connect(dCtrl, &QDeviceCtrl::sigWorkRun, this, &QtCanPlatform::on_autoWork);
+    connect(dCtrl, &QDeviceCtrl::sigCanChanged, this, &QtCanPlatform::on_pbRefreshDevice_clicked);
+
+    QHBoxLayout* clay = new QHBoxLayout(this);
+    clay->addWidget(pbClearText);
+    clay->addSpacerItem(new QSpacerItem(20, 10));
+    QWidget* ctx = new QWidget(this);
+    ctx->setLayout(clay);
+    pbClearText->setText(tr("清除日志"));
+    pbClearText->setFixedWidth(80);
     bootomright->addWidget(dCtrl);
+    bootomright->addWidget(ctx);
     bootomright->addWidget(textBrowser);
-    bootomright->setStretchFactor(0, 1);
-    bootomright->setStretchFactor(1, 3);
+    bootomright->setStretchFactor(0, 2);
+    bootomright->setStretchFactor(1, 1);
+    bootomright->setStretchFactor(2, 6);
+    
     mainBottom->setStretchFactor(0, 7);
     mainBottom->setStretchFactor(1, 1);
     QGridLayout* gg = new QGridLayout();
     gg->addWidget(mainQSpli);
     ui.centralWidget->setLayout(gg);
+
+    
+
 }
 
 void QtCanPlatform::initData()
@@ -778,8 +820,19 @@ void QtCanPlatform::sendData()
             QString strId = "0x"+QString("%1").arg(fream_id, 8, 16, QLatin1Char('0')).toUpper();
             QLOG_INFO() << "Tx:" << strId << "  " << hex;
         }
-        if(cbCanType->currentIndex()==0)
-            pcan->SendFrame(fream_id, s_Data);
+        if (cbCanType->currentIndex() == 0)
+        {
+            if(cbIsMutil->currentIndex()==0)
+                pcan->SendFrame(fream_id, s_Data);
+            else
+            {
+                for(int i=0;i<4;i++)
+                    if(pcanArr[i]->IsOpen())
+                       pcanArr[i]->SendFrame(fream_id, s_Data);
+            }
+            
+        }
+            
         else if (cbCanType->currentIndex() == 1)
         {
             kcan->canSendAll(fream_id, s_Data);
@@ -1402,16 +1455,6 @@ void QtCanPlatform::recAnalyseMoto(unsigned int fream_id, QByteArray data)
 void QtCanPlatform::recAnalyseIntel(int ch,unsigned int fream_id, QByteArray data)
 {
 
-    //非通用化判断
-    if (cbSelectModel->currentIndex() == 3)
-    {
-
-    }
-    else if (cbSelectModel->currentIndex() == 7)
-    {
-
-    }
-
     QStringList binaryStr;
     QString hex;
     for (int k = 0; k < data.size(); ++k)
@@ -2031,6 +2074,10 @@ void QtCanPlatform::on_pbSend_clicked(bool clicked)
             lostQTimer = new QTimer();
             connect(lostQTimer, SIGNAL(timeout()), this, SLOT(on_recTimeout()));
         }
+        for (int i = 0; i < 4; i++)
+        {
+            lostQTimerArr[i]->start(lostTimeOut);
+        }
         lostQTimer->start(lostTimeOut);
         pbSend->setStyleSheet("background-color:#00FF00");
     }
@@ -2054,7 +2101,11 @@ void QtCanPlatform::on_pbRefreshDevice_clicked()
     cbPcan->clear();
     if (cbCanType->currentIndex() == 0)
     {
-        QStringList canStr = pcan->DetectDevice();
+        pcan->DetectDevice();
+        pcanArr[0]->DetectDevice();
+        pcanArr[1]->DetectDevice();
+        pcanArr[2]->DetectDevice();
+        QStringList canStr = pcanArr[3]->DetectDevice();
         for (int i = 0; i < canStr.size(); ++i)
         {
             cbPcan->addItem(canStr.at(i));
@@ -2077,11 +2128,14 @@ void QtCanPlatform::on_pbOpenPcan_clicked()
         if (pcanIsOpen)
         {
             pcan->CloseCan();
+            for (int i = 0; i < 4 && i < cbPcan->count(); i++)
+                pcanArr[i]->CloseCan();
             pbOpen->setText(tr("打开设备"));
             cbBitRate->setEnabled(true);
             cbPcan->setEnabled(true);
             pbSend->setChecked(false);
             pbSend->setEnabled(false);
+            pbSend->setStyleSheet("");
             pcanIsOpen = false;
             sendTimer->stop();
         }
@@ -2106,7 +2160,22 @@ void QtCanPlatform::on_pbOpenPcan_clicked()
                 bitRate = 250;
                 break;
             }
-            bool b = pcan->ConnectDevice(cbPcan->currentIndex(), bitRate);
+            bool b = false;;
+            if (1 == cbIsMutil->currentIndex())
+            {
+                for (int i = 0; i < 4 && i < cbPcan->count(); i++)
+                       b |= pcanArr[i]->ConnectDevice(pcanArr[i]->m_interfaces.at(i).name(), bitRate);
+            }
+            else if (0 == cbIsMutil->currentIndex())
+            {
+                b = pcan->ConnectDevice(cbPcan->currentText(), bitRate);
+               
+            }
+            tabRollBox->tabBar()->setTabIcon(0, QApplication::style()->standardIcon((QStyle::StandardPixmap)31));
+            tabRollBox->tabBar()->setTabIcon(1, QApplication::style()->standardIcon((QStyle::StandardPixmap)31));
+            tabRollBox->tabBar()->setTabIcon(2, QApplication::style()->standardIcon((QStyle::StandardPixmap)31));
+            tabRollBox->tabBar()->setTabIcon(3, QApplication::style()->standardIcon((QStyle::StandardPixmap)31));
+             // = pcan->ConnectDevice(cbPcan->currentIndex(), bitRate);
             if (!b)
             {
                 QMessageBox::warning(NULL, tr("错误"), tr("打开CAN失败,请检测设备是否被占用或者已经连接？"));
@@ -2130,6 +2199,7 @@ void QtCanPlatform::on_pbOpenPcan_clicked()
             cbPcan->setEnabled(true);
             pbSend->setChecked(false);
             pbSend->setEnabled(false);
+            pbSend->setStyleSheet("");
             pcanIsOpen = false;
             sendTimer->stop();
         }
@@ -2175,7 +2245,9 @@ void QtCanPlatform::on_pbOpenPcan_clicked()
             pcanIsOpen = true;
         }
     }
-   
+    if (dCtrl) {
+        dCtrl->on_dCanRefresh_clicked();
+   }
     
 }
 /*
@@ -2288,8 +2360,28 @@ void QtCanPlatform::on_ReceiveData(uint fream_id, QByteArray data)
         recAnalyseMoto(fream_id, data);
     }
 }
+void QtCanPlatform::on_ReceiveDataMulti(uint fream_id, QByteArray data)
+{
+    PCAN* _pcan = dynamic_cast<PCAN*>(sender());
+    if (!_pcan)return;
+    for (int i = 0; i < 4; i++)
+        if (pcanArr[i] != nullptr && pcanArr[i] == _pcan)
+        {
+            on_ReceiveData(i, fream_id, data);
+            tabRollBox->tabBar()->setTabIcon(i, QApplication::style()->standardIcon((QStyle::StandardPixmap)31));
+            tabRecBox->tabBar()->setTabIcon(i, QApplication::style()->standardIcon((QStyle::StandardPixmap)31));
+            lostQTimerArr[i]->start(3000);
+        }
+            
+}
 void QtCanPlatform::on_ReceiveData(const int ch, uint fream_id, QByteArray data)
 {
+    if (1 == cbCanType->currentIndex())
+    {
+        tabRollBox->tabBar()->setTabIcon(ch, QApplication::style()->standardIcon((QStyle::StandardPixmap)31));
+        tabRecBox->tabBar()->setTabIcon(ch, QApplication::style()->standardIcon((QStyle::StandardPixmap)31));
+        lostQTimerArr[ch]->start(3000);
+    }
     QStringList binaryStr;
     QString hex;
     for (int k = 0; k < data.size(); ++k)
@@ -2394,6 +2486,11 @@ void QtCanPlatform::on_cbSelectSendItemChanged(int index)
     
     }
 }
+/*
+* @brief: 用来处理在“发送表格”前面的启用发送checkbox，勾选上了，则会发送，没勾选则不会发送
+* @param : int check，若大于0，则选中，此项所有的ID组所有位都会发送，否则不会
+* @return: void
+*/
 void QtCanPlatform::on_checkSendChanged(int check)
 {
     QCheckBox* cb = dynamic_cast<QCheckBox*>(sender());
@@ -2402,11 +2499,13 @@ void QtCanPlatform::on_checkSendChanged(int check)
         QLOG_INFO() << "当前的QComboBox sender 无效";
         return;
     }
+    //获取CheckBox所在行
     QModelIndex cbIndex = tableView->indexAt(QPoint(cb->geometry().x(), cb->geometry().y()));
     int cbRow = cbIndex.row();
     int cbCol = cbIndex.column();
     unsigned int cbInId = tableView->item(cbRow, 4)->text().toUInt(NULL, 16);
     bool b = check > 0 ? true : false;
+    //设置发送项的标志，如果此项为false，则在定时发送时忽略当前项
     for (int k = 0; k < sendCanData.size(); k++)
     {
         if (sendCanData.at(k).strCanId.toUInt(NULL, 16) != cbInId)
@@ -2415,6 +2514,7 @@ void QtCanPlatform::on_checkSendChanged(int check)
         break;
     }
     int tbRowCount = tableView->rowCount();
+    //设置整组的Checkbox
     for (int m = 0; m < tbRowCount; m++)
     {
         unsigned int cbInId2 = tableView->item(m, 4)->text().toUInt(NULL, 16);
@@ -2429,6 +2529,25 @@ void QtCanPlatform::on_recTimeout()
 {
     communicaLabel->setText(tr("通信超时"));
     communicaLabel->setStyleSheet("background-color:red");
+}
+void QtCanPlatform::on_recTimeoutMutil()
+{
+    //获取发送者的指针
+    QTimer* t = dynamic_cast<QTimer*>(sender());
+    if (!t)
+        return;
+    if (cbIsMutil->currentIndex() == 0 && cbCanType->currentIndex() != 1)
+        return;
+    for (int i = 0; i < 4; i++)
+    {
+        //判断是哪个定时器
+        if (t->timerId() == lostQTimerArr[i]->timerId())
+        {
+            //设置tabBar的ICON
+            tabRollBox->tabBar()->setTabIcon(i, QApplication::style()->standardIcon((QStyle::StandardPixmap)11));
+            tabRecBox->tabBar()->setTabIcon(i, QApplication::style()->standardIcon((QStyle::StandardPixmap)11));
+        }     
+    }
 }
 /*
 * @brief：把要滚动显示的数据添加到表格里面
@@ -2545,6 +2664,9 @@ void QtCanPlatform::saveCanData()
     on_pbClearCanData_clicked();
     //strSaveList.clear();
 }
+/*
+* @brief：
+*/
 void QtCanPlatform::saveCanDataMult()
 {
     QString appPath = QApplication::applicationDirPath() + "/PCAN-DATA/";
@@ -2576,9 +2698,9 @@ void QtCanPlatform::on_checkTraceChanged(int check)
 }
 void QtCanPlatform::on_pbSaveCanData_clicked()
 {
-    if (cbCanType->currentIndex() == 0)
+    if (cbCanType->currentIndex() == 0 && cbIsMutil->currentIndex() == 0)
         saveCanData();
-    else if (cbCanType->currentIndex() == 1)
+    else if (cbCanType->currentIndex() == 1|| cbIsMutil->currentIndex() == 1)
         saveCanDataMult();
 }
 void QtCanPlatform::on_pbClearCanData_clicked()
@@ -2612,7 +2734,14 @@ void QtCanPlatform::on_pbGetVer_clicked(bool isCheck)
          t_GetVer->start(100);
          if(cbCanType->currentIndex()==0)
          connect(t_GetVer, &QTimer::timeout, [&]() {
-             pcan->SendFrame(0x18ACE48D, data_ver);
+             if(0==cbIsMutil->currentIndex())
+                pcan->SendFrame(0x18ACE48D, data_ver);
+             else
+             {
+                 for(int i=0;i<4&&i<cbPcan->count();i++)
+                     if(pcanArr[i]->IsOpen())
+                         pcanArr[i]->SendFrame(0x18ACE48D, data_ver);
+             }
              });
          else
          {
@@ -2626,6 +2755,11 @@ void QtCanPlatform::on_pbGetVer_clicked(bool isCheck)
          t_GetVer->stop();
      }
 
+}
+void QtCanPlatform::on_pbClearLogShow_clicked()
+{
+    if (textBrowser)
+        textBrowser->clear();
 }
 void QtCanPlatform::on_lineEdit_editingFinished()
 {
@@ -2808,14 +2942,22 @@ void QtCanPlatform::on_recSigEndRunWork(int n,int channel)
         }
         else if (5 == n)                    //发送请求
         {
+            dCtrl->setResInLabel(0, "", QColor(255, 255, 255));
+            dCtrl->setResInLabel(1, "", QColor(255, 255, 255));
+            dCtrl->setResInLabel(2, "", QColor(255, 255, 255));
             runStep = 5;
             on_pbSend_clicked(true);
             pbSend->setChecked(true);
         }
         else if (10 == n)                   //冷水机
         {
-            
+            //冷水机外循环（水流）
+            dCtrl->on_pbStartOutCricle_clicked(true);
+            //内循环（制冷）
+            dCtrl->on_pbStartInCricle_clicked(true);
             QLOG_INFO() << "打开冷水机";
+
+            runStep = 10;
         }
         else if (15 == n)                   //上高压
         {
@@ -2832,14 +2974,223 @@ void QtCanPlatform::on_recSigEndRunWork(int n,int channel)
             {
                 dCtrl->setHV_2(600, 30);
             }
-           
+            runStep = 15;
             QLOG_INFO() << "打开高压电源";
         }
         else if (20 == n)
         {
             QLOG_INFO() << "使能";
+            if (cbSelectModel->currentText().contains("海卓"))
+            {
+                
+                QComboBox* cb = dynamic_cast<QComboBox*> (tableView->cellWidget(0, 1));
+                if (!cb)
+                {
+                    _bWork = false;
+                    QLOG_WARN() << "get enable button fail,autotest exit";
+                    QMessageBox::warning(this, tr("Error"), tr("获取使能按钮出错，自动化测试退出"));
+                    return;
+                }
+                cb->setCurrentIndex(1);
+                QTableWidgetItem* it = tableView->item(1, 2);
+                if (!it)
+                {
+                    _bWork = false;
+                    QLOG_WARN() << "set power fail,autotest exit";
+                    QMessageBox::warning(this, tr("Error"), tr("设置功率出错，自动化测试退出"));
+                    return;
+                }
+                if(channel==0)
+                     it->setText("7000");
+                else
+                    it->setText("0");
+                it = tableView->item(2, 2);
+                if (!it)
+                {
+                    _bWork = false;
+                    QLOG_WARN() << "set tempture fail,autotest exit";
+                    QMessageBox::warning(this, tr("Error"), tr("设置温度出错，自动化测试退出"));
+                    return;
+                }
+                if (channel == 0)
+                    it->setText("85");
+                else
+                    it->setText("0");
+            }
+            else if (cbSelectModel->currentText().contains("标准件"))
+            {
+                QComboBox* cb = dynamic_cast<QComboBox*> (tableView->cellWidget(1, 1));
+                if (!cb)
+                {
+                    _bWork = false;
+                    QLOG_WARN() << "get enable button fail,autotest exit";
+                    QMessageBox::warning(this, tr("Error"), tr("获取使能按钮出错，自动化测试退出"));
+                    return;
+                }
+                cb->setCurrentIndex(1);
+                QTableWidgetItem* it = tableView->item(0, 2);
+                if (!it)
+                {
+                    _bWork = false;
+                    QLOG_WARN() << "set power fail,autotest exit";
+                    QMessageBox::warning(this, tr("Error"), tr("设置功率出错，自动化测试退出"));
+                    return;
+                }
+                if(0==channel)
+                    it->setText("100");
+                else
+                    it->setText("0");
+               
+            }
+            runStep = 20;
         }
-        else if (330 <= n)
+        else if (25 == n)
+        {
+
+        QLOG_INFO() << "关使能";
+        if (cbSelectModel->currentText().contains("海卓"))
+        {
+
+            QComboBox* cb = dynamic_cast<QComboBox*> (tableView->cellWidget(0, 1));
+            if (!cb)
+            {
+                _bWork = false;
+                QLOG_WARN() << "get enable button fail,autotest exit";
+                QMessageBox::warning(this, tr("Error"), tr("获取使能按钮出错，自动化测试退出"));
+                return;
+            }
+            cb->setCurrentIndex(0);
+            QTableWidgetItem* it = tableView->item(1, 2);
+            if (!it)
+            {
+                _bWork = false;
+                QLOG_WARN() << "set power fail,autotest exit";
+                QMessageBox::warning(this, tr("Error"), tr("设置功率出错，自动化测试退出"));
+                return;
+            }
+            it->setText("0");
+            it = tableView->item(2, 2);
+            if (!it)
+            {
+                _bWork = false;
+                QLOG_WARN() << "set tempture fail,autotest exit";
+                QMessageBox::warning(this, tr("Error"), tr("设置温度出错，自动化测试退出"));
+                return;
+            }
+            it->setText("0");
+        }
+        else if (cbSelectModel->currentText().contains("标准件"))
+        {
+            QComboBox* cb = dynamic_cast<QComboBox*> (tableView->cellWidget(1, 1));
+            if (!cb)
+            {
+                QLOG_WARN() << "get enable button fail";
+            }
+            cb->setCurrentIndex(0);
+            QTableWidgetItem* it = tableView->item(0, 2);
+            if (!it)
+            {
+                
+                QLOG_WARN() << "set power fail";
+                
+            }
+            it->setText("0");
+
+        }
+
+            //下高压
+            dCtrl->on_pbOffVolt_clicked();
+            QLOG_INFO() << "下高压";
+            runStep = 25;
+        }
+        else if (30 == n)
+        {
+            //冷水机外循环
+            dCtrl->on_pbStartOutCricle_clicked(false);
+            
+            dCtrl->on_pbStartInCricle_clicked(false);
+            QLOG_INFO() << "关闭冷水机外循环";
+            runStep = 30;
+        }
+        else if (32 == n)
+        {
+            bool b = dCtrl->outCycleState();
+            if (!b)
+            {
+                runStep = 32;
+            }
+
+        }
+        else if (35 == n)
+        {
+            //吹水功能
+            dCtrl->on_pbBlowWater_4_clicked(true);
+            QLOG_INFO() << "吹水";
+        }
+        else if (55 == n)
+        {
+            if (dCtrl->getProcess1State())
+            {
+                QColor C(0, 200, 0);
+                QColor C2(200, 0, 0);
+                if (Error[0].size() > 0)
+                {
+                    QString nn;
+                    std::set<QString>::iterator b = Error[0].begin();
+                    while (b != Error[0].end())
+                    {
+                        nn += *b+"\n";
+                        b++;
+                    }
+                    dCtrl->setResInLabel(0, phuRes_1 + "\n" +nn, C);
+                }  
+                else
+                {
+                    dCtrl->setResInLabel(0, phuRes_1, C2);
+                }
+            }
+            if (dCtrl->getProcess2State())
+            {
+                QColor C(0, 200, 0);
+                QColor C2(200, 0, 0);
+                if (Error[1].size() > 0)
+                {
+                    QString nn;
+                    std::set<QString>::iterator b = Error[1].begin();
+                    while (b != Error[1].end())
+                    {
+                        nn += *b+"\n";
+                        b++;
+                    }
+                    dCtrl->setResInLabel(1, phuRes_2 +"\n" + nn, C);
+                }
+                else
+                {
+                    dCtrl->setResInLabel(1, phuRes_2, C2);
+                }
+            }
+            if (dCtrl->getProcess3State())
+            {
+                QColor C(0, 200, 0);
+                QColor C2(200, 0, 0);
+                if (Error[2].size() > 0)
+                {
+                    QString nn;
+                    std::set<QString>::iterator b = Error[2].begin();
+                    while (b != Error[2].end())
+                    {
+                        nn += *b+"\n";
+                        b++;
+                    }
+                    dCtrl->setResInLabel(2, phuRes_3 + "\n" + nn, C);
+                }
+                else
+                {
+                    dCtrl->setResInLabel(2, phuRes_3, C2);
+                }
+            }
+        }
+        else if (330 <= n && n<=998)
         {
             if (0 == channel)
             {
@@ -2857,6 +3208,30 @@ void QtCanPlatform::on_recSigEndRunWork(int n,int channel)
            
             QLOG_INFO() << "setVolt:"<<n;
         }
+        else if (999 == n)
+        {
+            //进度条
+            if (!progress)
+            {
+                progress = new QProgressDialog(this);
+                progress->setModal(true);
+                progress->setRange(0, 120);
+            }
+            progress->setLabelText(tr("吹水功能正在进行中"));
+            progress->reset();
+            progress->setAutoClose(false);
+            progress->setAutoReset(false);
+            progress->show();
+        }
+        else if (9999 == n)
+        {
+            progress->setValue(channel);
+            if (channel >= 120)
+            {
+                progress->setLabelText(tr("吹水完成，请关闭各个冷水阀"));
+            }
+            
+        }
     }
 }
 void QtCanPlatform::workRun()
@@ -2871,6 +3246,12 @@ void QtCanPlatform::workRun()
     bool HVProtectRes_1 = false;
     bool HVProtectRes_2 = false;
     bool HVProtectRes_3 = false;
+
+    phuRes_1 = "";
+    phuRes_2 = "";
+    phuRes_3 = "";
+    //清除之前的结果
+    emit sigEndRunWork(55, 0);
     //if(dCtrl->ge)
     //1 判断哪个工位要测试
     //2 打开相应的IO
@@ -2898,7 +3279,7 @@ void QtCanPlatform::workRun()
             emit sigEndRunWork(1,0);
             return;
         }
-       /* dCtrl->on_pbCover_clicked(true);
+        /* dCtrl->on_pbCover_clicked(true);
         dCtrl->on_pbColdWater_clicked(true);*/
     }
     if (b2)
@@ -2928,14 +3309,15 @@ void QtCanPlatform::workRun()
             break;
         Sleep(100);
     }
+
     Sleep(3000);
     
     //打开高压电源
-    emit sigEndRunWork(10,0);
+    emit sigEndRunWork(15,0);
 
     while (_bWork)
     {
-        if (runStep == 10)
+        if (runStep == 15)
             break;
         Sleep(100);
     }
@@ -2957,11 +3339,11 @@ void QtCanPlatform::workRun()
         float diff = std::abs(realVolt[0] - 600);
         float diff2 = std::abs(realVolt[1] - 600);
         float diff3 = std::abs(realVolt[2] - 600);
-        if (diff > 4 && b1)
+        if (diff > 8 && b1)
             continue;
-        if (diff2 > 4 && b2)
+        if (diff2 > 8 && b2)
             continue;
-        if (diff3 > 4 && b3)
+        if (diff3 > 8 && b3)
             continue;
 
         QLOG_INFO() << "Tempture up to 600,done";
@@ -2972,12 +3354,28 @@ void QtCanPlatform::workRun()
         QLOG_INFO() << "Exit!,_bWork turn to false." << runStep;
         return;
     }
+    //若是海卓的，需要使能
+    emit sigEndRunWork(20, 1);
+
+    while (_bWork)
+    {
+        if (runStep == 20)
+            break;
+        Sleep(100);
+    }
+
+    if (!_bWork)
+    {
+        QLOG_INFO() << "Exit!,_bWork turn to false." << runStep;
+        return;
+    }
+
     emit sigEndRunWork(330,0);
     //高压到330V,每次加3V，然后一直加到高压正常
     int HVVar1 = 330;
     int HVVar2 = 330;
     int low_lastHv1 = HVVar1;
-    int low_lastHv2 = HVVar1;
+    int low_lastHv2 = HVVar2;
     int low_lastHv3 = HVVar2;
     bflag1 = true; bflag1 &= b1;
     bflag2 = true; bflag2 &= b2;
@@ -2988,11 +3386,11 @@ void QtCanPlatform::workRun()
         float diff = std::abs(realVolt[0] - HVVar1);
         float diff2 = std::abs(realVolt[1] - HVVar2);
         float diff3 = std::abs(realVolt[2] - HVVar2);
-        if (diff > 4 && b1)
+        if (diff > 8 && b1)
             continue;
-        if (diff2 > 4 && b2)
+        if (diff2 > 8 && b2)
             continue;
-        if (diff3 > 4 && b3)
+        if (diff3 > 8 && b3)
             continue;
         Sleep(2000);
         if (b1 && bflag1)
@@ -3017,7 +3415,7 @@ void QtCanPlatform::workRun()
             }
             else if (realHVErr[1] == "高压异常")
             {
-                low_lastHv2 = HVVar1;
+                low_lastHv2 = HVVar2;
             }
         }
         if (b3 && bflag3)
@@ -3037,28 +3435,54 @@ void QtCanPlatform::workRun()
         if(bflag1)
             emit sigEndRunWork(HVVar1,1);
         if (bflag2)
-            emit sigEndRunWork(HVVar2, 1);
+            emit sigEndRunWork(HVVar2, 2);
         if (bflag3)
             emit sigEndRunWork(HVVar2,2);
         //三路都不报高压异常了
         if (!(bflag1 || bflag2 || bflag3))
             break;
     }
+    if (!_bWork)
+    {
+        QLOG_INFO() << "_bWork is false,exit";
+        return;
+    }
+    if (HVVar1 <= 334|| HVVar2<=334)
+    {
+        QLOG_INFO() << "没有高压欠压保护，退出测试";
+        if (b1)
+        {
+            phuRes_1 = "2#没有高压欠压保护";
+        }
+        if (b2)
+        {
+            phuRes_3 = "2#没有高压欠压保护";
+        }
+        if (b3)
+        {
+            phuRes_3 = "3#没有高压欠压保护";
+        }
+        //显示结果
+        emit sigEndRunWork(55, 0);
+        return;
+    }
     //在刚才的电压上，每次减3V，然后一直减到高压正常
     bflag1 = true; bflag1 &= b1;
     bflag2 = true; bflag2 &= b2;
     bflag3 = true; bflag3 &= b3;
+    sigEndRunWork(HVVar1, 1);
+    sigEndRunWork(HVVar2, 2);
     while (_bWork)
     {
         Sleep(100);
         float diff = std::abs(realVolt[0] - HVVar1);
         float diff2 = std::abs(realVolt[1] - HVVar2);
         float diff3 = std::abs(realVolt[2] - HVVar2);
-        if (diff > 4 && b1)
+        if (diff > 8 && b1)
             continue;
-        if (diff2 > 4 && b2)
+        if (diff2 > 8 && b2)
             continue;
-        if (diff3 > 4 && b3)
+        if (diff3 > 8 && b3)
             continue;
         Sleep(2000);
         if (b1 && bflag1)
@@ -3083,7 +3507,7 @@ void QtCanPlatform::workRun()
             }
             else if (realHVErr[1] == "高压正常")
             {
-                low_lastHv2 = HVVar1;
+                low_lastHv2 = HVVar2;
             }
         }
         if (b3 && bflag3)
@@ -3098,21 +3522,24 @@ void QtCanPlatform::workRun()
             }
         }
         //继续往下减
-        HVVar1 -= 3;
-        HVVar2 -= 3;
+        HVVar1 -= 4;
+        HVVar2 -= 4;
         if (bflag1)
             emit sigEndRunWork(HVVar1, 1);
         if (bflag2)
-            emit sigEndRunWork(HVVar2, 1);
+            emit sigEndRunWork(HVVar2, 2);
         if (bflag3)
             emit sigEndRunWork(HVVar2, 2);
         //三路都不报高压异常了
         if (!(bflag1 || bflag2 || bflag3))
             break;
     }
-    if (b1)QLOG_INFO() << "1#低压保护电压：" << low_lastHv1;
-    if (b2)QLOG_INFO() << "2#低压保护电压：" << low_lastHv2;
-    if (b3)QLOG_INFO() << "3#低压保护电压：" << low_lastHv3;
+    if (b1) { phuRes_1+="低压保护电压："+ QString::number(low_lastHv1)+"\n"; QLOG_INFO() << "1#低压保护电压：" << low_lastHv1; }
+    if (b2) { phuRes_2 += "低压保护电压：" + QString::number(low_lastHv2) + "\n"; QLOG_INFO() << "2#低压保护电压：" << low_lastHv2; }
+    if (b3) { phuRes_3 += "低压保护电压：" + QString::number(low_lastHv3) + "\n"; QLOG_INFO() << "3#低压保护电压：" << low_lastHv3; }
+    
+    //显示结果
+    emit sigEndRunWork(55, 0);
     //=======增加步骤
     //验证高压保护
 
@@ -3129,11 +3556,11 @@ void QtCanPlatform::workRun()
         float diff = std::abs(realVolt[0] - HVVar1);
         float diff2 = std::abs(realVolt[1] - HVVar2);
         float diff3 = std::abs(realVolt[2] - HVVar2);
-        if (diff > 2 && b1)
+        if (diff > 8 && b1)
             continue;
-        if (diff2 > 2 && b2)
+        if (diff2 > 8 && b2)
             continue;
-        if (diff3 > 2 && b3)
+        if (diff3 > 8 && b3)
             continue;
         Sleep(2000);
         if (b1 && bflag1)
@@ -3158,7 +3585,7 @@ void QtCanPlatform::workRun()
             }
             else if (realHVErr[1] == "高压正常")
             {
-                low_lastHv2 = HVVar1;
+                low_lastHv2 = HVVar2;
             }
         }
         if (b3 && bflag3)
@@ -3178,7 +3605,7 @@ void QtCanPlatform::workRun()
         if (bflag1)
             emit sigEndRunWork(HVVar1, 1);
         if (bflag2)
-            emit sigEndRunWork(HVVar2, 1);
+            emit sigEndRunWork(HVVar2, 2);
         if (bflag3)
             emit sigEndRunWork(HVVar2, 2);
         //三路都不报高压异常了
@@ -3193,7 +3620,7 @@ void QtCanPlatform::workRun()
     if (b1)
         emit sigEndRunWork(HVVar1, 1);
     if (b2)
-        emit sigEndRunWork(HVVar2, 1);
+        emit sigEndRunWork(HVVar2, 2);
     if (b3)
         emit sigEndRunWork(HVVar2, 2);
     while (_bWork)
@@ -3202,11 +3629,11 @@ void QtCanPlatform::workRun()
         float diff = std::abs(realVolt[0] - HVVar1);
         float diff2 = std::abs(realVolt[1] - HVVar2);
         float diff3 = std::abs(realVolt[2] - HVVar2);
-        if (diff > 4 && b1)
+        if (diff > 8 && b1)
             continue;
-        if (diff2 > 4 && b2)
+        if (diff2 > 8 && b2)
             continue;
-        if (diff3 > 4 && b3)
+        if (diff3 > 8 && b3)
             continue;
         Sleep(2000);
         if (b1 && bflag1)
@@ -3231,7 +3658,7 @@ void QtCanPlatform::workRun()
             }
             else if (realHVErr[1] == "高压异常")
             {
-                low_lastHv2 = HVVar1;
+                low_lastHv2 = HVVar2;
             }
         }
         if (b3 && bflag3)
@@ -3251,7 +3678,7 @@ void QtCanPlatform::workRun()
         if (bflag1)
             emit sigEndRunWork(HVVar1, 1);
         if (bflag2)
-            emit sigEndRunWork(HVVar1, 1);
+            emit sigEndRunWork(HVVar1, 2);
         if (bflag3)
             emit sigEndRunWork(HVVar2, 2);
         //三路都不报高压异常了
@@ -3259,9 +3686,12 @@ void QtCanPlatform::workRun()
             break;
     }
 
-    if (b1)QLOG_INFO() << "1#高压保护电压：" << low_lastHv1;
-    if (b2)QLOG_INFO() << "2#高压保护电压：" << low_lastHv2;
-    if (b3)QLOG_INFO() << "3#高压保护电压：" << low_lastHv3;
+    if (b1) { phuRes_1 += "高压保护电压：" + QString::number(low_lastHv1) + "\n"; QLOG_INFO() << "1#高压保护电压：" << low_lastHv1; }
+    if (b2) { phuRes_2 += "高压保护电压：" + QString::number(low_lastHv2) + "\n"; QLOG_INFO() << "2#高压保护电压：" << low_lastHv2; }
+    if (b3) { phuRes_3 += "高压保护电压：" + QString::number(low_lastHv3) + "\n"; QLOG_INFO() << "3#高压保护电压：" << low_lastHv3; }
+    //显示结果
+    emit sigEndRunWork(55, 0);
+
     if (!_bWork)return;
     //下面测试温度
     bflag1 = true;
@@ -3270,15 +3700,20 @@ void QtCanPlatform::workRun()
     
 
     //打开冷水机
-    emit sigEndRunWork(15,0);
+    emit sigEndRunWork(10,0);
    
     while (_bWork)
     {
-        if (runStep == 15)
+        if (runStep == 10)
             break;
         Sleep(100);
     }
-
+    if (b1)
+        emit sigEndRunWork(600, 1);
+    if (b2)
+        emit sigEndRunWork(600, 2);
+    if (b3)
+        emit sigEndRunWork(600, 2);
     //等待温度
     bflag1 = true;
     bflag2 = true;
@@ -3399,6 +3834,7 @@ void QtCanPlatform::workRun()
         if(PowerArr[0].size()>0)
             avage = sum / PowerArr[0].size();
         QLOG_INFO() << "1#件平均功率：" << avage << ",记录了" << PowerArr[0].size() << "次";
+        phuRes_1 += "1#件平均功率：" + QString::number(avage);
         QString er = "";
         for (std::set<QString>::iterator it = Error[0].begin(); it != Error[0].end(); it++)
             er += *it+",";
@@ -3416,6 +3852,7 @@ void QtCanPlatform::workRun()
         if (PowerArr[1].size() > 0)
             avage = sum / PowerArr[1].size();
         QLOG_INFO() << "2#件平均功率：" << avage << ",记录了" << PowerArr[1].size() << "次";
+        phuRes_2 += "2#件平均功率：" + QString::number(avage);
         QString er = "";
         for (std::set<QString>::iterator it = Error[1].begin(); it != Error[1].end(); it++)
             er += *it + ",";
@@ -3433,17 +3870,45 @@ void QtCanPlatform::workRun()
         if (PowerArr[2].size() > 0)
             avage = sum / PowerArr[2].size();
         QLOG_INFO() << "3#件平均功率：" << avage << ",记录了" << PowerArr[2].size() << "次";
+        phuRes_3 += "3#件平均功率：" + QString::number(avage);
         QString er = "";
         for (std::set<QString>::iterator it = Error[2].begin(); it != Error[2].end(); it++)
             er += *it + ",";
 
         QLOG_INFO() << "3#件故障：" << er;
     }
+
+    emit sigEndRunWork(55, 0);
+
     //关闭使能，下高压
     emit sigEndRunWork(25,0);
 
     //关闭内循环
     //===================
-
+    emit sigEndRunWork(30, 0);
+    Sleep(3000);
+    QLOG_INFO() << "等待外循环关闭";
+    while (1)
+    {
+        if (!_bWork)
+            return;
+        Sleep(500);
+        emit sigEndRunWork(32, 0);
+        if (runStep < 32)
+            continue;
+        else
+            break;
+    }
     //开启吹水功能
+    emit sigEndRunWork(35, 0);
+    int i = 0;
+    emit sigEndRunWork(999, i);
+    while (_bWork && i < 120)
+    {
+        i++;
+        emit sigEndRunWork(9999, i);
+        Sleep(1000);
+    }
+    return;
+
 }

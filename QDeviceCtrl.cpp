@@ -105,7 +105,7 @@ QDeviceCtrl::QDeviceCtrl(QWidget *parent)
 	{
 		ui.dCanDevice->addItem(canStr.at(i));
 	}
-
+	ui.dCanBundRate->setCurrentIndex(2);
 	//timeGetPower->start(500);
 	/*ui.label_12->setVisible(false);
 	ui.label_14->setVisible(false);
@@ -142,6 +142,24 @@ void QDeviceCtrl::closeSomething()
 	}
 	
 	
+}
+void QDeviceCtrl::setResInLabel(int ch, QString str,QColor color)
+{
+	if (0 == ch)
+	{
+		ui.label_1Res->setText(str);
+		ui.label_1Res->setStyleSheet("color:#" + QString::number(color.red(),16) + QString::number(color.green(),16) + QString::number(color.blue(),16));
+	}
+	else if (1 == ch)
+	{
+		ui.label_2Res->setText(str);
+		ui.label_2Res->setStyleSheet("color:#" + QString::number(color.red(),16) + QString::number(color.green(),16) + QString::number(color.blue(),16));
+	}
+	else if (2 == ch)
+	{
+		ui.label_3Res->setText(str);
+		ui.label_3Res->setStyleSheet("color:#" + QString::number(color.red(),16) + QString::number(color.green(),16) + QString::number(color.blue(),16));
+	}
 }
 void QDeviceCtrl::on_pbGrasp_clicked(bool isClicked)
 {
@@ -846,8 +864,8 @@ void QDeviceCtrl::onReceiveData(unsigned int fream_id, QByteArray data)
 	else if (7 == fream_id)
 	{
 		QString str=QString("%1%2").arg((uchar)data[0], 8, 2, QLatin1Char('0'));
-		int inCircle = str.mid(7, 1).toInt(nullptr, 2);
-		int outCircle = str.mid(6, 1).toInt(nullptr, 2);
+		inCircle = str.mid(7, 1).toInt(nullptr, 2);
+		outCircle = str.mid(6, 1).toInt(nullptr, 2);
 		int warm = str.mid(3, 1).toInt(nullptr, 2);
 		
 		QString inback = inCircle ? strGreen : strRed;
@@ -863,6 +881,7 @@ void QDeviceCtrl::onReceiveData(unsigned int fream_id, QByteArray data)
 }
 void QDeviceCtrl::on_pbStartInCricle_clicked(bool isCheck)
 {
+	ui.pbStartInCricle->setChecked(isCheck);
 	uchar data[8];
 	memset(data, 0, 8 * sizeof(uchar));
 	bitInCircle = isCheck ? 1 : 0;
@@ -889,6 +908,7 @@ void QDeviceCtrl::on_pbStartInCricle_clicked(bool isCheck)
 }
 void QDeviceCtrl::on_pbStartOutCricle_clicked(bool isCheck)
 {
+	ui.pbStartOutCricle->setChecked(isCheck);
 	uchar data[8];
 	memset(data, 0, 8*sizeof(uchar));
 	//外循环开关在第6个字节的第1位（从0开始）
@@ -918,6 +938,19 @@ void QDeviceCtrl::on_pbStartOutCricle_clicked(bool isCheck)
 	data[2] = l8bit;
 	waterCan->SendFrame(0x1, data);
 }
+void QDeviceCtrl::on_pbBlowWater_4_clicked(bool isCheck)
+{
+	
+	uchar data[8];
+	memset(data, 0, 8 * sizeof(uchar));
+	if (isCheck)
+	{
+		data[6] = 0x4;
+	}
+	else
+		data[6] = 0x0;
+	waterCan->SendFrame(0x1, data);
+}
 void QDeviceCtrl::on_dOpenCan_clicked(bool isCheck)
 {
 	if (isCheck)
@@ -940,7 +973,7 @@ void QDeviceCtrl::on_dOpenCan_clicked(bool isCheck)
 			bitRate = 250;
 			break;
 		}
-		bool b = waterCan->ConnectDevice(ui.dCanDevice->currentIndex(), bitRate);
+		bool b = waterCan->ConnectDevice(ui.dCanDevice->currentText(), bitRate);
 		
 		if (!b)
 		{
@@ -961,8 +994,18 @@ void QDeviceCtrl::on_dOpenCan_clicked(bool isCheck)
 		ui.dCanBundRate->setEnabled(true);
 		ui.dCanDevice->setEnabled(true);
 	}
+	emit sigCanChanged();
 	/*pbSend->setEnabled(true);
 	pcanIsOpen = true;*/
+}
+void QDeviceCtrl::on_dCanRefresh_clicked()
+{
+	ui.dCanDevice->clear();
+	QStringList canStr = waterCan->DetectDevice();
+	for (int i = 0; i < canStr.size(); ++i)
+	{
+		ui.dCanDevice->addItem(canStr.at(i));
+	}
 }
 void QDeviceCtrl::on_pbProcessSet_clicked(bool isCheck)
 {

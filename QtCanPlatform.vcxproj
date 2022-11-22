@@ -54,8 +54,8 @@
     <QtBuildConfig>debug</QtBuildConfig>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="QtSettings">
-    <QtInstall>msvc2017_64</QtInstall>
-    <QtModules>core;network;gui;axcontainer;widgets;serialport;printsupport;serialbus</QtModules>
+    <QtInstall>msvc2017_32</QtInstall>
+    <QtModules>core;network;gui;axcontainer;widgets;serialport;printsupport;concurrent;serialbus</QtModules>
     <QtBuildConfig>debug</QtBuildConfig>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'" Label="QtSettings">
@@ -64,8 +64,8 @@
     <QtBuildConfig>release</QtBuildConfig>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="QtSettings">
-    <QtInstall>msvc2017_64</QtInstall>
-    <QtModules>core;network;gui;axcontainer;widgets;serialport;serialbus</QtModules>
+    <QtInstall>msvc2017_32</QtInstall>
+    <QtModules>core;network;gui;axcontainer;widgets;serialport;concurrent;serialbus</QtModules>
     <QtBuildConfig>release</QtBuildConfig>
   </PropertyGroup>
   <Target Name="QtMsBuildNotFound" BeforeTargets="CustomBuild;ClCompile" Condition="!Exists('$(QtMsBuild)\qt.targets') or !Exists('$(QtMsBuild)\qt.props')">

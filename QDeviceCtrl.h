@@ -46,6 +46,8 @@ private:
 	uint bitInCircle = 0;
 	//冷水机外循环状态，0关闭，1开启
 	uint bitOutCircle = 0;
+	int inCircle = 1;
+	int outCircle = 1;
 
 	bool cbProcess1Check = false;
 	bool cbProcess2Check = false;
@@ -79,10 +81,14 @@ public:
 	bool bInState_Two[7] = { false };
 	bool bInState_Three[7] = { false };
 	void closeSomething();
+	bool outCycleState() { return outCircle; }
+	bool inCycleState() { return inCircle; }
+	void setResInLabel(int ch, QString str, QColor color);
 signals:
 	void timeToSend(QString str,int num);
 	void sigArealdSend(QModbusDataUnit mdu);
 	void sigWorkRun(bool isCheck);
+	void sigCanChanged();
 public slots:
 
 	//1#工位
@@ -132,9 +138,11 @@ public slots:
 	void onReceiveData(unsigned int fream_id, QByteArray data);
 	void on_pbStartInCricle_clicked(bool isCheck);
 	void on_pbStartOutCricle_clicked(bool isCheck);
+	void on_pbBlowWater_4_clicked(bool isCheck);
 
 	//
 	void on_dOpenCan_clicked(bool isCheck);
+	void on_dCanRefresh_clicked();
 
 	//打开流程设置
 	void on_pbProcessSet_clicked(bool isCheck);
