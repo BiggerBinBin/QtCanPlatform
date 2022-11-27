@@ -81,7 +81,6 @@ bool QMoudBusCtrl::sendWriteMdu(QModbusDataUnit mdu,uint serverAdd)
 		}
 		else
 		{
-
 			reply->deleteLater();
 			return true;
 		}		

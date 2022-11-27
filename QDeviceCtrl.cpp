@@ -161,6 +161,17 @@ void QDeviceCtrl::setResInLabel(int ch, QString str,QColor color)
 		ui.label_3Res->setStyleSheet("color:#" + QString::number(color.red(),16) + QString::number(color.green(),16) + QString::number(color.blue(),16));
 	}
 }
+QString QDeviceCtrl::getPhuCode(int ch)
+{
+	if (1 == ch)
+		return ui.lineEdit_1ResCode->text();
+	else if (2 == ch)
+		return ui.lineEdit_2ResCode->text();
+	else if (3 == ch)
+		return ui.lineEdit_3ResCode->text();
+	else
+		return QString();
+}
 void QDeviceCtrl::on_pbGrasp_clicked(bool isClicked)
 {
 	if (tcp->state() != QAbstractSocket::ConnectedState)
@@ -532,11 +543,13 @@ void QDeviceCtrl::getPowerRun()
 		{
 			if (!bRun)
 				return;
+			if (!moudBus)return;
 			using namespace std::chrono_literals;
 			std::this_thread::sleep_for(5ms);
 		}
 		std::this_thread::sleep_for(100ms);
 		emit sigArealdSend(mdu);
+		if (!moudBus)return;
 		//Sleep(500);
 		
 	}
@@ -1007,8 +1020,10 @@ void QDeviceCtrl::on_dCanRefresh_clicked()
 		ui.dCanDevice->addItem(canStr.at(i));
 	}
 }
+
 void QDeviceCtrl::on_pbProcessSet_clicked(bool isCheck)
 {
+	ui.pbProcessSet->setChecked(false);
 	emit sigWorkRun(isCheck);
 	return;
 	if (!qProcessB)
@@ -1016,6 +1031,10 @@ void QDeviceCtrl::on_pbProcessSet_clicked(bool isCheck)
 		qProcessB = new QProcessBuild();
 	}
 	qProcessB->show();
+}
+void QDeviceCtrl::on_setProcessSetState(bool b)
+{
+	ui.pbProcessSet->setChecked(b);
 }
 /*
 * @brief：响应多线程发出的信号，读电压电流寄存器

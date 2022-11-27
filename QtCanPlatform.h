@@ -40,6 +40,7 @@
 #include <QtConcurrent>
 #include <set>
 #include <QProgressDialog.h>
+#include "canthread.h"
 #pragma execution_character_set("utf-8")  
 class QtCanPlatform : public QMainWindow
 {
@@ -51,8 +52,7 @@ public:
     virtual void closeEvent(QCloseEvent* event) override;
 private:
     Ui::QtCanPlatformClass ui;
-    void initUi();
-    void initData();
+   
     QStringListModel *model=nullptr;
 
     //UI
@@ -82,6 +82,9 @@ private:
     std::atomic_int _iSetp = 0;
 
     int currentModel = -1;
+private:
+    void initUi();
+    void initData();
     bool sendDataIntoTab();
     bool recDataIntoTab();
     void sendData();
@@ -114,12 +117,15 @@ private:
     //读取发送的数据
     void getSendDataFromTable();
 
+    void saveAutoTestRes(const QString &fileName,const QStringList& data);
+
 private:
     std::vector<canIdData>recCanData;
     std::vector<canIdData>sendCanData;
     //pcan设备指针
     PCAN *pcan = nullptr;
     PCAN *pcanArr[4] = { nullptr };
+    CANThread* canayst= nullptr ;
     //kvaser设备指针
     kvaser* kcan = nullptr;
     //保存kcan的打开状态
@@ -163,15 +169,12 @@ private:
     QDateTime lastTime;
 
     //自动判断的条件与判断值
-    int lowVolt = 350;      //低压
-    int highVolt = 750;     //高压
-    int avgPower = 7000;    //平均功率
-    int shortIndex = 7;     //短路在报文数据的下标
-    QString voltId = "0x0C004400";      //电压是在哪个报文
-    QString powerId = "0x0C004400";     //功率是在哪个报文
-    QString shortId = "0x0C004400";     //短路是在哪个报文
-    int tempture = -15;                 //进水口温度
-    int zero_tempture = 0;              //这个温度下的功率
+    int lowVolt = 330;      //V,这个电压下开始测低压保护
+    int highVolt = 740;     //V,这个电压下开始测高压保护
+    int avgPower = 7000;    //平均功率,未用到
+    int m_iHeatTempture = -15;                 //°C，进水口这个温度下开始测加热
+    int m_iPowerTempture = 0;              //°C，这个温度下的额定功率
+    int m_iOverTime = 300;                //秒，超过这个时间，这个测试部分就要跳过了
     int rmFirstFream = 3;               //测功率时，到达指定条件后延迟帧数
     int agvPowerFream = 60;             //测功率时的平均帧数;
     float realPower[4] = { 0 };
@@ -179,6 +182,7 @@ private:
     float realWTemp[4] = { 0 };
     QString realHVErr[4] = { ""};
     QString realHvLv[4] = { ""};
+    QString realOTPro[4] = { ""};
     QString strErrorName = "高压异常";
     QString strOkName = "高压正常";
     std::vector<float>PowerArr[4];
@@ -199,6 +203,12 @@ private:
     QString phuRes_1 = "";
     QString phuRes_2 = "";
     QString phuRes_3 = "";
+    QStringList m1_listTestRes;
+    QStringList m2_listTestRes;
+    QStringList m3_listTestRes;
+    QString m1_strPhuCode;
+    QString m2_strPhuCode;
+    QString m3_strPhuCode;
    
 private slots:
     //CAN协议设置
@@ -247,6 +257,8 @@ private slots:
     void on_pbGetVer_clicked(bool);
 
     void on_pbClearLogShow_clicked();
+
+    void on_cbCanType_currentIndexChanged(int index);
 signals:
     void sigNewRoll();
     void sigNewRollMult(int ch);

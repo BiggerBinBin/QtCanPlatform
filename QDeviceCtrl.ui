@@ -31,7 +31,7 @@
       </attribute>
       <layout class="QGridLayout" name="gridLayout_12">
        <item row="0" column="0">
-        <layout class="QVBoxLayout" name="verticalLayout_5" stretch="1,5">
+        <layout class="QVBoxLayout" name="verticalLayout_8" stretch="1,7">
          <item>
           <layout class="QHBoxLayout" name="horizontalLayout_25">
            <item>
@@ -68,66 +68,113 @@
           </layout>
          </item>
          <item>
-          <layout class="QVBoxLayout" name="verticalLayout_4" stretch="1,7">
-           <property name="spacing">
-            <number>6</number>
-           </property>
+          <layout class="QVBoxLayout" name="verticalLayout_7" stretch="0,0,0,7">
            <item>
-            <layout class="QHBoxLayout" name="horizontalLayout_24">
+            <layout class="QHBoxLayout" name="horizontalLayout_26">
              <item>
-              <widget class="QLabel" name="label_25">
+              <widget class="QLabel" name="label_29">
                <property name="text">
-                <string>1#结果</string>
+                <string>1#二维码：</string>
                </property>
               </widget>
              </item>
              <item>
-              <widget class="QLabel" name="label_27">
+              <widget class="QLineEdit" name="lineEdit_1ResCode"/>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <layout class="QHBoxLayout" name="horizontalLayout_27">
+             <item>
+              <widget class="QLabel" name="label_30">
                <property name="text">
-                <string>2#结果</string>
+                <string>2#二维码：</string>
                </property>
               </widget>
              </item>
              <item>
-              <widget class="QLabel" name="label_28">
+              <widget class="QLineEdit" name="lineEdit_2ResCode"/>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <layout class="QHBoxLayout" name="horizontalLayout_28">
+             <item>
+              <widget class="QLabel" name="label_31">
                <property name="text">
-                <string>3#结果</string>
+                <string>3#二维码：</string>
                </property>
               </widget>
+             </item>
+             <item>
+              <widget class="QLineEdit" name="lineEdit_3ResCode"/>
              </item>
             </layout>
            </item>
            <item>
             <layout class="QHBoxLayout" name="horizontalLayout_23">
              <item>
-              <widget class="QLabel" name="label_1Res">
-               <property name="text">
-                <string/>
-               </property>
-               <property name="alignment">
-                <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
-               </property>
-              </widget>
+              <layout class="QVBoxLayout" name="verticalLayout_4" stretch="0,7">
+               <item>
+                <widget class="QLabel" name="label_25">
+                 <property name="text">
+                  <string>1#结果</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLabel" name="label_1Res">
+                 <property name="text">
+                  <string/>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+                 </property>
+                </widget>
+               </item>
+              </layout>
              </item>
              <item>
-              <widget class="QLabel" name="label_2Res">
-               <property name="text">
-                <string/>
-               </property>
-               <property name="alignment">
-                <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
-               </property>
-              </widget>
+              <layout class="QVBoxLayout" name="verticalLayout_5" stretch="0,7">
+               <item>
+                <widget class="QLabel" name="label_27">
+                 <property name="text">
+                  <string>2#结果</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLabel" name="label_2Res">
+                 <property name="text">
+                  <string/>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+                 </property>
+                </widget>
+               </item>
+              </layout>
              </item>
              <item>
-              <widget class="QLabel" name="label_3Res">
-               <property name="text">
-                <string/>
-               </property>
-               <property name="alignment">
-                <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
-               </property>
-              </widget>
+              <layout class="QVBoxLayout" name="verticalLayout_6" stretch="0,7">
+               <item>
+                <widget class="QLabel" name="label_28">
+                 <property name="text">
+                  <string>3#结果</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLabel" name="label_3Res">
+                 <property name="text">
+                  <string/>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+                 </property>
+                </widget>
+               </item>
+              </layout>
              </item>
             </layout>
            </item>

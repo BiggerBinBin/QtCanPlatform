@@ -22,6 +22,7 @@
 #include <QSplitter>
 #include <qsettings.h>
 #include <WinBase.h>
+
 using namespace QsLogging;
 
 QString qmyss = "QComboBox{border: 1px solid gray;border-radius: 5px;padding:1px 2px 1px 2px;s}\
@@ -39,7 +40,7 @@ QtCanPlatform::QtCanPlatform(QWidget *parent)
     initUi();
     sendTimer = new QTimer();
     connect(sendTimer, &QTimer::timeout, this, &QtCanPlatform::sendData);
-    this->setWindowTitle(tr("PHU-CAN-APP V1.0.11"));
+    this->setWindowTitle(tr("PHU-CAN-APP V1.11.27"));
     this->showMaximized();
     connect(this, &QtCanPlatform::sigEndRunWork, this, &QtCanPlatform::on_recSigEndRunWork);
     readSetFile();
@@ -63,12 +64,19 @@ QtCanPlatform::~QtCanPlatform()
     for (int i = 0; i < 4; i++)
     {
         if (pcanArr[i]) { delete pcanArr[i]; pcanArr[i] = nullptr; }
+
+        if (saveDataArr[i]) { delete saveDataArr[i]; saveDataArr[i] = nullptr; }
     }
     if (kcan)
     {
-        kcan->closeCAN();
+        //kcan->closeCAN();
         delete kcan;
         kcan = nullptr;
+    }
+    if (canayst)
+    {
+        delete canayst;
+        canayst = nullptr;
     }
     if (cbPcan)
     {
@@ -93,6 +101,7 @@ QtCanPlatform::~QtCanPlatform()
     {
         delete progress; progress = nullptr;
     }
+    
     destroyLogger();   //释放
 }
 
@@ -107,6 +116,16 @@ void QtCanPlatform::closeEvent(QCloseEvent* event)
     {
         if (pcanArr[i]) { pcanArr[i]->CloseCan(); }
     }
+    if (kcan)
+    {
+        kcan->closeCAN();
+    }
+    if (canayst)
+    {
+        canayst->stopped = true;
+        canayst->stop();
+        canayst->closeCAN();
+    }
     if (dCtrl)
         dCtrl->closeSomething();
     event->accept();
@@ -116,6 +135,7 @@ void QtCanPlatform::initUi()
 {
     this->setWindowIcon(QIcon(":/QtCanPlatform/app-logo.ico"));
     lostQTimer = new QTimer();
+    connect(lostQTimer, SIGNAL(timeout()), this, SLOT(on_recTimeout()));
     //QLOG_INFO() << "初始化界面中……";
     //这个是显示内容的
     saveData = new DataSave(this);
@@ -167,6 +187,8 @@ void QtCanPlatform::initUi()
     cbCanType = new QComboBox();
     cbCanType->addItem(tr("选择PCAN"));
     cbCanType->addItem(tr("选择Kvaser"));
+    cbCanType->addItem(tr("选择CANayst"));
+    connect(cbCanType, SIGNAL(currentIndexChanged(int)), this, SLOT(on_cbCanType_currentIndexChanged(int)));
     cbPcan = new QComboBox();
    
     for (int i = 0; i < 4; i++)
@@ -176,7 +198,11 @@ void QtCanPlatform::initUi()
         pcanArr[i]->DetectDevice();
         connect(pcanArr[i], SIGNAL(getProtocolData(quint32, QByteArray)), this, SLOT(on_ReceiveDataMulti(quint32, QByteArray)));
         connect(lostQTimerArr[i], &QTimer::timeout, this, &QtCanPlatform::on_recTimeoutMutil);
+        
+
     }
+    canayst = new CANThread();
+    connect(canayst, SIGNAL(getProtocolData(int, quint32, QByteArray)), this, SLOT(on_ReceiveData(int, quint32, QByteArray)));
     kcan = new kvaser();
     connect(kcan, SIGNAL(getProtocolData(int, quint32, QByteArray)), this, SLOT(on_ReceiveData(int, quint32, QByteArray)));
     pcan = new PCAN(this);
@@ -662,139 +688,7 @@ bool QtCanPlatform::recDataIntoTab()
    }
     return true;
 }
-//bool QtCanPlatform::recDataIntoTab()
-//{
-//
-//    rollTitle.clear();
-//    recCanData.clear();
-//    if (!tableRecView)
-//        return false;
-//    int rcount = tableRecView->rowCount();
-//    for (int m = 0; m < rcount; m++)
-//        tableRecView->removeRow(rcount - m - 1);
-//
-//    qGboleData* qGb = qGboleData::getInstance();
-//    if (!qGb)return false;
-//    if (currentModel > qGb->pGboleData.size() - 1 || currentModel < 0)
-//    {
-//        QMessageBox::warning(this, tr("warning"), tr("数据出错，当前型号不存在"));
-//        return false;
-//    }
-//    const protoData pTemp = qGb->pGboleData.at(currentModel);
-//
-//    //canIdData cTemp;
-//
-//    for (int i = 0; i < pTemp.cItem.size(); i++)
-//    {
-//        //取出操作为接收的信号
-//        if (0 == pTemp.cItem.at(i).opt)
-//        {
-//            recCanData.push_back(pTemp.cItem.at(i));
-//            // break;
-//        }
-//    }
-//    if (recCanData.size() <= 0)
-//    {
-//        QMessageBox::warning(this, tr("warning"), tr("该型号没有接收信号，请添加再操作"));
-//        return false;
-//    }
-//
-//    excelTitle = "序号,北京时间,";
-//    rollTitle.append(tr("序号"));
-//    for (int i = 0; i < recCanData.size(); i++)
-//    {
-//        int num = recCanData.at(i).pItem.size();
-//        int cr = tableRecView->rowCount();
-//        //每加一行就要设置到表格去
-//        tableRecView->setRowCount(cr + 1);
-//        int idex = 0;
-//        for (int j = 0; j < num; j++, idex++)
-//        {
-//            if (idex > 9)
-//            {
-//                idex = 0;
-//                cr = tableRecView->rowCount();
-//                tableRecView->setRowCount(cr + 2);
-//                cr += 1;
-//            }
-//            QTableWidgetItem* item = new QTableWidgetItem(recCanData.at(i).pItem.at(j).bitName);
-//            item->setTextAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
-//            item->font().setBold(true);
-//            //item->backgroundColor().setRgb(10, 10, 240);
-//            tableRecView->setItem(cr, idex, item);
-//            excelTitle += recCanData.at(i).pItem.at(j).bitName + ",";
-//
-//
-//            if (recCanData.at(i).pItem.at(j).isRoll)
-//            {
-//                rollTitle.append(recCanData.at(i).pItem.at(j).bitName);
-//            }
-//        }
-//        cr = tableRecView->rowCount();
-//        tableRecView->setRowCount(cr + 1);
-//        //tableRecView->insertRow(2);
-//    }
-//    excelTitle.remove(excelTitle.size() - 1, 1);
-//    tableRollTitle->setColumnCount(rollTitle.size());
-//    tableRollTitle->clear();
-//    tableRollTitle->setHorizontalHeaderLabels(rollTitle);
-//    QString stt = "QHeaderView::section {background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1,stop:0 #0078d7, stop: 0.5 #0078d7,stop: 0.6 #0078d7, stop:1 #0078d7);color: white;border:1px solid;border-color:white;font-weight: bold;}QHeaderView{background-color:#0078d7}";
-//    tableRollTitle->horizontalHeader()->setStyleSheet(stt);
-//    //QHeaderView::section {background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1,stop:0 #0078d7, stop: 0.5 #0078d7,stop: 0.6 #0078d7, stop:1 #0078d7);color: white;}
-//    for (int i = 0; i < rollTitle.size(); i++)
-//    {
-//        tableRollTitle->setColumnWidth(i, 100);
-//
-//
-//        //tableRollData->setColumnWidth(i, 40);
-//    }
-//    int col = tableRecView->columnCount();
-//    int row = tableRecView->rowCount();
-//    for (int h = 0; h < row; h++)
-//    {
-//        for (int g = 0; g < col; g++)
-//        {
-//            QTableWidgetItem* mItem = new QTableWidgetItem();
-//            mItem->setTextAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
-//            QFont ff;
-//            ff.setBold(true);
-//            mItem->setFont(ff);
-//            tableRecView->setItem(h, g, mItem);
-//            if (h % 2 == 0)
-//            {
-//                tableRecView->item(h, g)->setBackgroundColor(recBackgroudColor);
-//
-//            }
-//        }
-//    }
-//    int cr = 0;
-//    for (int i = 0; i < recCanData.size(); i++)
-//    {
-//        int num = recCanData.at(i).pItem.size();
-//
-//        int idex = 0;
-//        for (int j = 0; j < num; j++, idex++)
-//        {
-//            if (idex > 9)
-//            {
-//                idex = 0;
-//                cr += 2;
-//            }
-//            QTableWidgetItem* item = new QTableWidgetItem(recCanData.at(i).pItem.at(j).bitName);
-//            item->setBackgroundColor(recBackgroudColor);
-//            item->setForeground(QBrush(recFontColor));
-//            item->setTextAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
-//            QFont ff;
-//            ff.setBold(true);
-//            item->setFont(ff);
-//            tableRecView->setItem(cr, idex, item);
-//
-//        }
-//        cr += 2;
-//    }
-//
-//    return true;
-//}
+
 void QtCanPlatform::sendData()
 {
     uchar s_Data[8];
@@ -836,6 +730,10 @@ void QtCanPlatform::sendData()
         else if (cbCanType->currentIndex() == 1)
         {
             kcan->canSendAll(fream_id, s_Data);
+        }
+        else if (cbCanType->currentIndex() == 2)
+        {
+            canayst->sendData(fream_id, s_Data);
         }
         //_sleep(20);
     }
@@ -1107,17 +1005,21 @@ void QtCanPlatform::recAnalyseIntel(unsigned int fream_id,QByteArray data)
             {
                 realPower[0] = x.value;
             }
-            if (x.name == "电压V")
+            else if (x.name == "电压V")
             {
                 realVolt[0] = x.value;
             }
-            if (x.name == "出口温度°C")
+            else if (x.name == "出口温度°C")
             {
                 realWTemp[0] = x.value;
             }
-            if (x.name == "高压异常故障")
+            else if (x.name == "高压异常故障")
             {
                 realHVErr[0] = x.toWord;
+            }
+            else if (x.name == "过温保护" || x.name == "过温故障")
+            {
+                realOTPro[0] = x.toWord;
             }
         }
 
@@ -1636,17 +1538,21 @@ void QtCanPlatform::recAnalyseIntel(int ch,unsigned int fream_id, QByteArray dat
             {
                 realPower[ch] = x.value;
             }
-            if (x.name == "电压V")
+            else if (x.name == "电压V")
             {
                 realVolt[ch] = x.value;
             }
-            if (x.name == "出口温度°C")
+            else if (x.name == "出口温度°C")
             {
                 realWTemp[ch] = x.value;
             }
-            if (x.name == "高压异常故障")
+            else if (x.name == "高压异常故障")
             {
                 realHVErr[ch] = x.toWord;
+            }
+            else if (x.name == "过温保护" || x.name == "过温故障")
+            {
+                realOTPro[ch] = x.toWord;
             }
         }
         //判断map里面是否已经存在有了
@@ -2057,6 +1963,11 @@ void QtCanPlatform::on_CurrentModelChanged(int index)
     sendDataIntoTab();
     recDataIntoTab();
 }
+void QtCanPlatform::on_cbCanType_currentIndexChanged(int index)
+{
+    cbPcan->clear();
+    on_pbRefreshDevice_clicked();
+}
 void QtCanPlatform::on_pbSend_clicked(bool clicked)
 {
     if (clicked)
@@ -2092,7 +2003,7 @@ void QtCanPlatform::on_pbSend_clicked(bool clicked)
             lostQTimer->stop();
         }
         communicaLabel->setText(tr("待机中…"));
-        communicaLabel->setStyleSheet("background-color:yellow");
+        communicaLabel->setStyleSheet("background-color:#FAFA00");
         pbSend->setStyleSheet("");
     }
 }
@@ -2119,6 +2030,15 @@ void QtCanPlatform::on_pbRefreshDevice_clicked()
             cbPcan->addItem("ch" + QString::number(m+1));
         }
     }
+    else if (cbCanType->currentIndex() == 2)
+    {
+        QStringList n = canayst->DetectDevice();
+        for (int m = 0; m < n.size(); m++)
+        {
+            cbPcan->addItem("can" + n.at(m));
+        }
+        //canayst
+    }
     
 }
 void QtCanPlatform::on_pbOpenPcan_clicked()
@@ -2138,6 +2058,8 @@ void QtCanPlatform::on_pbOpenPcan_clicked()
             pbSend->setStyleSheet("");
             pcanIsOpen = false;
             sendTimer->stop();
+            reFresh->setEnabled(true);
+            communicaLabel->setText(tr("待机中..."));
         }
         else
         {
@@ -2185,6 +2107,7 @@ void QtCanPlatform::on_pbOpenPcan_clicked()
             cbBitRate->setEnabled(false);
             cbPcan->setEnabled(false);
             pbSend->setEnabled(true);
+            
             pcanIsOpen = true;
             
         }
@@ -2202,6 +2125,9 @@ void QtCanPlatform::on_pbOpenPcan_clicked()
             pbSend->setStyleSheet("");
             pcanIsOpen = false;
             sendTimer->stop();
+            reFresh->setEnabled(true);
+            communicaLabel->setText(tr("待机中..."));
+            communicaLabel->setStyleSheet("background-color:yellow");
         }
         else
         {
@@ -2237,6 +2163,57 @@ void QtCanPlatform::on_pbOpenPcan_clicked()
                     QLOG_INFO() << "Open Ch" + QString::number(k) + "Success!";
                 else
                     QLOG_INFO() << "Open Ch" + QString::number(k) + "failed!";
+            }
+            pbOpen->setText(tr("关闭设备"));
+            cbBitRate->setEnabled(false);
+            cbPcan->setEnabled(false);
+            pbSend->setEnabled(true);
+            pcanIsOpen = true;
+        }
+    }
+    else if (cbCanType->currentIndex() == 2)
+    {
+        if (pcanIsOpen)
+        {
+            canayst->closeCAN();
+            pbOpen->setText(tr("打开设备"));
+            cbBitRate->setEnabled(true);
+            cbPcan->setEnabled(true);
+            pbSend->setChecked(false);
+            pbSend->setEnabled(false);
+            pbSend->setStyleSheet("");
+            pcanIsOpen = false;
+            sendTimer->stop();
+            reFresh->setEnabled(true);
+            communicaLabel->setText(tr("待机中..."));
+            
+        }
+        else
+        {
+            /*if (cbPcan->count() <= 0)
+                return;*/
+            int curindex = cbBitRate->currentIndex();
+            int bitRate = 250;
+            switch (curindex)
+            {
+            case 0:
+                bitRate = 200; break;
+            case 1:
+                bitRate = 250; break;
+            case 2:
+                bitRate = 500; break;
+            case 3:
+                bitRate = 800; break;
+            default:
+                bitRate = 250;
+                break;
+            }
+            //bool b = pcan->ConnectDevice(cbPcan->currentIndex(), bitRate);
+            bool b = canayst->openCANAll(bitRate);
+            if (!b)
+            {
+                QMessageBox::warning(NULL, tr("错误"), tr("打开KCAN失败,请检测设备是否被占用或者已经连接？"));
+                return;
             }
             pbOpen->setText(tr("关闭设备"));
             cbBitRate->setEnabled(false);
@@ -2376,7 +2353,7 @@ void QtCanPlatform::on_ReceiveDataMulti(uint fream_id, QByteArray data)
 }
 void QtCanPlatform::on_ReceiveData(const int ch, uint fream_id, QByteArray data)
 {
-    if (1 == cbCanType->currentIndex())
+    if (1 == cbCanType->currentIndex() || 2 == cbCanType->currentIndex())
     {
         tabRollBox->tabBar()->setTabIcon(ch, QApplication::style()->standardIcon((QStyle::StandardPixmap)31));
         tabRecBox->tabBar()->setTabIcon(ch, QApplication::style()->standardIcon((QStyle::StandardPixmap)31));
@@ -2536,7 +2513,7 @@ void QtCanPlatform::on_recTimeoutMutil()
     QTimer* t = dynamic_cast<QTimer*>(sender());
     if (!t)
         return;
-    if (cbIsMutil->currentIndex() == 0 && cbCanType->currentIndex() != 1)
+    if (cbIsMutil->currentIndex() == 0 && cbCanType->currentIndex() < 1)
         return;
     for (int i = 0; i < 4; i++)
     {
@@ -2687,6 +2664,25 @@ void QtCanPlatform::saveCanDataMult()
     }
     on_pbClearCanData_clicked();
 }
+void QtCanPlatform::saveAutoTestRes(const QString & fileName,const QStringList& data)
+{
+    QString appPath = QApplication::applicationDirPath() + "/AUTO_TEST_RES/";
+    QDir dd(appPath);
+    if (!dd.exists())
+    {
+        dd.mkpath(appPath);
+    }
+    if (!fileName.isEmpty())
+    {
+        appPath += fileName + ".xlsx";
+    }
+    else
+    {
+        appPath += QDateTime::currentDateTime().toString("yyyy-MM-dd-hh-mm-ss-zzz") + ".xlsx";
+    }
+    DataSave d;
+    d.SaveData(data, data.size(), appPath);
+}
 void QtCanPlatform::on_checkTraceChanged(int check)
 {
     if (check)
@@ -2700,7 +2696,7 @@ void QtCanPlatform::on_pbSaveCanData_clicked()
 {
     if (cbCanType->currentIndex() == 0 && cbIsMutil->currentIndex() == 0)
         saveCanData();
-    else if (cbCanType->currentIndex() == 1|| cbIsMutil->currentIndex() == 1)
+    else if (cbCanType->currentIndex() == 1|| cbCanType->currentIndex() ==2|| cbIsMutil->currentIndex() == 1)
         saveCanDataMult();
 }
 void QtCanPlatform::on_pbClearCanData_clicked()
@@ -2845,13 +2841,13 @@ void QtCanPlatform::readSetFile()
         QLOG_INFO() << "Open ini file error:" << setf->status();
         return;
     }
-    voltId = setf->value("voltId").toString();
-    powerId = setf->value("powerId").toString();
-    shortId = setf->value("shortId").toString();
+ 
     lowVolt = setf->value("lowVolt").toInt();
     highVolt = setf->value("highVolt").toInt();
     avgPower = setf->value("avgPower").toInt();
-    shortIndex = setf->value("shortIndex").toInt();
+    m_iHeatTempture = setf->value("m_iHeatTempture").toInt();
+    m_iPowerTempture = setf->value("m_iPowerTempture").toInt();
+    m_iOverTime = setf->value("m_iOverTime").toInt();
     rmFirstFream = setf->value("rmFirstFream").toInt();
     agvPowerFream = setf->value("agvPowerFream").toInt();
 
@@ -2866,13 +2862,14 @@ void QtCanPlatform::configSetFile()
     //程序目录下Data文件，名字为Jugde.ini
     QString filepath = QApplication::applicationDirPath() + "/Data/Jugde.ini";
     QSettings* setf = new QSettings(filepath, QSettings::IniFormat);
-    setf->setValue("voltId", voltId);
-    setf->setValue("powerId", powerId);
-    setf->setValue("shortId", shortId);
+    
     setf->setValue("lowVolt", lowVolt);
     setf->setValue("highVolt", highVolt);
     setf->setValue("avgPower", avgPower);
-    setf->setValue("shortIndex", shortIndex);
+    setf->setValue("m_iHeatTempture", m_iHeatTempture);
+    setf->setValue("m_iPowerTempture", m_iPowerTempture);
+    setf->setValue("m_iOverTime", m_iOverTime);
+    
     setf->setValue("rmFirstFream", rmFirstFream);
     setf->setValue("agvPowerFream", agvPowerFream);
 }
@@ -3103,13 +3100,19 @@ void QtCanPlatform::on_recSigEndRunWork(int n,int channel)
             QLOG_INFO() << "下高压";
             runStep = 25;
         }
-        else if (30 == n)
+        else if (28 == n)
         {
             //冷水机外循环
-            dCtrl->on_pbStartOutCricle_clicked(false);
-            
             dCtrl->on_pbStartInCricle_clicked(false);
-            QLOG_INFO() << "关闭冷水机外循环";
+            QLOG_INFO() << "关闭冷水机内循环";
+            runStep = 28;
+        }
+        else if (30 == n)
+        {
+            //冷水机内外循环
+            dCtrl->on_pbStartOutCricle_clicked(false);
+            dCtrl->on_pbStartInCricle_clicked(false);
+            QLOG_INFO() << "关闭冷水机内外循环";
             runStep = 30;
         }
         else if (32 == n)
@@ -3189,6 +3192,18 @@ void QtCanPlatform::on_recSigEndRunWork(int n,int channel)
                     dCtrl->setResInLabel(2, phuRes_3, C2);
                 }
             }
+        }
+        else if (n == 60)
+        {
+            m1_strPhuCode = dCtrl->getPhuCode(1);
+            m2_strPhuCode = dCtrl->getPhuCode(2);
+            m3_strPhuCode = dCtrl->getPhuCode(3);
+            runStep = 60;
+        }
+        else if (n==65)
+        {
+            on_autoWork(false);
+            dCtrl->on_setProcessSetState(false);
         }
         else if (330 <= n && n<=998)
         {
@@ -3370,10 +3385,10 @@ void QtCanPlatform::workRun()
         return;
     }
 
-    emit sigEndRunWork(330,0);
+    emit sigEndRunWork(lowVolt,0);
     //高压到330V,每次加3V，然后一直加到高压正常
-    int HVVar1 = 330;
-    int HVVar2 = 330;
+    int HVVar1 = lowVolt;
+    int HVVar2 = lowVolt;
     int low_lastHv1 = HVVar1;
     int low_lastHv2 = HVVar2;
     int low_lastHv3 = HVVar2;
@@ -3444,7 +3459,8 @@ void QtCanPlatform::workRun()
     }
     if (!_bWork)
     {
-        QLOG_INFO() << "_bWork is false,exit";
+        emit sigEndRunWork(25, 0);
+        QLOG_INFO() << "_bWork is false,exit:"<<runStep;
         return;
     }
     if (HVVar1 <= 334|| HVVar2<=334)
@@ -3464,6 +3480,12 @@ void QtCanPlatform::workRun()
         }
         //显示结果
         emit sigEndRunWork(55, 0);
+        return;
+    }
+    if (!_bWork)
+    {
+        emit sigEndRunWork(25, 0);
+        QLOG_INFO() << "_bWork is false,exit:" << runStep;
         return;
     }
     //在刚才的电压上，每次减3V，然后一直减到高压正常
@@ -3540,11 +3562,18 @@ void QtCanPlatform::workRun()
     
     //显示结果
     emit sigEndRunWork(55, 0);
+
+    if (!_bWork)
+    {
+        emit sigEndRunWork(25, 0);
+        QLOG_INFO() << "_bWork is false,exit:" << runStep;
+        return;
+    }
     //=======增加步骤
     //验证高压保护
 
-    emit sigEndRunWork(740, 0);
-    HVVar1 = HVVar2 = 740;
+    emit sigEndRunWork(highVolt, 0);
+    HVVar1 = HVVar2 = highVolt;
     sigEndRunWork(HVVar1, 1);
     sigEndRunWork(HVVar2, 2);
     bflag1 = true; bflag1 &= b1;
@@ -3617,6 +3646,13 @@ void QtCanPlatform::workRun()
     bflag2 = true; bflag2 &= b2;
     bflag3 = true; bflag3 &= b3;
 
+    if (!_bWork)
+    {
+        emit sigEndRunWork(25, 0);
+        QLOG_INFO() << "_bWork is false,exit:" << runStep;
+        return;
+    }
+
     if (b1)
         emit sigEndRunWork(HVVar1, 1);
     if (b2)
@@ -3686,13 +3722,63 @@ void QtCanPlatform::workRun()
             break;
     }
 
-    if (b1) { phuRes_1 += "高压保护电压：" + QString::number(low_lastHv1) + "\n"; QLOG_INFO() << "1#高压保护电压：" << low_lastHv1; }
-    if (b2) { phuRes_2 += "高压保护电压：" + QString::number(low_lastHv2) + "\n"; QLOG_INFO() << "2#高压保护电压：" << low_lastHv2; }
-    if (b3) { phuRes_3 += "高压保护电压：" + QString::number(low_lastHv3) + "\n"; QLOG_INFO() << "3#高压保护电压：" << low_lastHv3; }
+    if (b1) 
+    {
+        if (bflag1)
+        {
+            phuRes_1 += "高压保护电压：" + QString::number(low_lastHv1) + "(异常值)\n"; 
+            QLOG_INFO() << "1#高压保护电压：" << low_lastHv1<<"(异常值)";
+            m1_listTestRes.append("1#高压保护电压," + QString::number(low_lastHv1) + "(异常值)");
+        }
+        else
+        {
+            phuRes_1 += "高压保护电压：" + QString::number(low_lastHv1) + "\n";
+            QLOG_INFO() << "1#高压保护电压：" << low_lastHv1;
+            m1_listTestRes.append("1#高压保护电压," + QString::number(low_lastHv1));
+        }
+    }
+    if (b2)
+    { 
+        if (bflag2)
+        {
+            phuRes_2 += "高压保护电压：" + QString::number(low_lastHv2) + "(异常值)\n";
+            QLOG_INFO() << "2#高压保护电压：" << low_lastHv2 << "(异常值)";
+            m2_listTestRes.append("2#高压保护电压," + QString::number(low_lastHv2) + "(异常值)");
+        }
+        else
+        {
+            phuRes_2 += "高压保护电压：" + QString::number(low_lastHv2) + "\n";
+            QLOG_INFO() << "2#高压保护电压：" << low_lastHv2; 
+            m1_listTestRes.append("2#高压保护电压," + QString::number(low_lastHv2));
+        }
+       
+    }
+    if (b3) 
+    { 
+        if (bflag3)
+        {
+            phuRes_3 += "高压保护电压：" + QString::number(low_lastHv3) + "(异常值)\n";
+            QLOG_INFO() << "3#高压保护电压：" << low_lastHv3 << "(异常值)";
+            m3_listTestRes.append("3#高压保护电压," + QString::number(low_lastHv3) + "(异常值)");
+        }
+        else
+        {
+            phuRes_3 += "高压保护电压：" + QString::number(low_lastHv3) + "\n";
+            QLOG_INFO() << "3#高压保护电压：" << low_lastHv3;
+            m3_listTestRes.append("3#高压保护电压," + QString::number(low_lastHv3));
+        }
+       
+
+    }
     //显示结果
     emit sigEndRunWork(55, 0);
 
-    if (!_bWork)return;
+    if (!_bWork)
+    {
+        emit sigEndRunWork(25, 0);
+        QLOG_INFO() << "_bWork is false,exit:" << runStep;
+        return;
+    }
     //下面测试温度
     bflag1 = true;
     bflag2 = true;
@@ -3719,32 +3805,44 @@ void QtCanPlatform::workRun()
     bflag2 = true;
     bflag3 = true;
    
+    if (!_bWork)
+    {
+        emit sigEndRunWork(25, 0);
+        QLOG_INFO() << "_bWork is false,exit:" << runStep;
+        return;
+    }
     QLOG_INFO() << "等待温度-15";
     while (_bWork)
-    {
-       
+    { 
         if (b1 && bflag1)
         {  
-            if (realWTemp[0] > tempture)
+            if (realWTemp[0] > m_iHeatTempture)
                 continue;                   //没到温度，继续循环等
             bflag1 = false;                 //温度到了，就不要进入了
         }
         if (b2 && bflag2)
         {
-            if (realWTemp[1] > tempture)
+            if (realWTemp[1] > m_iHeatTempture)
                 continue;                   //没到温度，继续循环等
             bflag2 = false;                 //温度到了，就不要进入了
         }
         if (b3 && bflag3)
         {
-            if (realWTemp[2] > tempture)
+            if (realWTemp[2] > m_iHeatTempture)
                 continue;                   //没到温度，继续循环等
             bflag3 = false;                 //温度到了，就不要进入了
         }
         break;
         Sleep(100);
-
     }
+
+    if (!_bWork)
+    {
+        emit sigEndRunWork(25, 0);
+        QLOG_INFO() << "_bWork is false,exit:" << runStep;
+        return;
+    }
+
     //使能
     emit sigEndRunWork(20,0);
     while (_bWork)
@@ -3755,6 +3853,13 @@ void QtCanPlatform::workRun()
     }
     //休眠3秒，因为升温没那么快
     Sleep(3000);
+
+    if (!_bWork)
+    {
+        emit sigEndRunWork(25, 0);
+        QLOG_INFO() << "_bWork is false,exit:" << runStep;
+        return;
+    }
 
     PowerArr[0].clear();
     PowerArr[1].clear();
@@ -3767,6 +3872,7 @@ void QtCanPlatform::workRun()
     bflag2 = true;
     bflag3 = true;
     bool bIn = true;
+    QTime t_OT = QTime::currentTime().addSecs(m_iOverTime);
     while (_bWork)
     {
         bIn = false;
@@ -3774,50 +3880,56 @@ void QtCanPlatform::workRun()
         {
             //这个是为了跳出外面这个循环
             bIn = true;
-            if (realWTemp[0] == zero_tempture)
+            if (realWTemp[0] == m_iPowerTempture)
             {
                 if (PowerArr[0].size() < agvPowerFream)
                     PowerArr[0].push_back(realPower[0]);                //没到温度，继续循环等
                 else
                     bflag1 = false;                                     //够数了
             }
-            if(realWTemp[0] > zero_tempture)
+            if(realWTemp[0] > m_iPowerTempture)
                 bflag1 = false;                                         //超温了
         }
         if (b2 && bflag2)
         {
             //这个是为了跳出外面这个循环
             bIn = true;
-            if (realWTemp[1] == zero_tempture)
+            if (realWTemp[1] == m_iPowerTempture)
             {
                 if (PowerArr[1].size() < agvPowerFream)
                     PowerArr[1].push_back(realPower[1]);                //没到温度，继续循环等
                 else
                     bflag2 = false;                                     //够数了
             }
-            if (realWTemp[1] > zero_tempture)
+            if (realWTemp[1] > m_iPowerTempture)
                 bflag2 = false;                                         //超温了
         }
         if (b3 && bflag3)
         {
             //这个是为了跳出外面这个循环
             bIn = true;
-            if (realWTemp[2] == zero_tempture)
+            if (realWTemp[2] == m_iPowerTempture)
             {
                 if (PowerArr[2].size() < agvPowerFream)
                     PowerArr[2].push_back(realPower[2]);                //没到温度，继续循环等
                 else
                     bflag3 = false;                                     //够数了
             }
-            if (realWTemp[2] > zero_tempture)
+            if (realWTemp[2] > m_iPowerTempture)
                 bflag3 = false;                                         //超温了
+        }
+
+        if (QTime::currentTime() > t_OT)
+        {
+            QLOG_INFO() << tr("等待水温超时，功率测试模块跳过");
+            break;
         }
         //上面三个if都没有跳进去，说明要跳出这个循环了
         if (!bIn)
             break;
         Sleep(1000);
         //三个都超温了
-        if (realWTemp[0] > zero_tempture && realWTemp[1] > zero_tempture && realWTemp[2] > zero_tempture)
+        if (realWTemp[0] > m_iPowerTempture && realWTemp[1] > m_iPowerTempture && realWTemp[2] > m_iPowerTempture)
         {
             break;
         }
@@ -3835,11 +3947,8 @@ void QtCanPlatform::workRun()
             avage = sum / PowerArr[0].size();
         QLOG_INFO() << "1#件平均功率：" << avage << ",记录了" << PowerArr[0].size() << "次";
         phuRes_1 += "1#件平均功率：" + QString::number(avage);
-        QString er = "";
-        for (std::set<QString>::iterator it = Error[0].begin(); it != Error[0].end(); it++)
-            er += *it+",";
-
-        QLOG_INFO() << "1#件故障：" << er;
+        m1_listTestRes.append("1#件平均功率," + QString::number(avage));
+        
     }
     if (b2)
     {
@@ -3853,11 +3962,8 @@ void QtCanPlatform::workRun()
             avage = sum / PowerArr[1].size();
         QLOG_INFO() << "2#件平均功率：" << avage << ",记录了" << PowerArr[1].size() << "次";
         phuRes_2 += "2#件平均功率：" + QString::number(avage);
-        QString er = "";
-        for (std::set<QString>::iterator it = Error[1].begin(); it != Error[1].end(); it++)
-            er += *it + ",";
-
-        QLOG_INFO() << "2#件故障：" << er;
+        m2_listTestRes.append("2#件平均功率," + QString::number(avage));
+        
     }
     if (b3)
     {
@@ -3871,23 +3977,179 @@ void QtCanPlatform::workRun()
             avage = sum / PowerArr[2].size();
         QLOG_INFO() << "3#件平均功率：" << avage << ",记录了" << PowerArr[2].size() << "次";
         phuRes_3 += "3#件平均功率：" + QString::number(avage);
-        QString er = "";
-        for (std::set<QString>::iterator it = Error[2].begin(); it != Error[2].end(); it++)
-            er += *it + ",";
-
-        QLOG_INFO() << "3#件故障：" << er;
+        m3_listTestRes.append("3#件平均功率," + QString::number(avage));
+       
     }
 
     emit sigEndRunWork(55, 0);
-
-    //关闭使能，下高压
-    emit sigEndRunWork(25,0);
+    if (!_bWork)
+    {
+        emit sigEndRunWork(25, 0);
+        QLOG_INFO() << "_bWork is false,exit:" << runStep;
+        return;
+    }
 
     //关闭内循环
     //===================
     emit sigEndRunWork(30, 0);
     Sleep(3000);
-    QLOG_INFO() << "等待外循环关闭";
+    bflag1 = true; bflag1 &= b1;
+    bflag2 = true; bflag2 &= b2;
+    bflag3 = true; bflag3 &= b3;
+    int protectV1 = 0;
+    int protectV2 = 0;
+    int protectV3 = 0;
+    t_OT = QTime::currentTime().addSecs(m_iOverTime);
+    while (_bWork)
+    {
+
+        if (b1 && bflag1)
+        {
+            if (realOTPro[0] == "过温保护")
+            {
+                protectV1 = realWTemp[0];
+                bflag1 = false;
+            }
+        }
+        if (b2 && bflag2)
+        {
+            if (realOTPro[1] == "过温保护")
+            {
+                protectV2 = realWTemp[1];
+                bflag2 = false;
+            }
+        }
+        if (b3 && bflag3)
+        {
+            if (realOTPro[2] == "过温保护")
+            {
+                protectV3 = realWTemp[2];
+                bflag3 = false;
+            }
+        }
+        if (QTime::currentTime() > t_OT)
+        {
+            QLOG_INFO() << "过温保护测试模块超时";
+            break;
+        }
+           
+        if (!(bflag1 || bflag2 || bflag3))
+            break;
+
+    }
+    if (b1)
+    {
+        if (bflag1)
+        {
+            phuRes_1 += "\n1#过温保护:未完成测试";
+            m1_listTestRes.append("1#过温保护,未完成测试");
+        }
+        else
+        {
+            phuRes_1 += "\n1#过温保护," + QString::number(protectV1) + "°C";
+            m1_listTestRes.append("1#过温保护,"+ QString::number(protectV1) + "°C");
+        }
+        QString er = "";
+        for (std::set<QString>::iterator it = Error[0].begin(); it != Error[0].end(); it++)
+            er += *it + ",";
+        m1_listTestRes.append("1#件故障," + er);
+        QLOG_INFO() << "1#件故障：" << er;
+    }
+    if (b2)
+    {
+        if (bflag1)
+        {
+            phuRes_2 += "\n2#过温保护:未完成测试";
+            m2_listTestRes.append("2#过温保护,未完成测试");
+        }
+        else
+        {
+            phuRes_2 += "\n2#过温保护," + QString::number(protectV2) + "°C";
+            m2_listTestRes.append("2#过温保护," + QString::number(protectV2) + "°C");
+        }
+        QString er = "";
+        for (std::set<QString>::iterator it = Error[1].begin(); it != Error[1].end(); it++)
+            er += *it + ",";
+        m2_listTestRes.append("2#件故障," + er);
+        QLOG_INFO() << "2#件故障：" << er;
+    }
+        
+    if (b3)
+    {
+        if (bflag3)
+        {
+            phuRes_3 += "\n3#过温保护:未完成测试";
+            m3_listTestRes.append("3#过温保护,未完成测试");
+        }
+        else
+        {
+            phuRes_3 += "\n3#过温保护," + QString::number(protectV3) + "°C";
+            m3_listTestRes.append("3#过温保护," + QString::number(protectV3) + "°C");
+        }
+
+        QString er = "";
+        for (std::set<QString>::iterator it = Error[2].begin(); it != Error[2].end(); it++)
+            er += *it + ",";
+        m3_listTestRes.append("3#件故障," + er);
+        QLOG_INFO() << "3#件故障：" << er;
+    }
+    
+    emit sigEndRunWork(60, 0);
+    while (_bWork)
+    {
+        if (runStep == 60)
+            break;
+        Sleep(100);
+    }
+    if (b1)
+    {
+        if (!m1_strPhuCode.isEmpty())
+            saveAutoTestRes(m1_strPhuCode, m1_listTestRes);
+        else
+        {
+            QLOG_WARN() << "1#件未有二维码，保存名字为当前时间";
+            saveAutoTestRes(m1_strPhuCode, m1_listTestRes);
+        }
+    }
+    if (b2)
+    {
+        if (!m2_strPhuCode.isEmpty())
+            saveAutoTestRes(m2_strPhuCode, m2_listTestRes);
+        else
+        {
+            QLOG_WARN() << "3#件未有二维码，保存名字为当前时间";
+            saveAutoTestRes(m2_strPhuCode, m2_listTestRes);
+        }
+    }
+    if (b3)
+    {
+        if (!m3_strPhuCode.isEmpty())
+            saveAutoTestRes(m3_strPhuCode, m3_listTestRes);
+        else
+        {
+            QLOG_WARN() << "3#件未有二维码，保存名字为当前时间";
+            saveAutoTestRes(m3_strPhuCode, m3_listTestRes);
+        }
+    }
+
+
+    //显示
+    emit sigEndRunWork(55, 0);
+    //关闭使能，下高压
+    emit sigEndRunWork(25,0);
+
+
+    if (!_bWork)
+    {
+        
+        QLOG_INFO() << "_bWork is false,exit:" << runStep;
+        return;
+    }
+    //关闭内循环
+    //===================
+    emit sigEndRunWork(30, 0);
+    Sleep(3000);
+    QLOG_INFO() << "等待内外循环关闭";
     while (1)
     {
         if (!_bWork)
@@ -3899,16 +4161,27 @@ void QtCanPlatform::workRun()
         else
             break;
     }
+    if (!_bWork)
+    {
+        emit sigEndRunWork(25, 0);
+        QLOG_INFO() << "_bWork is false,exit:" << runStep;
+        return;
+    }
+
     //开启吹水功能
     emit sigEndRunWork(35, 0);
     int i = 0;
+    //开启进度条
     emit sigEndRunWork(999, i);
     while (_bWork && i < 120)
     {
         i++;
+        //更新进度条
         emit sigEndRunWork(9999, i);
         Sleep(1000);
     }
+    //按钮可用
+    emit sigEndRunWork(65, 0);
     return;
 
 }

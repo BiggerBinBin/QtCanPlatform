@@ -84,6 +84,7 @@ public:
 	bool outCycleState() { return outCircle; }
 	bool inCycleState() { return inCircle; }
 	void setResInLabel(int ch, QString str, QColor color);
+	QString getPhuCode(int ch);
 signals:
 	void timeToSend(QString str,int num);
 	void sigArealdSend(QModbusDataUnit mdu);
@@ -146,6 +147,7 @@ public slots:
 
 	//打开流程设置
 	void on_pbProcessSet_clicked(bool isCheck);
+	void on_setProcessSetState(bool b);
 
 	//工位的选择
 	void on_dCbProcess1_stateChanged(int state);
