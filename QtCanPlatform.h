@@ -136,18 +136,31 @@ private:
     QComboBox* cbPcan = nullptr;
     //can类型选择
     QComboBox* cbCanType = nullptr;
+    //多个pcan组合？
     QComboBox* cbIsMutil = nullptr;
+    //设备打开
     QPushButton* pbOpen = nullptr;
+    //报文周期
     QLineEdit* cycle = nullptr;
+    //波特率
     QComboBox* cbBitRate = nullptr;
+    //刷新设备
     QPushButton* reFresh = nullptr;
+    //型号选择
     QComboBox* cbSelectModel = nullptr;
+    //通信状态
     QLabel* communicaLabel = nullptr;
+    //定时发送请求
     QTimer* sendTimer = nullptr;
+    //通信丢失定时器
     QTimer* lostQTimer = nullptr;
+    //多路的通信丢失定时器
     QTimer* lostQTimerArr[4] = { nullptr };
+    //CAN打开状态变量
     bool pcanIsOpen = false;
+    //日志条数
     int maxTextBrowser = 0;
+    //是否打印报文
     bool isTrace = false;
     std::map<QString, std::vector<parseData>>showTableD;
     QStringList rollTitle;

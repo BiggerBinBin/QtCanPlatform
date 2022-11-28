@@ -3,7 +3,7 @@
 
 #include <QThread>
 #include <QDebug>
-#include <QMutex>
+
 
 #include "config.h"
 
@@ -42,7 +42,7 @@ public:
     int debicCom=0;
     bool stopped;
     UINT Send_ID;
-    QByteArray *hex_data = new QByteArray();
+    //QByteArray *hex_data = new QByteArray();
     int hex_data_length;
     CHex chex;
 //    int Counter_hex = 1;
@@ -50,21 +50,20 @@ public:
     int Counter_hex_data = 0;
 
     qint64 currentTime,preTime;
-
+    int i_CAN_NUM = 2;
+    int i_DEVICE_NUM = 1;
 signals:
     void getProtocolData(VCI_CAN_OBJ *vci,DWORD dwRel,int common);
     void getProtocolData(int ch, quint32 ID ,QByteArray data);
 
 private:
-    QMutex mutex;
     char StartAddr;
     bool Reset = false;
 
-    void ThreadPause();
-    void ThreadResume();
+   
     void run();
     void sleep(unsigned int msec);
-    ushort CAN_NUM = 0;
+    
 };
 
 #endif // CANTHREAD_H

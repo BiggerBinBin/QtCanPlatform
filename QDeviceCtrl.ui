@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>400</width>
+    <width>479</width>
     <height>433</height>
    </rect>
   </property>
@@ -62,6 +62,13 @@
             <widget class="QCheckBox" name="dCbProcess3">
              <property name="text">
               <string>测试3#</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="pbTestParamSet">
+             <property name="text">
+              <string>参数SET</string>
              </property>
             </widget>
            </item>

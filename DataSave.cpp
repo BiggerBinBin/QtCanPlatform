@@ -194,7 +194,7 @@ void DataSave::writeExcelFast(QString fileName, QList<QList<QVariant>>& x_y)
     QVariant var;
     castListListVariant2Variant(x_y, var);
     usedrange_Write->setProperty("Value", var);
-    worksheet->dynamicCall("Protect(Password)", "123");
+    //worksheet->dynamicCall("Protect(Password)", "123");
     workbook->dynamicCall("SaveCopyAs(QString)", QDir::toNativeSeparators(fileName));
     workbook->dynamicCall("Close(bool)", false);  //关闭文件
     excel->dynamicCall("Quit()");//关闭excel

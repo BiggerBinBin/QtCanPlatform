@@ -330,33 +330,7 @@ void QtCanPlatform::initUi()
     connect(pbClearCanData, SIGNAL(clicked()), this, SLOT(on_pbClearCanData_clicked()));
     connect(pbGetVer, SIGNAL(clicked(bool)), this, SLOT(on_pbGetVer_clicked(bool)));
     canButton->addSpacerItem(new QSpacerItem(20, 20, QSizePolicy::Expanding));
-    //QVBoxLayout* canVLaout = new QVBoxLayout();
-    //canVLaout->addLayout(canButton);
-    //canVLaout->addWidget(tableRollTitle);
-    //canVLaout->addWidget(tableRollData);
-    //canVLaout->setSpacing(1);
-    ////定义一个垂直布局
-    //QVBoxLayout* vLayout = new QVBoxLayout();
-    //vLayout->addLayout(hLayout);
-
-    ////两个显示数据的垂直在左边
-    //QVBoxLayout* vLayoutTable = new QVBoxLayout();
-    //vLayoutTable->addWidget(tableView);
-    //vLayoutTable->addWidget(tableRecView);
-    //vLayoutTable->addLayout(canVLaout);
-    //vLayoutTable->setStretch(0, 2);
-    //vLayoutTable->setStretch(1, 3);
-    //vLayoutTable->setStretch(2, 5);
-   
-    ////定义一个水平layout
-    //QHBoxLayout* mainTLayout = new QHBoxLayout();
-    ////两个显示数据的table在左
-    //mainTLayout->addLayout(vLayoutTable);
-    ////显示日志的在右
-    //mainTLayout->addWidget(textBrowser);
-    ////再跟顶部的按钮搞在一起
-    //vLayout->addLayout(mainTLayout);
-    //ui.centralWidget->setLayout(vLayout);
+    
     if(cbSelectModel->count()>0)
         on_CurrentModelChanged(0);
     //QLOG_INFO() << "初始化界面完成";
@@ -2681,6 +2655,7 @@ void QtCanPlatform::saveAutoTestRes(const QString & fileName,const QStringList& 
         appPath += QDateTime::currentDateTime().toString("yyyy-MM-dd-hh-mm-ss-zzz") + ".xlsx";
     }
     DataSave d;
+    d.setTitle(QString("测试项,结果"));
     d.SaveData(data, data.size(), appPath);
 }
 void QtCanPlatform::on_checkTraceChanged(int check)
@@ -2881,6 +2856,39 @@ void QtCanPlatform::on_autoWork(bool isRun)
         int ret = tip.exec();
         if (ret != QMessageBox::Yes)
             return;
+        bool b1 = dCtrl->getProcess1State();
+        bool b2 = dCtrl->getProcess2State();
+        bool b3 = dCtrl->getProcess3State();
+        if (b1)
+        {
+            QString text = dCtrl->getPhuCode(1).trimmed();
+            if (text.isEmpty())
+            {
+                QMessageBox tip(QMessageBox::Warning, "tips", tr("1#件未输入二维码"), QMessageBox::Yes | QMessageBox::No);
+                dCtrl->on_pbProcessSet_clicked(false);
+                return;
+            }
+        }
+        if (b2)
+        {
+            QString text = dCtrl->getPhuCode(2).trimmed();
+            if (text.isEmpty())
+            {
+                QMessageBox tip(QMessageBox::Warning, "tips", tr("2#件未输入二维码"), QMessageBox::Yes | QMessageBox::No);
+                dCtrl->on_pbProcessSet_clicked(false);
+                return;
+            }
+        }
+        if (b3)
+        {
+            QString text = dCtrl->getPhuCode(3).trimmed();
+            if (text.isEmpty())
+            {
+                QMessageBox tip(QMessageBox::Warning, "tips", tr("3#件未输入二维码"), QMessageBox::Yes | QMessageBox::No);
+                dCtrl->on_pbProcessSet_clicked(false);
+                return;
+            }
+        }
         _bWork = true;
         QtConcurrent::run(this, &QtCanPlatform::workRun);
     }
@@ -2888,7 +2896,7 @@ void QtCanPlatform::on_autoWork(bool isRun)
     {
         _bWork = false;
         on_pbSend_clicked(false);
-        pbSend->setChecked(false);
+        //pbSend->setChecked(false);
     }
         //workRun();
 }
@@ -2955,6 +2963,16 @@ void QtCanPlatform::on_recSigEndRunWork(int n,int channel)
             QLOG_INFO() << "打开冷水机";
 
             runStep = 10;
+        }
+        else if (12 == n)                   //冷水机
+        {
+            ////冷水机外循环（水流）
+            //dCtrl->on_pbStartOutCricle_clicked(true);
+            //内循环（制冷）
+            dCtrl->on_pbStartInCricle_clicked(true);
+            QLOG_INFO() << "打开冷水机制冷";
+
+            runStep = 12;
         }
         else if (15 == n)                   //上高压
         {
@@ -3145,7 +3163,8 @@ void QtCanPlatform::on_recSigEndRunWork(int n,int channel)
                         nn += *b+"\n";
                         b++;
                     }
-                    dCtrl->setResInLabel(0, phuRes_1 + "\n" +nn, C);
+                    nn = "\n" + nn;
+                    dCtrl->setResInLabel(0, phuRes_1 +nn, C);
                 }  
                 else
                 {
@@ -3165,7 +3184,8 @@ void QtCanPlatform::on_recSigEndRunWork(int n,int channel)
                         nn += *b+"\n";
                         b++;
                     }
-                    dCtrl->setResInLabel(1, phuRes_2 +"\n" + nn, C);
+                    nn = "\n" + nn;
+                    dCtrl->setResInLabel(1, phuRes_2  + nn, C);
                 }
                 else
                 {
@@ -3185,7 +3205,8 @@ void QtCanPlatform::on_recSigEndRunWork(int n,int channel)
                         nn += *b+"\n";
                         b++;
                     }
-                    dCtrl->setResInLabel(2, phuRes_3 + "\n" + nn, C);
+                    nn = "\n" + nn;
+                    dCtrl->setResInLabel(2, phuRes_3  + nn, C);
                 }
                 else
                 {
@@ -3209,16 +3230,16 @@ void QtCanPlatform::on_recSigEndRunWork(int n,int channel)
         {
             if (0 == channel)
             {
-                dCtrl->setHV_1(n, 30);
-                dCtrl->setHV_2(n, 30);
+                dCtrl->setHV_1(n, 60);
+                dCtrl->setHV_2(n, 60);
             }
             else if (1 == channel)
             {
-                dCtrl->setHV_1(n, 30);
+                dCtrl->setHV_1(n, 60);
             }
             else if (2 == channel)
             {
-                dCtrl->setHV_2(n, 30);
+                dCtrl->setHV_2(n, 60);
             }
            
             QLOG_INFO() << "setVolt:"<<n;
@@ -3444,6 +3465,9 @@ void QtCanPlatform::workRun()
                 low_lastHv3 = HVVar2;
             }
         }
+        //三路都不报高压异常了
+        if (!(bflag1 || bflag2 || bflag3))
+            break;
         //继续往上加
         HVVar1 += 4;
         HVVar2 += 4;
@@ -3453,9 +3477,7 @@ void QtCanPlatform::workRun()
             emit sigEndRunWork(HVVar2, 2);
         if (bflag3)
             emit sigEndRunWork(HVVar2,2);
-        //三路都不报高压异常了
-        if (!(bflag1 || bflag2 || bflag3))
-            break;
+        
     }
     if (!_bWork)
     {
@@ -3543,6 +3565,9 @@ void QtCanPlatform::workRun()
                 low_lastHv3 = HVVar2;
             }
         }
+        //三路都不报高压异常了
+        if (!(bflag1 || bflag2 || bflag3))
+            break;
         //继续往下减
         HVVar1 -= 4;
         HVVar2 -= 4;
@@ -3552,13 +3577,56 @@ void QtCanPlatform::workRun()
             emit sigEndRunWork(HVVar2, 2);
         if (bflag3)
             emit sigEndRunWork(HVVar2, 2);
-        //三路都不报高压异常了
-        if (!(bflag1 || bflag2 || bflag3))
-            break;
+        
     }
-    if (b1) { phuRes_1+="低压保护电压："+ QString::number(low_lastHv1)+"\n"; QLOG_INFO() << "1#低压保护电压：" << low_lastHv1; }
-    if (b2) { phuRes_2 += "低压保护电压：" + QString::number(low_lastHv2) + "\n"; QLOG_INFO() << "2#低压保护电压：" << low_lastHv2; }
-    if (b3) { phuRes_3 += "低压保护电压：" + QString::number(low_lastHv3) + "\n"; QLOG_INFO() << "3#低压保护电压：" << low_lastHv3; }
+    if (b1)
+    {
+        if (bflag1)
+        {
+            phuRes_1 += "低压保护电压：" + QString::number(low_lastHv1) + "(异常值)\n";
+            QLOG_INFO() << "1#低压保护电压：" << low_lastHv1 << "(异常值)";
+            m1_listTestRes.append("1#低压保护电压," + QString::number(low_lastHv1) + "(异常值)");
+        }
+        else
+        {
+            phuRes_1 += "低压保护电压：" + QString::number(low_lastHv1) + "\n";
+            QLOG_INFO() << "1#低压保护电压：" << low_lastHv1;
+            m1_listTestRes.append("1#低压保护电压," + QString::number(low_lastHv1));
+        }
+    }
+    if (b2)
+    {
+        if (bflag2)
+        {
+            phuRes_2 += "低压保护电压：" + QString::number(low_lastHv2) + "(异常值)\n";
+            QLOG_INFO() << "2#低压保护电压：" << low_lastHv2 << "(异常值)";
+            m2_listTestRes.append("2#低压保护电压," + QString::number(low_lastHv2) + "(异常值)");
+        }
+        else
+        {
+            phuRes_2 += "低压保护电压：" + QString::number(low_lastHv2) + "\n";
+            QLOG_INFO() << "2#低压保护电压：" << low_lastHv2;
+            m2_listTestRes.append("2#低压保护电压," + QString::number(low_lastHv2));
+        }
+
+    }
+    if (b3)
+    {
+        if (bflag3)
+        {
+            phuRes_3 += "低压保护电压：" + QString::number(low_lastHv3) + "(异常值)\n";
+            QLOG_INFO() << "3#低压保护电压：" << low_lastHv3 << "(异常值)";
+            m3_listTestRes.append("3#低压保护电压," + QString::number(low_lastHv3) + "(异常值)");
+        }
+        else
+        {
+            phuRes_3 += "低压保护电压：" + QString::number(low_lastHv3) + "\n";
+            QLOG_INFO() << "3#低压保护电压：" << low_lastHv3;
+            m3_listTestRes.append("3#低压保护电压," + QString::number(low_lastHv3));
+        }
+
+
+    }
     
     //显示结果
     emit sigEndRunWork(55, 0);
@@ -3628,6 +3696,9 @@ void QtCanPlatform::workRun()
                 low_lastHv3 = HVVar2;
             }
         }
+        //三路都不报高压异常了
+        if (!(bflag1 || bflag2 || bflag3))
+            break;
         //继续往上加
         HVVar1 += 4;
         HVVar2 += 4;
@@ -3637,9 +3708,7 @@ void QtCanPlatform::workRun()
             emit sigEndRunWork(HVVar2, 2);
         if (bflag3)
             emit sigEndRunWork(HVVar2, 2);
-        //三路都不报高压异常了
-        if (!(bflag1 || bflag2 || bflag3))
-            break;
+        
     }
     //在刚才的电压上，每次减3V，然后一直减到高压正常
     bflag1 = true; bflag1 &= b1;
@@ -3708,6 +3777,9 @@ void QtCanPlatform::workRun()
                 low_lastHv3 = HVVar2;
             }
         }
+        //三路都不报高压异常了
+        if (!(bflag1 || bflag2 || bflag3))
+            break;
         //继续往下减
         HVVar1 -= 4;
         HVVar2 -= 4;
@@ -3717,9 +3789,7 @@ void QtCanPlatform::workRun()
             emit sigEndRunWork(HVVar1, 2);
         if (bflag3)
             emit sigEndRunWork(HVVar2, 2);
-        //三路都不报高压异常了
-        if (!(bflag1 || bflag2 || bflag3))
-            break;
+        
     }
 
     if (b1) 
@@ -3749,7 +3819,7 @@ void QtCanPlatform::workRun()
         {
             phuRes_2 += "高压保护电压：" + QString::number(low_lastHv2) + "\n";
             QLOG_INFO() << "2#高压保护电压：" << low_lastHv2; 
-            m1_listTestRes.append("2#高压保护电压," + QString::number(low_lastHv2));
+            m2_listTestRes.append("2#高压保护电压," + QString::number(low_lastHv2));
         }
        
     }
