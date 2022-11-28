@@ -44,6 +44,13 @@ public:
 	}
 	void save();
 	void read();
+	void save_ini();
+	void read_ini();
+	const struct autoTestData getATData() { return aTdata; }
+	void setATData(const struct autoTestData& da) 
+	{
+		aTdata = da;
+	}
 	std::vector<struct protoData>pGboleData;
 	bool getIsInit() { return isInit; }
 	
@@ -55,6 +62,7 @@ private:
 	//static std::mutex mut;
 	std::mutex dMut;
 	uint fIndex[10000];
+	struct autoTestData aTdata;
 signals:
 	void dataChange();
 };

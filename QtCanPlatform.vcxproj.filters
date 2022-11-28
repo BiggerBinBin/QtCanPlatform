@@ -76,6 +76,9 @@
     <ClCompile Include="chex.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="QAutoTestIniData.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="QCanSetting.h">
@@ -105,6 +108,9 @@
     <QtMoc Include="canthread.h">
       <Filter>Header Files</Filter>
     </QtMoc>
+    <QtMoc Include="QAutoTestIniData.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
   </ItemGroup>
   <ItemGroup>
     <QtUic Include="QCanSetting.ui">
@@ -117,6 +123,9 @@
       <Filter>Form Files</Filter>
     </QtUic>
     <QtUic Include="QProcessBuild.ui">
+      <Filter>Form Files</Filter>
+    </QtUic>
+    <QtUic Include="QAutoTestIniData.ui">
       <Filter>Form Files</Filter>
     </QtUic>
   </ItemGroup>

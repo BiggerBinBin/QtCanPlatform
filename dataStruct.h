@@ -65,3 +65,12 @@ struct protoData {
 	QString modelName;				//名称
 	std::vector<canIdData>cItem;	//数据
 };
+struct autoTestData {
+	int m_iLowVolt;				//欠压起步电压
+	int m_iHeightVolt;			//过压起步电压
+	int m_iVoltStep;			//升压步进
+	int m_iVoltError;			//电压误差
+	int m_iHeatTempture;		//开始加热的温度
+	int m_iPowerTempture;		//额定功率的温度
+	int m_iOverTime;			//超时
+};

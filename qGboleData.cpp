@@ -10,6 +10,9 @@
 #include <QTextStream>
 #include <QString>
 #include <qobject.h>
+#include <qsettings.h>
+#include "QsLog.h"
+//静态成员变量在类外初始化
 qGboleData* qGboleData::pGboleInstance = nullptr;
 qGboleData::qGboleData()
 {
@@ -252,7 +255,49 @@ void qGboleData::read()
 	}
 	isInit = true;
 }
+void qGboleData::save_ini()
+{
+	std::lock_guard<std::mutex>lock(dMut);
+	// 程序目录下Data文件，名字为Jugde.ini
+	QString filepath = QApplication::applicationDirPath() + "/Data/Jugde.ini";
+	QSettings* setf = new QSettings(filepath, QSettings::IniFormat);
 
+	setf->setValue("lowVolt", aTdata.m_iLowVolt);
+	setf->setValue("highVolt", aTdata.m_iHeightVolt);
+	setf->setValue("m_iVoltStep", aTdata.m_iVoltStep);
+	setf->setValue("m_iVoltError", aTdata.m_iVoltError);
+	setf->setValue("m_iHeatTempture", aTdata.m_iHeatTempture);
+	setf->setValue("m_iPowerTempture", aTdata.m_iPowerTempture);
+	setf->setValue("m_iOverTime", aTdata.m_iOverTime);
+	
+
+}
+void qGboleData::read_ini()
+{
+	std::lock_guard<std::mutex>lock(dMut);
+	QString filepath = QApplication::applicationDirPath() + "/Data/Jugde.ini";
+	QFile file(filepath);
+	if (!file.exists())
+	{
+		//不存在就创建一个
+		save_ini();
+		QLOG_INFO() << "Jugde.ini not exits before,but now was created";
+		return;
+	}
+	QSettings* setf = new QSettings(filepath, QSettings::IniFormat);
+	if (setf->status() != QSettings::NoError)
+	{
+		QLOG_INFO() << "Open ini file error:" << setf->status();
+		return;
+	}
+	aTdata.m_iLowVolt = setf->value("lowVolt").toInt();
+	aTdata.m_iHeightVolt = setf->value("highVolt").toInt();
+	aTdata.m_iHeatTempture = setf->value("m_iHeatTempture").toInt();
+	aTdata.m_iPowerTempture = setf->value("m_iPowerTempture").toInt();
+	aTdata.m_iOverTime = setf->value("m_iOverTime").toInt();
+	aTdata.m_iVoltError = setf->value("m_iVoltError").toInt();
+	aTdata.m_iVoltStep = setf->value("m_iVoltStep").toInt();
+}
 qGboleData::~qGboleData()
 {
 	if (pGboleInstance)

@@ -394,6 +394,9 @@ void QtCanPlatform::initData()
     if(!qGb->getIsInit())
         qGb->read();
 }
+/*
+* ================“发送报文”填充到Tablewidget去============
+*/
 bool QtCanPlatform::sendDataIntoTab()
 {
     
@@ -455,19 +458,22 @@ bool QtCanPlatform::sendDataIntoTab()
             connect(cbSend, &QCheckBox::stateChanged, this, &QtCanPlatform::on_checkSendChanged);
             tableView->setCellWidget(cr, 0, cbSend);
             
+            //发送操作的下拉框
             QComboBox* cb = new QComboBox();
             for (int k = 0; k < sendCanData.at(i).pItem.at(j).stl_itemProperty.size();++k)
             {
                 QString name = sendCanData.at(i).pItem.at(j).stl_itemProperty.at(k).toWord;
                 QColor bc = QColor(sendCanData.at(i).pItem.at(j).stl_itemProperty.at(k).r, sendCanData.at(i).pItem.at(j).stl_itemProperty.at(k).g, sendCanData.at(i).pItem.at(j).stl_itemProperty.at(k).b);
                 cb->addItem(name);
+                //设置Item的数据，使用Qt::BackgroundColorRole声明
                 cb->setItemData(cb->count() - 1, bc, Qt::BackgroundColorRole);
             }
+            int sendValue = 0;
             if (cb->count() > 0)
             {
                 int k = cb->currentIndex();
                 QColor bc = QColor(sendCanData.at(i).pItem.at(j).stl_itemProperty.at(k).r, sendCanData.at(i).pItem.at(j).stl_itemProperty.at(k).g, sendCanData.at(i).pItem.at(j).stl_itemProperty.at(k).b);
-          
+                sendValue = sendCanData.at(i).pItem.at(j).stl_itemProperty.at(k).value.toInt();
                 QString backcolor = "background-color:#"+ QString("%1").arg(bc.red(), 2, 16, QLatin1Char('0'))+
                     QString("%1").arg(bc.green(), 2, 16, QLatin1Char('0'))+
                     QString("%1").arg(bc.blue(), 2, 16, QLatin1Char('0'));
@@ -483,7 +489,7 @@ bool QtCanPlatform::sendDataIntoTab()
             tableView->setCellWidget(cr, 1, cb);
             //QString mt = "0x"+QString("%1").arg(sendCanData.at(i).CanId, QString::number(sendCanData.at(i).CanId).length(), 16).toUpper().trimmed();
             QString mt = sendCanData.at(i).strCanId;
-            QTableWidgetItem* it1 = new QTableWidgetItem("0");
+            QTableWidgetItem* it1 = new QTableWidgetItem(QString::number(sendValue));
             it1->setTextAlignment(Qt::AlignVCenter | Qt::AlignHCenter);
             tableView->setItem(cr, 2, it1);
             QTableWidgetItem* it3 = new QTableWidgetItem(mt);
@@ -2801,34 +2807,24 @@ void QtCanPlatform::qCanSettingShow()
 }
 void QtCanPlatform::readSetFile()
 {
-    QString filepath = QApplication::applicationDirPath() + "/Data/Jugde.ini";
-    QFile file(filepath);
-    if (!file.exists())
-    {
-        //不存在就创建一个
-        configSetFile();
-        QLOG_INFO() << "Jugde.ini not exits before,but now was created";
+    
+    qGboleData* gb = qGboleData::getInstance();
+    if (!gb)
         return;
-    }
-    QSettings *setf = new QSettings(filepath,QSettings::IniFormat);
-    if (setf->status() != QSettings::NoError)
-    {
-        QLOG_INFO() << "Open ini file error:" << setf->status();
-        return;
-    }
- 
-    lowVolt = setf->value("lowVolt").toInt();
-    highVolt = setf->value("highVolt").toInt();
-    avgPower = setf->value("avgPower").toInt();
-    m_iHeatTempture = setf->value("m_iHeatTempture").toInt();
-    m_iPowerTempture = setf->value("m_iPowerTempture").toInt();
-    m_iOverTime = setf->value("m_iOverTime").toInt();
-    rmFirstFream = setf->value("rmFirstFream").toInt();
-    agvPowerFream = setf->value("agvPowerFream").toInt();
+    gb->read_ini();
+    struct autoTestData at = gb->getATData();
+    lowVolt = at.m_iLowVolt;
+    highVolt = at.m_iHeightVolt;
+    m_iHeatTempture = at.m_iHeatTempture;
+    m_iPowerTempture = at.m_iPowerTempture;
+    m_iOverTime = at.m_iOverTime;
+    m_iVoltError = at.m_iVoltError;
+    m_iVoltStep = at.m_iVoltError;
+
 
 }
 /******************************************************
-* @brief: 创建ini文件,当readSetFile()函数检测到ini文件不存在时，就调用这个函数创建
+* @brief: (丢弃了)创建ini文件,当readSetFile()函数检测到ini文件不存在时，就调用这个函数创建
 * @param: void
 * @return: void
 ******************************************************/
@@ -3422,11 +3418,11 @@ void QtCanPlatform::workRun()
         float diff = std::abs(realVolt[0] - HVVar1);
         float diff2 = std::abs(realVolt[1] - HVVar2);
         float diff3 = std::abs(realVolt[2] - HVVar2);
-        if (diff > 8 && b1)
+        if (diff > m_iVoltError && b1)
             continue;
-        if (diff2 > 8 && b2)
+        if (diff2 > m_iVoltError && b2)
             continue;
-        if (diff3 > 8 && b3)
+        if (diff3 > m_iVoltError && b3)
             continue;
         Sleep(2000);
         if (b1 && bflag1)
@@ -3469,8 +3465,8 @@ void QtCanPlatform::workRun()
         if (!(bflag1 || bflag2 || bflag3))
             break;
         //继续往上加
-        HVVar1 += 4;
-        HVVar2 += 4;
+        HVVar1 += m_iVoltStep;
+        HVVar2 += m_iVoltStep;
         if(bflag1)
             emit sigEndRunWork(HVVar1,1);
         if (bflag2)
@@ -3522,11 +3518,11 @@ void QtCanPlatform::workRun()
         float diff = std::abs(realVolt[0] - HVVar1);
         float diff2 = std::abs(realVolt[1] - HVVar2);
         float diff3 = std::abs(realVolt[2] - HVVar2);
-        if (diff > 8 && b1)
+        if (diff > m_iVoltError && b1)
             continue;
-        if (diff2 > 8 && b2)
+        if (diff2 > m_iVoltError && b2)
             continue;
-        if (diff3 > 8 && b3)
+        if (diff3 > m_iVoltError && b3)
             continue;
         Sleep(2000);
         if (b1 && bflag1)
@@ -3569,8 +3565,8 @@ void QtCanPlatform::workRun()
         if (!(bflag1 || bflag2 || bflag3))
             break;
         //继续往下减
-        HVVar1 -= 4;
-        HVVar2 -= 4;
+        HVVar1 -= m_iVoltStep;
+        HVVar2 -= m_iVoltStep;
         if (bflag1)
             emit sigEndRunWork(HVVar1, 1);
         if (bflag2)
@@ -3653,11 +3649,11 @@ void QtCanPlatform::workRun()
         float diff = std::abs(realVolt[0] - HVVar1);
         float diff2 = std::abs(realVolt[1] - HVVar2);
         float diff3 = std::abs(realVolt[2] - HVVar2);
-        if (diff > 8 && b1)
+        if (diff > m_iVoltError && b1)
             continue;
-        if (diff2 > 8 && b2)
+        if (diff2 > m_iVoltError && b2)
             continue;
-        if (diff3 > 8 && b3)
+        if (diff3 > m_iVoltError && b3)
             continue;
         Sleep(2000);
         if (b1 && bflag1)
@@ -3700,8 +3696,8 @@ void QtCanPlatform::workRun()
         if (!(bflag1 || bflag2 || bflag3))
             break;
         //继续往上加
-        HVVar1 += 4;
-        HVVar2 += 4;
+        HVVar1 += m_iVoltStep;
+        HVVar2 += m_iVoltStep;
         if (bflag1)
             emit sigEndRunWork(HVVar1, 1);
         if (bflag2)
@@ -3734,11 +3730,11 @@ void QtCanPlatform::workRun()
         float diff = std::abs(realVolt[0] - HVVar1);
         float diff2 = std::abs(realVolt[1] - HVVar2);
         float diff3 = std::abs(realVolt[2] - HVVar2);
-        if (diff > 8 && b1)
+        if (diff > m_iVoltError && b1)
             continue;
-        if (diff2 > 8 && b2)
+        if (diff2 > m_iVoltError && b2)
             continue;
-        if (diff3 > 8 && b3)
+        if (diff3 > m_iVoltError && b3)
             continue;
         Sleep(2000);
         if (b1 && bflag1)
@@ -3781,8 +3777,8 @@ void QtCanPlatform::workRun()
         if (!(bflag1 || bflag2 || bflag3))
             break;
         //继续往下减
-        HVVar1 -= 4;
-        HVVar2 -= 4;
+        HVVar1 -= m_iVoltStep;
+        HVVar2 -= m_iVoltStep;
         if (bflag1)
             emit sigEndRunWork(HVVar1, 1);
         if (bflag2)

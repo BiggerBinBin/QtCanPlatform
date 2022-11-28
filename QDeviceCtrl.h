@@ -9,6 +9,7 @@
 #include <QModbusDataUnit>
 #include "PCAN.h"
 #include "QProcessBuild.h"
+#include "QAutoTestIniData.h"
 #pragma execution_character_set("utf-8")  
 class QDeviceCtrl : public QWidget
 {
@@ -22,6 +23,7 @@ private:
 	Ui::QDeviceCtrlClass ui;
 	QTcpSocket* tcp = nullptr;
 	PCAN* waterCan = nullptr;
+	QAutoTestIniData* autoTestWidget = nullptr;
 	QMoudBusCtrl* moudBus = nullptr;
 	//PLC µØÖ·ºÍ¶Ë¿ÚºÅ
 	QString ipAddress = "192.168.200.10";
@@ -155,6 +157,7 @@ public slots:
 	void on_dCbProcess3_stateChanged(int state);
 
 	void on_linedSetp_editingFinished();
+	void on_pbTestParamSet_clicked();
 	
 public slots:
 	void on_sendMdu();

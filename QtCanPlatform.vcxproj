@@ -190,6 +190,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <QtRcc Include="QtCanPlatform.qrc" />
+    <QtUic Include="QAutoTestIniData.ui" />
     <QtUic Include="QCanSetting.ui" />
     <QtUic Include="QDeviceCtrl.ui" />
     <QtUic Include="QProcessBuild.ui" />
@@ -202,6 +203,7 @@
     <ClCompile Include="DataSave.cpp" />
     <ClCompile Include="kvaser.cpp" />
     <ClCompile Include="PCAN.cpp" />
+    <ClCompile Include="QAutoTestIniData.cpp" />
     <ClCompile Include="QCanSetting.cpp" />
     <ClCompile Include="QDeviceCtrl.cpp" />
     <ClCompile Include="qGboleData.cpp" />
@@ -220,6 +222,7 @@
     <QtMoc Include="canthread.h" />
     <ClInclude Include="chex.h" />
     <ClInclude Include="config.h" />
+    <QtMoc Include="QAutoTestIniData.h" />
     <ClInclude Include="resource.h" />
     <QtMoc Include="QMoudBusCtrl.h" />
     <QtMoc Include="DataSave.h" />

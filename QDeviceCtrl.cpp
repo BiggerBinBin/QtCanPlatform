@@ -140,6 +140,12 @@ void QDeviceCtrl::closeSomething()
 		delete waterCan;
 		waterCan = nullptr;
 	}
+	if (autoTestWidget)
+	{
+		autoTestWidget->close();
+		delete autoTestWidget;
+		autoTestWidget = nullptr;
+	}
 	
 	
 }
@@ -1144,4 +1150,12 @@ void QDeviceCtrl::setHV_2(int hv, float current)
 	ui.spinBoxVolt_2->setValue(hv);
 	ui.spinBoxCurrent_2->setValue(current);
 	on_pbSetVoltAndCurr_clicked();
+}
+void QDeviceCtrl::on_pbTestParamSet_clicked()
+{
+	if (!autoTestWidget)
+	{
+		autoTestWidget = new QAutoTestIniData();
+	}
+	autoTestWidget->show();
 }

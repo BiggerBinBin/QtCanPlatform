@@ -188,6 +188,8 @@ private:
     int m_iHeatTempture = -15;                 //°C，进水口这个温度下开始测加热
     int m_iPowerTempture = 0;              //°C，这个温度下的额定功率
     int m_iOverTime = 300;                //秒，超过这个时间，这个测试部分就要跳过了
+    int m_iVoltError = 8;                  //电压误差
+    int m_iVoltStep = 4;                   //电压步进
     int rmFirstFream = 3;               //测功率时，到达指定条件后延迟帧数
     int agvPowerFream = 60;             //测功率时的平均帧数;
     float realPower[4] = { 0 };
