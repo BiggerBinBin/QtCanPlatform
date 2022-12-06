@@ -162,6 +162,8 @@ private:
     int maxTextBrowser = 0;
     //是否打印报文
     bool isTrace = false;
+
+    QSet<QString>multErr;
     std::map<QString, std::vector<parseData>>showTableD;
     QStringList rollTitle;
     QStringListModel* titleModel = nullptr;

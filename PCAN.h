@@ -28,7 +28,7 @@
 class PCAN  : public QThread
 {
 	Q_OBJECT
-
+    Q_PROPERTY(bool isExtend READ readIsExtend WRITE setIsExtend)
 public:
 	PCAN(QObject *parent);
 	~PCAN();
@@ -44,9 +44,15 @@ public:
     const QString plugin = "peakcan";
     QString errorString;
     bool IsOpen() { return isOpen; };
+    bool readIsExtend() {
+        return isExtendedFream
+            ;
+    }
+    void setIsExtend(bool b) { isExtendedFream = b; }
 private:
     void run();
     bool isOpen = false;
+    bool isExtendedFream = false;
 signals:
     void getProtocolData(uint frame_id, QByteArray data);
 };

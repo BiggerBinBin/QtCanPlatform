@@ -40,7 +40,7 @@ QtCanPlatform::QtCanPlatform(QWidget *parent)
     initUi();
     sendTimer = new QTimer();
     connect(sendTimer, &QTimer::timeout, this, &QtCanPlatform::sendData);
-    this->setWindowTitle(tr("PHU-CAN-APP V1.11.27"));
+    this->setWindowTitle(tr("PHU-CAN-APP V1.11.30"));
     this->showMaximized();
     connect(this, &QtCanPlatform::sigEndRunWork, this, &QtCanPlatform::on_recSigEndRunWork);
     readSetFile();
@@ -313,7 +313,7 @@ void QtCanPlatform::initUi()
     
     
 
-    
+    //界面左边下方的几个按钮
     QPushButton* pbSaveCanData = new QPushButton(tr("保存数据"));
     QPushButton* pbClearCanData = new QPushButton(tr("清除数据"));
     pbGetVer = new QPushButton(tr("获取版本号(博世)"));
@@ -330,10 +330,10 @@ void QtCanPlatform::initUi()
     connect(pbClearCanData, SIGNAL(clicked()), this, SLOT(on_pbClearCanData_clicked()));
     connect(pbGetVer, SIGNAL(clicked(bool)), this, SLOT(on_pbGetVer_clicked(bool)));
     canButton->addSpacerItem(new QSpacerItem(20, 20, QSizePolicy::Expanding));
-    
+    //默认第一个型号为当前型号
     if(cbSelectModel->count()>0)
         on_CurrentModelChanged(0);
-    //QLOG_INFO() << "初始化界面完成";
+    //建立动态显示报文的槽
     connect(this, &QtCanPlatform::sigNewRoll, this, &QtCanPlatform::on_setInToRollData);
     connect(this, &QtCanPlatform::sigNewRollMult, this, &QtCanPlatform::on_setInToRollDataMult);
     QSplitter* mainQSpli = new QSplitter(Qt::Vertical);
@@ -375,8 +375,8 @@ void QtCanPlatform::initUi()
     bootomright->setStretchFactor(1, 1);
     bootomright->setStretchFactor(2, 6);
     
-    mainBottom->setStretchFactor(0, 7);
-    mainBottom->setStretchFactor(1, 1);
+    mainBottom->setStretchFactor(0, 8);
+    mainBottom->setStretchFactor(1, 2);
     QGridLayout* gg = new QGridLayout();
     gg->addWidget(mainQSpli);
     ui.centralWidget->setLayout(gg);
@@ -675,6 +675,7 @@ void QtCanPlatform::sendData()
     getSendDataFromTable();
     for (int i = 0; i < sendCanData.size(); i++)
     {
+        
         if (!sendCanData.at(i).isSend)
             continue;
         memset(s_Data, 0, 8 * sizeof(uchar));
@@ -858,7 +859,7 @@ void QtCanPlatform::recAnalyseIntel(unsigned int fream_id,QByteArray data)
            
             
             //判断是否跨字节，起止位模8，得出是当前字节的起止位，再加个长度
-            if (datafrom != "-1")
+            if (datafrom.contains("*") || datafrom.contains("/"))
             {
                 QStringList splt = datafrom.split("*");
                 if (splt.size() > 1)
@@ -970,12 +971,28 @@ void QtCanPlatform::recAnalyseIntel(unsigned int fream_id,QByteArray data)
                 }
 
             }
-            parseArr.push_back(pd);
+            
             //这里保存有错误的，stdddd是正确的标志，如果返回的数据跟正确的不一样，就是有错误
             if (ss.size() > 0 && stdddd != temp && isRecordError)
             {
+                
                 Error[0].insert(pd.toWord);
+
+            } 
+            if (datafrom == "-2")
+            {
+                if (ss.size() > 0 && stdddd != temp)
+                {
+                    multErr.insert(pd.toWord);
+                }
+                else
+                    multErr.clear();
+                pd.toWord.clear();
+                for (auto mk : multErr)
+                      pd.toWord += mk + "\n";
+                pd.toWord.remove(pd.toWord.size() - 1, 1);
             }
+            parseArr.push_back(pd);
         }
 
         for (auto& x : parseArr)
@@ -1045,6 +1062,7 @@ void QtCanPlatform::recAnalyseIntel(unsigned int fream_id,QByteArray data)
                 //下一行的下一行，也就是隔一行，要加2；
                 cr += 2;
             } 
+            tableArray[0]->resizeRowToContents(cr + 1);
             QString tnamp = iBegin->second.at(j).name;
             QString toword = iBegin->second.at(j).toWord;
             try
@@ -1149,7 +1167,8 @@ void QtCanPlatform::recAnalyseMoto(unsigned int fream_id, QByteArray data)
             parseData pd;
             float temp=0;
             //判断是否跨字节，起止位模8，得出是当前字节的起止位，再加个长度
-            if (datafrom != "-1")
+            //if (datafrom != "-1")
+            if(datafrom.contains("*")|| datafrom.contains("/"))
             {
                 QStringList splt = datafrom.split("*");
                 if (splt.size() > 1)
@@ -1283,7 +1302,8 @@ void QtCanPlatform::recAnalyseMoto(unsigned int fream_id, QByteArray data)
     for (int m = 0; m < rcount; m++)
         tableArray[0]->removeRow(rcount - m - 1);
     //=================10.10===============
-    QString dTime = QDateTime::currentDateTime().toString("yyyy-MM-dd-hh-ss-zzz");
+    //=================10.10===============
+    QString dTime = QDateTime::currentDateTime().toString("yyyy-MM-dd-hh-mm-ss-zzz");
     QDateTime dd = QDateTime::currentDateTime();
     uint curCount = strSaveList.size() + 1;
     QString dTemp = QString::number(curCount) + "," + dTime + ",";
@@ -1293,28 +1313,59 @@ void QtCanPlatform::recAnalyseMoto(unsigned int fream_id, QByteArray data)
     int cr = 0;
     while (iBegin != iEnd)
     {
+
+        //每加一行就要设置到表格去
         int num = iBegin->second.size();
         int idex = 0;
         for (int j = 0; j < num; j++, idex++)
         {
-            if (idex > 9)   //每行10列
+            if (idex > 9)   //一行最多放10个数据
             {
+                //满10个，从头开始
                 idex = 0;
+                //下一行的下一行，也就是隔一行，要加2；
                 cr += 2;
             }
-
+            tableArray[0]->setRowCount(cr+2);
             QString tnamp = iBegin->second.at(j).name;
             QString toword = iBegin->second.at(j).toWord;
-            tableArray[0]->setItem(cr, idex, new QTableWidgetItem(tnamp));
-            QFont ff;
-            ff.setBold(true);
-            tableArray[0]->item(cr, idex)->setFont(ff);
-            tableArray[0]->item(cr, idex)->setTextAlignment(Qt::AlignCenter);
-            tableArray[0]->item(cr, idex)->setBackgroundColor(recBackgroudColor);
-            tableArray[0]->item(cr, idex)->setForeground(QBrush(recFontColor));
-            tableArray[0]->setItem(cr + 1, idex, new QTableWidgetItem(toword));
-            tableArray[0]->item(cr + 1, idex)->setBackgroundColor(QColor(iBegin->second.at(j).color.r, iBegin->second.at(j).color.g, iBegin->second.at(j).color.b));
-            tableArray[0]->item(cr + 1, idex)->setTextAlignment(Qt::AlignCenter);
+            try
+            {
+                tableArray[0]->setItem(cr, idex, new QTableWidgetItem(tnamp));
+                QFont ff;
+                ff.setBold(true);
+                QTableWidgetItem* b = tableArray[0]->item(cr, idex);
+                if (!b)
+                    continue;
+                b->setFont(ff);
+                b = tableArray[0]->item(cr, idex);
+                if (!b)
+                    continue;
+                b->setTextAlignment(Qt::AlignCenter);
+                b = tableArray[0]->item(cr, idex);
+                if (!b)
+                    continue;
+                b->setBackgroundColor(recBackgroudColor);
+                b = tableArray[0]->item(cr, idex);
+                if (!b)
+                    continue;
+                b->setForeground(QBrush(recFontColor));
+                tableArray[0]->setItem(cr + 1, idex, new QTableWidgetItem(toword));
+                b = tableArray[0]->item(cr + 1, idex);
+                if (!b)
+                    continue;
+                b->setBackgroundColor(QColor(iBegin->second.at(j).color.r, iBegin->second.at(j).color.g, iBegin->second.at(j).color.b));
+                b = tableArray[0]->item(cr + 1, idex);
+                if (!b)
+                    continue;
+                b->setTextAlignment(Qt::AlignCenter);
+            }
+            catch (const std::exception& e)
+            {
+                QLOG_INFO() << "Error:" << e.what();
+            }
+
+
             dTemp += toword + ",";
         }
         cr += 2;
@@ -1322,13 +1373,17 @@ void QtCanPlatform::recAnalyseMoto(unsigned int fream_id, QByteArray data)
 
     }
     dTemp.remove(dTemp.size() - 1, 1);
+
     uint nn = (dd.toMSecsSinceEpoch() - lastTime.toMSecsSinceEpoch());
     lastTime = dd;
     //QLOG_INFO() << "nn:" << nn;
     if (nn > 50)
+    {
         strSaveList.append(dTemp); //放到一个list存着
-    if (isRoll)
-        emit sigNewRollMult(0);
+        if (isRoll)
+            emit sigNewRollMult(0);
+    }
+       
     if (strSaveList.size() >= saveListNum)
     {
         saveCanData();
@@ -1971,6 +2026,21 @@ void QtCanPlatform::on_pbSend_clicked(bool clicked)
         }
         lostQTimer->start(lostTimeOut);
         pbSend->setStyleSheet("background-color:#00FF00");
+
+        int index = cbSelectModel->currentIndex();
+        qGboleData* qGb = qGboleData::getInstance();
+        if (!qGb)return;
+        if (index > qGb->pGboleData.size() - 1)
+            return;
+        if (0 == qGb->pGboleData.at(index).agreement)
+        {
+            pcan->setProperty("isExtend", true);
+        }
+        else
+        {
+            pcan->setProperty("isExtend", false);
+        }
+
     }
     else
     {
@@ -2310,6 +2380,7 @@ void QtCanPlatform::on_ReceiveData(uint fream_id, QByteArray data)
         return;
     if (0 == qGb->pGboleData.at(index).agreement)
     {
+        
         recAnalyseIntel(fream_id, data);
     }
     else
@@ -2533,9 +2604,12 @@ void QtCanPlatform::on_setInToRollDataMult(int ch)
     QTableWidgetItem* b2 = tableRollDataArray[ch]->item(row, 0);
     if(b2)
         b2->setTextAlignment(Qt::AlignCenter);
+    QStringList title;
+    title.append("序号");
     for (int i = 0;i< RollShowData.size(); i++)
     {
         tableRollDataArray[ch]->setItem(row, i+1, new QTableWidgetItem(QString::number(RollShowData.at(i).value)));
+        title.append(RollShowData.at(i).name);
         QTableWidgetItem* b = tableRollDataArray[ch]->item(row, i + 1);
         if (!b)
             continue;
@@ -2544,6 +2618,7 @@ void QtCanPlatform::on_setInToRollDataMult(int ch)
         //这个是保存到excel的表头
         //excelTitle += RollShowData.at(i).name + ",";
     }
+    tableRollTitleArray[ch]->setHorizontalHeaderLabels(title);
     //表格永远显示底部
     tableRollDataArray[ch]->scrollToBottom();
     //移除最后一个逗号
@@ -2682,6 +2757,7 @@ void QtCanPlatform::on_pbSaveCanData_clicked()
 }
 void QtCanPlatform::on_pbClearCanData_clicked()
 {
+    multErr.clear();
     strSaveList.clear();
     multReceData.clear();
     recDataIntoTab();
@@ -3269,6 +3345,9 @@ void QtCanPlatform::on_recSigEndRunWork(int n,int channel)
 void QtCanPlatform::workRun()
 {
     
+   // m1_listTestRes.append("")
+
+
     if (!dCtrl)
     {
         QLOG_INFO() << "dCtrl is Nullptr";
