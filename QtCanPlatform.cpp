@@ -40,7 +40,7 @@ QtCanPlatform::QtCanPlatform(QWidget *parent)
     initUi();
     sendTimer = new QTimer();
     connect(sendTimer, &QTimer::timeout, this, &QtCanPlatform::sendData);
-    this->setWindowTitle(tr("PHU-CAN-APP V1.11.30"));
+    this->setWindowTitle(tr("PHU-CAN-APP V1.12.07"));
     this->showMaximized();
     connect(this, &QtCanPlatform::sigEndRunWork, this, &QtCanPlatform::on_recSigEndRunWork);
     readSetFile();
@@ -1222,7 +1222,8 @@ void QtCanPlatform::recAnalyseMoto(unsigned int fream_id, QByteArray data)
             
             pd.name = recCanData.at(i).pItem.at(m).bitName;
             pd.value = temp;
-            pd.toWord = QString::number(temp,'g',2);
+            //pd.toWord = QString::number(temp,'g',2);
+            pd.toWord = QString::number(temp);
             pd.color.r = 255;
             pd.color.g = 255;
             pd.color.b = 255;
@@ -1491,7 +1492,8 @@ void QtCanPlatform::recAnalyseIntel(int ch,unsigned int fream_id, QByteArray dat
             
             pd.name = recCanData.at(i).pItem.at(m).bitName;
             pd.value = temp;
-            pd.toWord = QString::number(temp,'g',2);
+            //pd.toWord = QString::number(temp,'g',2);
+            pd.toWord = QString::number(temp);
             pd.color.r = 255;
             pd.color.g = 255;
             pd.color.b = 255;
