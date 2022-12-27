@@ -40,7 +40,7 @@ QtCanPlatform::QtCanPlatform(QWidget *parent)
     initUi();
     sendTimer = new QTimer();
     connect(sendTimer, &QTimer::timeout, this, &QtCanPlatform::sendData);
-    this->setWindowTitle(tr("PHU-CAN-APP V1.12.07"));
+    this->setWindowTitle(tr("PHU-CAN-APP V1.12.12"));
     this->showMaximized();
     connect(this, &QtCanPlatform::sigEndRunWork, this, &QtCanPlatform::on_recSigEndRunWork);
     readSetFile();
@@ -415,6 +415,7 @@ bool QtCanPlatform::sendDataIntoTab()
     }
     
     const protoData pTemp = qGb->pGboleData.at(currentModel);
+    bStandard = pTemp.bStandardId;
     //canIdData cTemp;
     cbBitRate->setCurrentIndex(pTemp.bundRate);
     cycle->setText(QString::number(pTemp.circle));
@@ -698,12 +699,12 @@ void QtCanPlatform::sendData()
         if (cbCanType->currentIndex() == 0)
         {
             if(cbIsMutil->currentIndex()==0)
-                pcan->SendFrame(fream_id, s_Data);
+                pcan->SendFrame(fream_id, s_Data,bStandard);
             else
             {
                 for(int i=0;i<4;i++)
                     if(pcanArr[i]->IsOpen())
-                       pcanArr[i]->SendFrame(fream_id, s_Data);
+                       pcanArr[i]->SendFrame(fream_id, s_Data, bStandard);
             }
             
         }
@@ -714,7 +715,7 @@ void QtCanPlatform::sendData()
         }
         else if (cbCanType->currentIndex() == 2)
         {
-            canayst->sendData(fream_id, s_Data);
+            canayst->sendData(fream_id, s_Data, bStandard);
         }
         //_sleep(20);
     }

@@ -27,6 +27,7 @@ public:
     void closeCAN();
 
     void sendData(UINT ID, uchar qbt[]);
+    void sendData(UINT ID, uchar qbt[],bool bStandard);
 
     //void sendData(int ID,QByteArray qbt,bool check);
 

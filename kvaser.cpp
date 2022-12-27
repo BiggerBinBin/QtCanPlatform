@@ -221,6 +221,30 @@ void kvaser::canSendAll(uint fream_id, uchar data[])
         }
     }
 }
+void kvaser::canSendAll(uint fream_id, uchar data[],bool bStandard)
+{
+    for (int i = 0; i < chanCount; i++)
+    {
+        if (kHandle[i] < 0)
+            continue;
+        canStatus sta;
+        if (bStandard)
+        {
+            sta=canWrite(kHandle[i], fream_id, data, 8, canMSG_STD);
+        }
+        else
+        {
+            sta=canWrite(kHandle[i], fream_id, data, 8, canMSG_EXT);
+        }
+            
+        //canStatus sta = canWrite(kHandle[i], fream_id, data, 8, canMSG_EXT);
+        msleep(2);
+        if (sta != canOK)
+        {
+            qDebug() << "Channel " << i << " send failure";
+        }
+    }
+}
 
 void kvaser::run()
 {

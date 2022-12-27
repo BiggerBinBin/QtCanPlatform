@@ -16,6 +16,7 @@ public:
     int* openCanAll(int bitRate,QString &msg);
     void canSend(int frame_id, unsigned int msg[]);
     void canSendAll(uint fream_id,uchar data[8]);
+    void canSendAll(uint fream_id,uchar data[8],bool bStandard);
     void closeCAN();
     int getCanCount();
 

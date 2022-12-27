@@ -54,8 +54,8 @@ void QCanSetting::closeEvent(QCloseEvent* event)
 void QCanSetting::InitUi()
 {
 	QLOG_INFO() << "正在初始化设置界面……";
-	QStringList listname;
-	listname << tr("名称") << tr("协议")<<tr("波特率")<<tr("周期ms");
+	QStringList listname = { tr("名称") , tr("协议") , tr("波特率") , tr("周期ms"),tr("标准帧")};
+	//listname << tr("名称") << tr("协议")<<tr("波特率")<<tr("周期ms");
 	QPushButton* pbAddModel = new QPushButton("添加型号");
 	pbAddModel->setFixedWidth(60);
 	connect(pbAddModel, &QPushButton::clicked, this, &QCanSetting::on_pbAddModel_clicked);
@@ -86,10 +86,10 @@ void QCanSetting::InitUi()
 	hLayoutMdeol->addSpacerItem(new QSpacerItem(60, 20, QSizePolicy::Expanding));
 	hLayoutMdeol->setSpacing(0);
 	modelView = new QTableWidget();
-	modelView->setColumnCount(4);
+	modelView->setColumnCount(listname.size());
 	modelView->setHorizontalHeaderLabels(listname);
 	modelView->setSelectionBehavior(QAbstractItemView::SelectRows);
-	modelView->setMinimumWidth(270);
+	//modelView->setMinimumWidth(400);
 	connect(modelView, SIGNAL(cellDoubleClicked(int, int)), this, SLOT(on_modelView_doubleClicked(int, int)));
 	connect(modelView, SIGNAL(cellClicked(int, int)), this, SLOT(on_modelView_Clicked(int, int)));
 	
@@ -124,7 +124,7 @@ void QCanSetting::InitUi()
 	hLayoutCanId->addSpacerItem(new QSpacerItem(20, 20, QSizePolicy::Expanding));
 	hLayoutCanId->setSpacing(0);
 	canIdView = new QTableWidget();
-	canIdView->setColumnCount(4);
+	canIdView->setColumnCount(3);
 	canIdView->setHorizontalHeaderLabels(listname);
 	canIdView->setSelectionBehavior(QAbstractItemView::SelectRows);
 	canIdView->setMinimumWidth(350);
@@ -178,9 +178,9 @@ void QCanSetting::InitUi()
 	splitterHor->addWidget(w1);
 	splitterHor->addWidget(w2);
 	splitterHor->addWidget(w3);
-	splitterHor->setStretchFactor(0, 1);
+	splitterHor->setStretchFactor(0, 3);
 	splitterHor->setStretchFactor(1, 1);
-	splitterHor->setStretchFactor(2, 3);
+	splitterHor->setStretchFactor(2, 4);
 	QMargins M = QMargins(0, 0, 0, 0);
 	splitterHor->setContentsMargins(M);
 	QGridLayout* gg = new QGridLayout(this);
@@ -293,6 +293,14 @@ void QCanSetting::SetTableData()
 			
 		modelView->setItem(i, 3, new QTableWidgetItem(QString::number(circle)));
 		proto->setCurrentIndex(qGb->pGboleData.at(i).agreement);
+
+		QCheckBox* cbStandard = new QCheckBox(this);
+		modelView->setCellWidget(i, 4, cbStandard);
+		if (qGb->pGboleData.at(i).bStandardId)
+			cbStandard->setChecked(true);
+		else
+			cbStandard->setChecked(false);
+		connect(cbStandard, SIGNAL(stateChanged(int)), this, SLOT(on_modelView_cbStandar(int)));
 	}
 }
 
@@ -923,6 +931,26 @@ void QCanSetting::on_modelView_Clicked(int row, int col)
 	if (!tableView)
 		return;
 	on_canIdView_Clicked(0, 0);
+}
+
+void QCanSetting::on_modelView_cbStandar(int bStandard)
+{
+	qGboleData* qGb = qGboleData::getInstance();
+	if (!qGb)return;
+	QCheckBox* cb = dynamic_cast<QCheckBox*>(sender());
+	if (!cb)
+		return;
+	if (!modelView) return;
+	
+	
+	QModelIndex pIndex = modelView->indexAt(QPoint(cb->frameGeometry().x(), cb->frameGeometry().y()));
+	int mCurRow = pIndex.row();
+	if (mCurRow < 0 || mCurRow>qGb->pGboleData.size() - 1) {
+		QMessageBox::warning(this, tr("warning"), tr("超出界限， 不能修改"));
+		return;
+	}
+	qGb->pGboleData.at(mCurRow).bStandardId = cb->isChecked();
+
 }
 
 void QCanSetting::on_canIdView_currentIndexChanged(int index)

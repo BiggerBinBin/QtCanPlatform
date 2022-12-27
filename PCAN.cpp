@@ -148,6 +148,27 @@ void PCAN::SendFrame(int FrameID, uchar Data[])
     //    qDebug()<<"打印输出"<<payload;
     m_canDevice->writeFrame(frame);
 }
+void PCAN::SendFrame(int FrameID, uchar Data[],bool bStandard)
+{
+    if (!m_canDevice)
+        return;
+
+
+    QCanBusFrame frame;
+    frame.setExtendedFrameFormat(!bStandard);
+    frame.setFrameId(FrameID);
+
+
+    QByteArray payload;
+    for (int i = 0; i < 8; i++)
+    {
+        payload.append(Data[i]);
+        //        qDebug()<<Data[i];
+    }
+    frame.setPayload(payload);
+    //    qDebug()<<"打印输出"<<payload;
+    m_canDevice->writeFrame(frame);
+}
 void PCAN::CloseCan()
 {
     isOpen = false;

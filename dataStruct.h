@@ -64,6 +64,7 @@ struct protoData {
 	int circle;						//报文周期
 	QString modelName;				//名称
 	std::vector<canIdData>cItem;	//数据
+	bool bStandardId;				//是否为标准帧
 };
 struct autoTestData {
 	int m_iLowVolt;				//欠压起步电压

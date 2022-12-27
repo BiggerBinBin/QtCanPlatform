@@ -89,6 +89,7 @@ private slots:
 	void on_modelView_cellChanged(int row, int col);
 	void on_modelView_doubleClicked(int, int);
 	void on_modelView_Clicked(int, int);
+	void on_modelView_cbStandar(int bStandard);
 
 	//下面是CanID表格响应槽函数
 	void on_canIdView_currentIndexChanged(int index);

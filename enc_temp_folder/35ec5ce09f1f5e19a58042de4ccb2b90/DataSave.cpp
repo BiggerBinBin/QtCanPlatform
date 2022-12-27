@@ -32,7 +32,6 @@ void DataSave::run()
     QList<QList<QVariant>> bb = paraString(dataList);
     writeExcelFast(this->filepath, bb);
     return;
-    //===========以下是老的代码,=========//
     if (dataList.count() > 0)
     {
         if (!filepath.isEmpty()) {

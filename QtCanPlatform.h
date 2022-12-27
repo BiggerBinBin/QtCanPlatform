@@ -163,6 +163,8 @@ private:
     //是否打印报文
     bool isTrace = false;
 
+    bool bStandard = false;
+
     QSet<QString>multErr;
     std::map<QString, std::vector<parseData>>showTableD;
     QStringList rollTitle;

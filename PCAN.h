@@ -37,6 +37,7 @@ public:
     bool ConnectDevice(QString usb_name, int bitrate);
     void Receive();
     void SendFrame(int FrameID, uchar Data[]);
+    void SendFrame(int FrameID, uchar Data[],bool bStandard);
     void CloseCan();
     bool isReceive;
     QList<QCanBusDeviceInfo> m_interfaces;

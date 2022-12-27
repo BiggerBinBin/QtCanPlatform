@@ -337,6 +337,33 @@ void CANThread::sendData(UINT ID, uchar qbt[])
     }
    
 }
+void CANThread::sendData(UINT ID, uchar qbt[],bool bStandard)
+{
+    DWORD dwRel;
+    VCI_CAN_OBJ vco[1];
+
+    for (int i = 0; i < 8; i++)
+    {
+        vco->Data[i] = qbt[i];
+    }
+
+    int count = 1;
+    vco->ID = ID;
+    vco->DataLen = 8;
+    vco->RemoteFlag = 0U;
+    vco->ExternFlag = (!bStandard);
+    for (int j = 0; j < i_DEVICE_NUM; j++)
+        for (int i = 0; i < i_CAN_NUM; i++)
+        {
+            dwRel = VCI_Transmit(deviceType, j, i, vco, count);
+            if (dwRel <= 0U)
+            {
+                QLOG_INFO() << "CANayst Send fail:" << QString::number(dwRel);
+            }
+            msleep(5);
+        }
+
+}
 
 void CANThread::run()
 {
