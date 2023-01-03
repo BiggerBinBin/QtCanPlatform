@@ -79,6 +79,9 @@
     <ClCompile Include="QAutoTestIniData.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="mHttp.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="QCanSetting.h">
@@ -109,6 +112,9 @@
       <Filter>Header Files</Filter>
     </QtMoc>
     <QtMoc Include="QAutoTestIniData.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="mHttp.h">
       <Filter>Header Files</Filter>
     </QtMoc>
   </ItemGroup>

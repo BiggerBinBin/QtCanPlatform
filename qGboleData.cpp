@@ -271,6 +271,8 @@ void qGboleData::save_ini()
 	setf->setValue("m_iHeatTempture", aTdata.m_iHeatTempture);
 	setf->setValue("m_iPowerTempture", aTdata.m_iPowerTempture);
 	setf->setValue("m_iOverTime", aTdata.m_iOverTime);
+	setf->setValue("m_sInWebAddr", aTdata.m_sInWebAddr);
+	setf->setValue("m_sOutWebAddr", aTdata.m_sOutWebAddr);
 	
 
 }
@@ -299,6 +301,8 @@ void qGboleData::read_ini()
 	aTdata.m_iOverTime = setf->value("m_iOverTime").toInt();
 	aTdata.m_iVoltError = setf->value("m_iVoltError").toInt();
 	aTdata.m_iVoltStep = setf->value("m_iVoltStep").toInt();
+	aTdata.m_sInWebAddr = setf->value("m_sInWebAddr").toString();
+	aTdata.m_sOutWebAddr = setf->value("m_sOutWebAddr").toString();
 }
 qGboleData::~qGboleData()
 {

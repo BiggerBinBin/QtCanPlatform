@@ -7,6 +7,7 @@
 #include <QHBoxLayout>
 #include <QString>
 #include <QMessageBox>
+#include "qGboleData.h"
 /*****************************************************
 * 控制IO_OUT,共有18个IO输出点
 * 格式为Head+Name+On/Off
@@ -106,13 +107,8 @@ QDeviceCtrl::QDeviceCtrl(QWidget *parent)
 		ui.dCanDevice->addItem(canStr.at(i));
 	}
 	ui.dCanBundRate->setCurrentIndex(2);
-	//timeGetPower->start(500);
-	/*ui.label_12->setVisible(false);
-	ui.label_14->setVisible(false);
-	ui.label_16->setVisible(false);
-	ui.label_Volt->setVisible(false);
-	ui.label_Current->setVisible(false);
-	ui.label_Power->setVisible(false);*/
+	
+	mp = new mHttp(this);
 }
 
 QDeviceCtrl::~QDeviceCtrl()
@@ -1158,4 +1154,85 @@ void QDeviceCtrl::on_pbTestParamSet_clicked()
 		autoTestWidget = new QAutoTestIniData();
 	}
 	autoTestWidget->show();
+}
+void QDeviceCtrl::on_lineEdit_1ResCode_editingFinished()
+{
+	if (!ui.lineEdit_1ResCode->hasFocus()) return;
+	QString code = ui.lineEdit_1ResCode->text();
+	QJsonObject json;
+	json.insert("DeviceID", "PHU");
+	json.insert("Barcode", code);
+	QJsonDocument document;
+	document.setObject(json);
+	QByteArray dataArray = document.toJson(QJsonDocument::Compact);
+	qGboleData* gb = qGboleData::getInstance();
+	if (!gb)
+		return;
+	struct autoTestData at = gb->getATData();
+	QString status = mp->sendHttpSys(dataArray, at.m_sInWebAddr);
+	if (status.isEmpty() || status.at(0)!="Y")
+	{
+		QMessageBox::warning(this, tr("警告"), tr("入站失败，没有找到相关设备所在工位信息，不能生产"));
+		ui.dCbProcess1->setChecked(false);
+	}
+	else if (status.at(0) == "Y")
+	{
+		QMessageBox::about(this, tr("提示"), tr("入站成功"));
+		ui.dCbProcess1->setChecked(true);
+	}
+	
+
+}
+void QDeviceCtrl::on_lineEdit_2ResCode_editingFinished()
+{
+	if (!ui.lineEdit_2ResCode->hasFocus()) return;
+	QString code = ui.lineEdit_2ResCode->text();
+	QJsonObject json;
+	json.insert("DeviceID", "PHU");
+	json.insert("Barcode", code);
+	QJsonDocument document;
+	document.setObject(json);
+	QByteArray dataArray = document.toJson(QJsonDocument::Compact);
+	qGboleData* gb = qGboleData::getInstance();
+	if (!gb)
+		return;
+	struct autoTestData at = gb->getATData();
+	QString status = mp->sendHttpSys(dataArray, at.m_sInWebAddr);
+	if (status.isEmpty() || status.at(0) != "Y")
+	{
+		QMessageBox::warning(this, tr("警告"), tr("入站失败，没有找到相关设备所在工位信息，不能生产"));
+		ui.dCbProcess2->setChecked(false);
+	}
+	else if (status.at(0) == "Y")
+	{
+		QMessageBox::about(this, tr("提示"), tr("入站成功"));
+		ui.dCbProcess2->setChecked(true);
+	}
+}
+
+void QDeviceCtrl::on_lineEdit_3ResCode_editingFinished()
+{
+	if (!ui.lineEdit_3ResCode->hasFocus()) return;
+	QString code = ui.lineEdit_3ResCode->text();
+	QJsonObject json;
+	json.insert("DeviceID", "PHU");
+	json.insert("Barcode", code);
+	QJsonDocument document;
+	document.setObject(json);
+	QByteArray dataArray = document.toJson(QJsonDocument::Compact);
+	qGboleData* gb = qGboleData::getInstance();
+	if (!gb)
+		return;
+	struct autoTestData at = gb->getATData();
+	QString status = mp->sendHttpSys(dataArray, at.m_sInWebAddr);
+	if (status.isEmpty() || status.at(0) != "Y")
+	{
+		QMessageBox::warning(this, tr("警告"), tr("入站失败，没有找到相关设备所在工位信息，不能生产"));
+		ui.dCbProcess3->setChecked(false);
+	}
+	else if (status.at(0) == "Y")
+	{
+		QMessageBox::about(this, tr("提示"), tr("入站成功"));
+		ui.dCbProcess3->setChecked(true);
+	}
 }

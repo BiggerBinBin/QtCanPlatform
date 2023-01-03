@@ -17,7 +17,7 @@ void QAutoTestIniData::InitUi()
 {
 	
 	ui.tableWidget->setColumnCount(2);
-	ui.tableWidget->setRowCount(7);
+	ui.tableWidget->setRowCount(9);
 	QStringList aa{ "测试项", "参数" };
 	ui.tableWidget->setHorizontalHeaderLabels(aa);
 
@@ -46,6 +46,12 @@ void QAutoTestIniData::InitUi()
 
 	ui.tableWidget->setItem(6, 0, new QTableWidgetItem(tr("测试超时时间)(秒)")));
 	ui.tableWidget->setItem(6, 1, new QTableWidgetItem(QString::number(at.m_iOverTime)));
+
+	ui.tableWidget->setItem(7, 0, new QTableWidgetItem(tr("入站地址")));
+	ui.tableWidget->setItem(7, 1, new QTableWidgetItem(at.m_sInWebAddr));
+
+	ui.tableWidget->setItem(8, 0, new QTableWidgetItem(tr("出站地址")));
+	ui.tableWidget->setItem(8, 1, new QTableWidgetItem(at.m_sOutWebAddr));
 }
 void QAutoTestIniData::on_pbSaveAData_clicked()
 {
@@ -53,9 +59,13 @@ void QAutoTestIniData::on_pbSaveAData_clicked()
 
 	at.m_iLowVolt = ui.tableWidget->item(0, 1)->text().toInt();
 	at.m_iHeightVolt = ui.tableWidget->item(1, 1)->text().toInt();
-	at.m_iHeatTempture = ui.tableWidget->item(2, 1)->text().toInt();
-	at.m_iPowerTempture = ui.tableWidget->item(3, 1)->text().toInt();
-	at.m_iOverTime = ui.tableWidget->item(4, 1)->text().toInt();
+	at.m_iVoltStep = ui.tableWidget->item(2, 1)->text().toInt();
+	at.m_iVoltError = ui.tableWidget->item(3, 1)->text().toInt();
+	at.m_iHeatTempture = ui.tableWidget->item(4, 1)->text().toInt();
+	at.m_iPowerTempture = ui.tableWidget->item(5, 1)->text().toInt();
+	at.m_iOverTime = ui.tableWidget->item(6, 1)->text().toInt();
+	at.m_sInWebAddr = ui.tableWidget->item(7, 1)->text();
+	at.m_sOutWebAddr = ui.tableWidget->item(8, 1)->text();
 
 	qGboleData* gb = qGboleData::getInstance();
 	if (!gb)

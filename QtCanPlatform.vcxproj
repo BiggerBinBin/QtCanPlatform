@@ -202,6 +202,7 @@
     <ClCompile Include="chex.cpp" />
     <ClCompile Include="DataSave.cpp" />
     <ClCompile Include="kvaser.cpp" />
+    <ClCompile Include="mHttp.cpp" />
     <ClCompile Include="PCAN.cpp" />
     <ClCompile Include="QAutoTestIniData.cpp" />
     <ClCompile Include="QCanSetting.cpp" />
@@ -223,6 +224,7 @@
     <ClInclude Include="chex.h" />
     <ClInclude Include="config.h" />
     <QtMoc Include="QAutoTestIniData.h" />
+    <QtMoc Include="mHttp.h" />
     <ClInclude Include="resource.h" />
     <QtMoc Include="QMoudBusCtrl.h" />
     <QtMoc Include="DataSave.h" />

@@ -44,6 +44,7 @@ QtCanPlatform::QtCanPlatform(QWidget *parent)
     this->showMaximized();
     connect(this, &QtCanPlatform::sigEndRunWork, this, &QtCanPlatform::on_recSigEndRunWork);
     readSetFile();
+    connect(this, &QtCanPlatform::sigSendHttp, this, &QtCanPlatform::on_commitData);
     //博世的获取版本定时器
     t_GetVer = new QTimer(this);
 
@@ -2006,6 +2007,27 @@ void QtCanPlatform::on_cbCanType_currentIndexChanged(int index)
     cbPcan->clear();
     on_pbRefreshDevice_clicked();
 }
+void QtCanPlatform::on_commitData(const QByteArray& byte, int id)
+{
+    qGboleData* gb = qGboleData::getInstance();
+    if (!gb)
+        return;
+    struct autoTestData at = gb->getATData();
+    mHttp mp(this);
+    QString status = mp.sendHttpSys(byte, at.m_sOutWebAddr);
+    if (status.isEmpty() || status.at(0) != "Y")
+    {
+        QMessageBox::warning(this, tr("警告"), tr("上传失败，没有找到相关设备所在工位信息"));
+        QLOG_INFO() << "工位-" << id << ":上传数据失败";
+        //ui.dCbProcess3->setChecked(false);
+    }
+    else if (status.at(0) == "Y")
+    {
+        //QMessageBox::about(this, tr("提示"), tr("出站成功"));
+        //ui.dCbProcess3->setChecked(true);
+        QLOG_INFO() << "工位-"<<id<<":上传数据成功";
+    }
+}
 void QtCanPlatform::on_pbSend_clicked(bool clicked)
 {
     if (clicked)
@@ -2136,6 +2158,7 @@ void QtCanPlatform::on_pbOpenPcan_clicked()
                 break;
             }
             bool b = false;;
+            bundRate = bitRate;
             if (1 == cbIsMutil->currentIndex())
             {
                 for (int i = 0; i < 4 && i < cbPcan->count(); i++)
@@ -2202,6 +2225,7 @@ void QtCanPlatform::on_pbOpenPcan_clicked()
                 bitRate = 250;
                 break;
             }
+            bundRate = bitRate;
             //bool b = pcan->ConnectDevice(cbPcan->currentIndex(), bitRate);
             QString err;
             ckHandle =  kcan->openCanAll(bitRate, err);
@@ -2261,6 +2285,7 @@ void QtCanPlatform::on_pbOpenPcan_clicked()
                 bitRate = 250;
                 break;
             }
+            bundRate = bitRate;
             //bool b = pcan->ConnectDevice(cbPcan->currentIndex(), bitRate);
             bool b = canayst->openCANAll(bitRate);
             if (!b)
@@ -2724,6 +2749,8 @@ void QtCanPlatform::saveCanDataMult()
 }
 void QtCanPlatform::saveAutoTestRes(const QString & fileName,const QStringList& data)
 {
+    if (data.isEmpty())
+        return;
     QString appPath = QApplication::applicationDirPath() + "/AUTO_TEST_RES/";
     QDir dd(appPath);
     if (!dd.exists())
@@ -2899,6 +2926,8 @@ void QtCanPlatform::readSetFile()
     m_iOverTime = at.m_iOverTime;
     m_iVoltError = at.m_iVoltError;
     m_iVoltStep = at.m_iVoltError;
+    m_sInWebAddr = at.m_sInWebAddr;
+    m_sOutWebAddr = at.m_sOutWebAddr;
 
 
 }
@@ -3509,7 +3538,7 @@ void QtCanPlatform::workRun()
         Sleep(2000);
         if (b1 && bflag1)
         {
-           
+       
             if (realHVErr[0] != "高压异常")
             {
                 bflag1 = false;
@@ -3518,7 +3547,7 @@ void QtCanPlatform::workRun()
             {
                 low_lastHv1 = HVVar1;
             }
-                
+            
         }
         if (b2 && bflag2)
         {
@@ -3555,7 +3584,7 @@ void QtCanPlatform::workRun()
             emit sigEndRunWork(HVVar2, 2);
         if (bflag3)
             emit sigEndRunWork(HVVar2,2);
-        
+    
     }
     if (!_bWork)
     {
@@ -3655,7 +3684,7 @@ void QtCanPlatform::workRun()
             emit sigEndRunWork(HVVar2, 2);
         if (bflag3)
             emit sigEndRunWork(HVVar2, 2);
-        
+    
     }
     if (b1)
     {
@@ -3786,7 +3815,7 @@ void QtCanPlatform::workRun()
             emit sigEndRunWork(HVVar2, 2);
         if (bflag3)
             emit sigEndRunWork(HVVar2, 2);
-        
+    
     }
     //在刚才的电压上，每次减3V，然后一直减到高压正常
     bflag1 = true; bflag1 &= b1;
@@ -3867,7 +3896,7 @@ void QtCanPlatform::workRun()
             emit sigEndRunWork(HVVar1, 2);
         if (bflag3)
             emit sigEndRunWork(HVVar2, 2);
-        
+    
     }
 
     if (b1) 
@@ -3943,11 +3972,11 @@ void QtCanPlatform::workRun()
         Sleep(100);
     }
     if (b1)
-        emit sigEndRunWork(600, 1);
+        emit sigEndRunWork(m_iPowerVolt, 1);
     if (b2)
-        emit sigEndRunWork(600, 2);
+        emit sigEndRunWork(m_iPowerVolt, 2);
     if (b3)
-        emit sigEndRunWork(600, 2);
+        emit sigEndRunWork(m_iPowerVolt, 2);
     //等待温度
     bflag1 = true;
     bflag2 = true;
@@ -4083,6 +4112,7 @@ void QtCanPlatform::workRun()
         }
     }   
     isRecordError = false;
+    float avage1 = 0;
     if (b1)
     {
         int sum=0;
@@ -4090,14 +4120,15 @@ void QtCanPlatform::workRun()
         {
             sum += PowerArr[0].at(i);
         }
-        float avage = 0;
+       
         if(PowerArr[0].size()>0)
-            avage = sum / PowerArr[0].size();
-        QLOG_INFO() << "1#件平均功率：" << avage << ",记录了" << PowerArr[0].size() << "次";
-        phuRes_1 += "1#件平均功率：" + QString::number(avage);
-        m1_listTestRes.append("1#件平均功率," + QString::number(avage));
-        
+            avage1 = sum / PowerArr[0].size();
+        QLOG_INFO() << "1#件平均功率：" << avage1 << ",记录了" << PowerArr[0].size() << "次";
+        phuRes_1 += "1#件平均功率：" + QString::number(avage1);
+        m1_listTestRes.append("1#件平均功率," + QString::number(avage1));
+    
     }
+    float avage2 = 0;
     if (b2)
     {
         int sum = 0;
@@ -4105,14 +4136,15 @@ void QtCanPlatform::workRun()
         {
             sum += PowerArr[1].at(i);
         }
-        float avage = 0;
+        //float avage = 0;
         if (PowerArr[1].size() > 0)
-            avage = sum / PowerArr[1].size();
-        QLOG_INFO() << "2#件平均功率：" << avage << ",记录了" << PowerArr[1].size() << "次";
-        phuRes_2 += "2#件平均功率：" + QString::number(avage);
-        m2_listTestRes.append("2#件平均功率," + QString::number(avage));
-        
+            avage2 = sum / PowerArr[1].size();
+        QLOG_INFO() << "2#件平均功率：" << avage2 << ",记录了" << PowerArr[1].size() << "次";
+        phuRes_2 += "2#件平均功率：" + QString::number(avage2);
+        m2_listTestRes.append("2#件平均功率," + QString::number(avage2));
+    
     }
+    float avage3 = 0;
     if (b3)
     {
         int sum = 0;
@@ -4120,12 +4152,12 @@ void QtCanPlatform::workRun()
         {
             sum += PowerArr[2].at(i);
         }
-        float avage = 0;
+        //float avage = 0;
         if (PowerArr[2].size() > 0)
-            avage = sum / PowerArr[2].size();
-        QLOG_INFO() << "3#件平均功率：" << avage << ",记录了" << PowerArr[2].size() << "次";
-        phuRes_3 += "3#件平均功率：" + QString::number(avage);
-        m3_listTestRes.append("3#件平均功率," + QString::number(avage));
+            avage3 = sum / PowerArr[2].size();
+        QLOG_INFO() << "3#件平均功率：" << avage3 << ",记录了" << PowerArr[2].size() << "次";
+        phuRes_3 += "3#件平均功率：" + QString::number(avage3);
+        m3_listTestRes.append("3#件平均功率," + QString::number(avage3));
        
     }
 
@@ -4180,7 +4212,7 @@ void QtCanPlatform::workRun()
             QLOG_INFO() << "过温保护测试模块超时";
             break;
         }
-           
+       
         if (!(bflag1 || bflag2 || bflag3))
             break;
 
@@ -4221,7 +4253,7 @@ void QtCanPlatform::workRun()
         m2_listTestRes.append("2#件故障," + er);
         QLOG_INFO() << "2#件故障：" << er;
     }
-        
+    
     if (b3)
     {
         if (bflag3)
@@ -4249,6 +4281,7 @@ void QtCanPlatform::workRun()
             break;
         Sleep(100);
     }
+    
     if (b1)
     {
         if (!m1_strPhuCode.isEmpty())
@@ -4258,6 +4291,18 @@ void QtCanPlatform::workRun()
             QLOG_WARN() << "1#件未有二维码，保存名字为当前时间";
             saveAutoTestRes(m1_strPhuCode, m1_listTestRes);
         }
+        QJsonObject json;
+        json.insert("DeviceID", "PHU");
+        json.insert("Barcode", m1_strPhuCode);
+        json.insert("0", "24");
+        json.insert("1", QString::number(m_iPowerVolt));
+        json.insert("2", QString::number(bundRate));
+        json.insert("6", QString::number(m_iPowerTempture));
+        json.insert("7", QString::number(avage1));
+        QJsonDocument document;
+        document.setObject(json);
+        QByteArray dataArray = document.toJson(QJsonDocument::Compact);
+        emit on_commitData(dataArray, 1);
     }
     if (b2)
     {
@@ -4268,6 +4313,18 @@ void QtCanPlatform::workRun()
             QLOG_WARN() << "3#件未有二维码，保存名字为当前时间";
             saveAutoTestRes(m2_strPhuCode, m2_listTestRes);
         }
+        QJsonObject json;
+        json.insert("DeviceID", "PHU");
+        json.insert("Barcode", m2_strPhuCode);
+        json.insert("0", "24");
+        json.insert("1", QString::number(m_iPowerVolt));
+        json.insert("2", QString::number(bundRate));
+        json.insert("6", QString::number(m_iPowerTempture));
+        json.insert("7", QString::number(avage2));
+        QJsonDocument document;
+        document.setObject(json);
+        QByteArray dataArray = document.toJson(QJsonDocument::Compact);
+        emit on_commitData(dataArray, 2);
     }
     if (b3)
     {
@@ -4278,6 +4335,18 @@ void QtCanPlatform::workRun()
             QLOG_WARN() << "3#件未有二维码，保存名字为当前时间";
             saveAutoTestRes(m3_strPhuCode, m3_listTestRes);
         }
+        QJsonObject json;
+        json.insert("DeviceID", "PHU");
+        json.insert("Barcode", m3_strPhuCode);
+        json.insert("0", "24");
+        json.insert("1", QString::number(m_iPowerVolt));
+        json.insert("2", QString::number(bundRate));
+        json.insert("6", QString::number(m_iPowerTempture));
+        json.insert("7", QString::number(avage3));
+        QJsonDocument document;
+        document.setObject(json);
+        QByteArray dataArray = document.toJson(QJsonDocument::Compact);
+        emit on_commitData(dataArray, 3);
     }
 
 

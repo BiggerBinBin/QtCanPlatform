@@ -41,6 +41,7 @@
 #include <set>
 #include <QProgressDialog.h>
 #include "canthread.h"
+#include "mHttp.h"
 #pragma execution_character_set("utf-8")  
 class QtCanPlatform : public QMainWindow
 {
@@ -196,6 +197,10 @@ private:
     int m_iVoltStep = 4;                   //电压步进
     int rmFirstFream = 3;               //测功率时，到达指定条件后延迟帧数
     int agvPowerFream = 60;             //测功率时的平均帧数;
+    int m_iPowerVolt = 600;
+    int bundRate = 250;
+    QString m_sInWebAddr = "";
+    QString m_sOutWebAddr = "";
     float realPower[4] = { 0 };
     float realVolt[4] = { 0 };
     float realWTemp[4] = { 0 };
@@ -276,10 +281,12 @@ private slots:
     void on_pbGetVer_clicked(bool);
 
     void on_pbClearLogShow_clicked();
-
+    //CAN盒子的类型
     void on_cbCanType_currentIndexChanged(int index);
+    void on_commitData(const QByteArray& byte, int id);
 signals:
     void sigNewRoll();
+    void sigSendHttp(QByteArray byte, int id);
     void sigNewRollMult(int ch);
     void sigEndRunWork(int n,int channel);
 public:

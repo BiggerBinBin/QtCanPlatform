@@ -10,6 +10,7 @@
 #include "PCAN.h"
 #include "QProcessBuild.h"
 #include "QAutoTestIniData.h"
+#include "mHttp.h"
 #pragma execution_character_set("utf-8")  
 class QDeviceCtrl : public QWidget
 {
@@ -54,6 +55,8 @@ private:
 	bool cbProcess1Check = false;
 	bool cbProcess2Check = false;
 	bool cbProcess3Check = false;
+
+	mHttp* mp = nullptr;;
 
 	float reamHV_1 = 0;
 	float reamHV_2 = 0;
@@ -158,7 +161,10 @@ public slots:
 
 	void on_linedSetp_editingFinished();
 	void on_pbTestParamSet_clicked();
-	
+private slots:
+	void on_lineEdit_1ResCode_editingFinished();
+	void on_lineEdit_2ResCode_editingFinished();
+	void on_lineEdit_3ResCode_editingFinished();
 public slots:
 	void on_sendMdu();
 	
