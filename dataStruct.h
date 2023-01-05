@@ -65,6 +65,8 @@ struct protoData {
 	QString modelName;				//名称
 	std::vector<canIdData>cItem;	//数据
 	bool bStandardId;				//是否为标准帧
+	//int iPlatform;					//平台:3kW,5kW,7kW,10kW,15kW
+	QString sPlatform;				//
 };
 struct autoTestData {
 	int m_iLowVolt;				//欠压起步电压

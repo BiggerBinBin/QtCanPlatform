@@ -54,7 +54,7 @@ void QCanSetting::closeEvent(QCloseEvent* event)
 void QCanSetting::InitUi()
 {
 	QLOG_INFO() << "正在初始化设置界面……";
-	QStringList listname = { tr("名称") , tr("协议") , tr("波特率") , tr("周期ms"),tr("标准帧")};
+	QStringList listname = { tr("名称") , tr("协议") , tr("波特率") , tr("周期ms"),tr("标准帧"),tr("平台")};
 	//listname << tr("名称") << tr("协议")<<tr("波特率")<<tr("周期ms");
 	QPushButton* pbAddModel = new QPushButton("添加型号");
 	pbAddModel->setFixedWidth(60);
@@ -217,16 +217,35 @@ void QCanSetting::on_pbAddModel_clicked()
 	bundRa->addItem("500kb/s");
 	bundRa->addItem("800kb/s");
 	bundRa->setCurrentIndex(1);
+
+	/*QComboBox* cbPlatform = new QComboBox();
+	cbPlatform->addItem("无分类");
+	cbPlatform->addItem("3kW");
+	cbPlatform->addItem("5kW");
+	cbPlatform->addItem("7kW");
+	cbPlatform->addItem("10kW");
+	cbPlatform->addItem("15kW");*/
 	connect(proto, SIGNAL(currentIndexChanged(int)), this, SLOT(on_modelView_currentIndexChanged(int)));
-	connect(proto, SIGNAL(currentIndexChanged(int)), this, SLOT(on_modelView_bundIndexChanged(int)));
+	connect(bundRa, SIGNAL(currentIndexChanged(int)), this, SLOT(on_modelView_bundIndexChanged(int)));
 	modelView->setItem(row, 0, new QTableWidgetItem(tr("型号")+QString::number(row)));
 	modelView->setCellWidget(row, 1, proto);
 	modelView->setCellWidget(row, 2, bundRa);
 	modelView->setItem(row, 3, new QTableWidgetItem("1000"));
+
+	QCheckBox* cbStandard = new QCheckBox(this);
+	//扩展帧还是标准帧
+	modelView->setCellWidget(row, 4, cbStandard);
+	connect(cbStandard, SIGNAL(stateChanged(int)), this, SLOT(on_modelView_cbStandar(int)));
+	//平台选项
+	modelView->setItem(row, 5, new QTableWidgetItem("Non"));
+	//cbPlatform->setCurrentIndex(0);
+	//connect(cbPlatform, SIGNAL(currentIndexChanged(int)), this, SLOT(on_modelView_platFormIndexChanged(int)));
 	struct protoData data;
 	data.modelName = tr("型号") + QString::number(row);
 	data.agreement = 0;
 	data.bundRate = 1;
+	data.bStandardId = 0;
+	data.sPlatform = "Non";
 	data.circle = 1000;
 	qGboleData* qGb = qGboleData::getInstance();
 	if (!qGb)return;
@@ -301,6 +320,12 @@ void QCanSetting::SetTableData()
 		else
 			cbStandard->setChecked(false);
 		connect(cbStandard, SIGNAL(stateChanged(int)), this, SLOT(on_modelView_cbStandar(int)));
+
+
+		
+		//平台选项
+		modelView->setItem(i, 5, new QTableWidgetItem(qGb->pGboleData.at(i).sPlatform));
+		
 	}
 }
 
@@ -854,6 +879,8 @@ void QCanSetting::on_modelView_bundIndexChanged(int index)
 	qGb->pGboleData.at(row).bundRate = cbx->currentIndex();
 }
 
+
+
 void QCanSetting::on_modelView_cellChanged(int row, int col)
 {
 	qGboleData* qGb = qGboleData::getInstance();
@@ -867,6 +894,10 @@ void QCanSetting::on_modelView_cellChanged(int row, int col)
 	else if (col == 3)
 	{
 		qGb->pGboleData.at(row).circle = modelView->item(row, col)->text().toInt();
+	}
+	else if (col == 5)
+	{
+		qGb->pGboleData.at(row).sPlatform = modelView->item(row, col)->text();
 	}
 	//关掉这个，防止添加行setData的时候，触发这个信号
 	disconnect(modelView, SIGNAL(itemChanged(cellChanged(int, int))), this, SLOT(on_modelView_cellChanged(int, int)));

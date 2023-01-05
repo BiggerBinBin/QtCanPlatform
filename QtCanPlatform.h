@@ -123,6 +123,7 @@ private:
 private:
     std::vector<canIdData>recCanData;
     std::vector<canIdData>sendCanData;
+    std::vector<int>HashArr;
     //pcan设备指针
     PCAN *pcan = nullptr;
     PCAN *pcanArr[4] = { nullptr };
@@ -170,8 +171,10 @@ private:
     std::map<QString, std::vector<parseData>>showTableD;
     QStringList rollTitle;
     QStringListModel* titleModel = nullptr;
+    //滚动显示的数据
     std::vector<RollStruct>RollShowData;
     DataSave *saveData=nullptr;
+    //多路保存
     DataSave* saveDataArr[4] = { nullptr };
     //单个通道时的保存变量
     QStringList strSaveList;
@@ -239,6 +242,8 @@ private slots:
     void qCanSettingShow();
     //选择当前型号
     void on_CurrentModelChanged(int index);
+    //选择当前平台
+    void on_CurrentPlatformChanged(int index);
     //发送
     void on_pbSend_clicked(bool clicked);
     //刷新设备

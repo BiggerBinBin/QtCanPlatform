@@ -48,6 +48,8 @@ void qGboleData::save()
 		mItem.insert("bundRate", pGboleData.at(i).bundRate);
 		mItem.insert("circle", pGboleData.at(i).circle);
 		mItem.insert("bStandardId", pGboleData.at(i).bStandardId);
+		//mItem.insert("iPlatform", pGboleData.at(i).iPlatform);
+		mItem.insert("sPlatform", pGboleData.at(i).sPlatform);
 		QJsonObject cItemObj;
 		for (int j = 0; j < pGboleData.at(i).cItem.size(); j++)
 		{
@@ -170,6 +172,8 @@ void qGboleData::read()
 		ptem.bundRate = rootSecond["bundRate"].toInt(0);
 		ptem.circle = rootSecond["circle"].toInt(1000);
 		ptem.bStandardId = rootSecond["bStandardId"].toBool(0);
+		//ptem.iPlatform = rootSecond["iPlatform"].toInt(0);
+		ptem.sPlatform = rootSecond["sPlatform"].toString("Non");
 		//如果还有嵌套对象
 		if (rootSecond["mDItem"].type() == QJsonValue::Object)
 		{

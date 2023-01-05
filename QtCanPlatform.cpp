@@ -164,9 +164,11 @@ void QtCanPlatform::initUi()
     
     qGboleData* qGb = qGboleData::getInstance();
     if (!qGb)return;
+    HashArr.clear();
     for (int i = 0; i < qGb->pGboleData.size(); i++)
     {
         cbSelectModel->addItem(qGb->pGboleData.at(i).modelName);
+        HashArr.push_back(i);
         
     }
     if (qGb->pGboleData.size() > 0)
@@ -261,13 +263,27 @@ void QtCanPlatform::initUi()
     QCheckBox* checkTrace = new QCheckBox();
     checkTrace->setText(tr("数据监控   "));
     connect(checkTrace, &QCheckBox::stateChanged, this, &QtCanPlatform::on_checkTraceChanged);
+    QLabel* pLabel = new QLabel();
+    pLabel->setText(tr("平台"));
+    QComboBox* cbPlatform = new QComboBox(this);
+    cbPlatform->addItem("无分类");
+    cbPlatform->addItem("3kW");
+    cbPlatform->addItem("4kW");
+    cbPlatform->addItem("5kW");
+    cbPlatform->addItem("7kW");
+    cbPlatform->addItem("10kW");
+    cbPlatform->addItem("15kW");
+    cbPlatform->addItem("19kW");
     QLabel* mLabel = new QLabel();
     mLabel->setText(tr("当前型号"));
-    hLayout->addWidget(debugLine);
+    //hLayout->addWidget(debugLine);
+   
     hLayout->addWidget(checkTrace);
+    hLayout->addWidget(pLabel);
+    hLayout->addWidget(cbPlatform);
     hLayout->addWidget(mLabel);
     hLayout->addWidget(cbSelectModel);
-
+    connect(cbPlatform, SIGNAL(currentIndexChanged(int)), this, SLOT(on_CurrentPlatformChanged(int)));
     tableRecView = new QTableWidget();
     //设置表格为10列，不加这个内容不会显示的
     tableRecView->setColumnCount(10);
@@ -1998,9 +2014,112 @@ void QtCanPlatform::getModelTitle()
 }
 void QtCanPlatform::on_CurrentModelChanged(int index)
 {
-    currentModel = index;
+    currentModel = HashArr.at(index);
     sendDataIntoTab();
     recDataIntoTab();
+}
+void QtCanPlatform::on_CurrentPlatformChanged(int index)
+{
+    HashArr.clear();
+    if (index < 0)
+        return;
+    qGboleData* qGb = qGboleData::getInstance();
+    if (!qGb)return;
+    disconnect(cbSelectModel, SIGNAL(currentIndexChanged(int)), this, SLOT(on_CurrentModelChanged(int)));
+    cbSelectModel->clear();
+    for (int i = 0; i < qGb->pGboleData.size(); i++)
+    {
+       
+        if (0 == index)
+        {
+            HashArr.push_back(i);
+            cbSelectModel->addItem(qGb->pGboleData.at(i).modelName);
+        }
+        else
+        {
+            QStringList ls;
+            switch (index)
+            {
+                case 1:
+                    ls = qGb->pGboleData.at(i).sPlatform.split(",");
+                    for(int k=0;k<ls.size();k++)
+                        if (ls.at(k)=="3kW" || ls.at(k)=="Non")
+                        {
+                            HashArr.push_back(i);
+                            cbSelectModel->addItem(qGb->pGboleData.at(i).modelName);
+                            break;
+                        }
+                    break;
+                case 2:
+                    ls = qGb->pGboleData.at(i).sPlatform.split(",");
+                    for (int k = 0; k < ls.size(); k++)
+                        if (ls.at(k) == "4kW" || ls.at(k) == "Non")
+                        {
+                            HashArr.push_back(i);
+                            cbSelectModel->addItem(qGb->pGboleData.at(i).modelName);
+                            break;
+                        }
+                    break;
+                case 3:
+                    ls = qGb->pGboleData.at(i).sPlatform.split(",");
+                    for (int k = 0; k < ls.size(); k++)
+                        if (ls.at(k) == "5kW" || ls.at(k) == "Non")
+                        {
+                            HashArr.push_back(i);
+                            cbSelectModel->addItem(qGb->pGboleData.at(i).modelName);
+                            break;
+                        }
+                    break;
+                case 4:
+                    ls = qGb->pGboleData.at(i).sPlatform.split(",");
+                    for (int k = 0; k < ls.size(); k++)
+                        if (ls.at(k) == "7kW" || ls.at(k) == "Non")
+                        {
+                            HashArr.push_back(i);
+                            cbSelectModel->addItem(qGb->pGboleData.at(i).modelName);
+                            break;
+                        }
+                    break;
+                case 5:
+                    ls = qGb->pGboleData.at(i).sPlatform.split(",");
+                    for (int k = 0; k < ls.size(); k++)
+                        if (ls.at(k) == "10kW" || ls.at(k) == "Non")
+                        {
+                            HashArr.push_back(i);
+                            cbSelectModel->addItem(qGb->pGboleData.at(i).modelName);
+                            break;
+                        }
+                    break;
+                case 6:
+                    ls = qGb->pGboleData.at(i).sPlatform.split(",");
+                    for (int k = 0; k < ls.size(); k++)
+                        if (ls.at(k) == "15kW" || ls.at(k) == "Non")
+                        {
+                            HashArr.push_back(i);
+                            cbSelectModel->addItem(qGb->pGboleData.at(i).modelName);
+                            break;
+                        }
+                    break;
+                case 7:
+                    ls = qGb->pGboleData.at(i).sPlatform.split(",");
+                    for (int k = 0; k < ls.size(); k++)
+                        if (ls.at(k) == "19kW" || ls.at(k) == "Non")
+                        {
+                            HashArr.push_back(i);
+                            cbSelectModel->addItem(qGb->pGboleData.at(i).modelName);
+                            break;
+                        }
+                    break;
+            default:
+                HashArr.push_back(i);
+                cbSelectModel->addItem(qGb->pGboleData.at(i).modelName);
+                break;
+            }
+        }
+    }
+    if(cbSelectModel->count()>0)
+        on_CurrentModelChanged(0);
+    connect(cbSelectModel, SIGNAL(currentIndexChanged(int)), this, SLOT(on_CurrentModelChanged(int)));
 }
 void QtCanPlatform::on_cbCanType_currentIndexChanged(int index)
 {
