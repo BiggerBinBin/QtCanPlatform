@@ -21,15 +21,15 @@ struct parseData
 	QString toWord;
 	struct YBRGB color;
 };
-//
+//值对含义
 struct cellProperty
 {
-	uint16_t r;
-	uint16_t g;
-	uint16_t b;
-	QString toWord;
-	QString value;
-	bool isStand;
+	uint16_t r;									//红色分量
+	uint16_t g;									//绿色分量
+	uint16_t b;									//蓝色分量
+	QString toWord;								//值的含义
+	QString value;								//值
+	bool isStand;								//是否正常值（即这个值为不是异常的值）
 	//QColor  color;
 	
 };
@@ -59,7 +59,7 @@ struct canIdData {
 //型号数据结构体
 struct protoData {
 	
-	uint8_t agreement;				//协议
+	uint8_t agreement;				//协议,0:intel,1:motolora
 	int bundRate;					//波特率
 	int circle;						//报文周期
 	QString modelName;				//名称

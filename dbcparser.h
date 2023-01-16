@@ -1,5 +1,5 @@
 /*
- * QDeviceCtrl.h - header file of QDeviceCtrl class
+ * DbcParser.h - header file of DbcParser class
  *
  * Copyright (C) 2021-2022 lyb <liyangbinbin@foxmail.com>
  *
@@ -20,30 +20,33 @@
  * <http://www.gnu.org/licenses/>.
  */
 #pragma once
-
-#include <QThread>
-#include <QAxObject>
-#include <QStringList>
-class DataSave  : public QThread
+#include "dataStruct.h"
+#include <qstring.h>
+#include "zdbc.h"
+class DbcParser
 {
-	Q_OBJECT
-
 public:
-	DataSave(QObject *parent=nullptr);
-	~DataSave();
-	void SaveData(QStringList list, int rows, QString path);
-	bool setTitle(QString title);
-	void writeExcelFast(QString fileName, QList<QList<QVariant>>& x_y);
-	void castListListVariant2Variant(QList<QList<QVariant>>& cells, QVariant& res);
-	void convert2ColName(int data, QString& res);
-	QString to26AlphabetString(int data);
-	QList<QList<QVariant>> paraString(QStringList list);
-protected:
-	void run();
+	DbcParser();
+	~DbcParser();
+	virtual struct protoData parserdbc(bool& res)=0;
+
+//protected:
+//	QString m_sPath;
+//	int m_iParserTYpe;
+};
+
+
+
+class ParserZ:public DbcParser
+{
+public:
+	ParserZ(QString dbcFileName);
+	virtual struct protoData parserdbc(bool &res);
 private:
-	QString datalist_name;
-	QStringList dataList;
-	int rows;
-	QString filepath;
-	bool isRun = true;
+	DBCHandle m_hDBC;
+private:
+	void AddMsgToList(DBCMessage msg, protoData& pData);
+protected:
+	QString m_sPath;
+	int m_iParserTYpe;
 };

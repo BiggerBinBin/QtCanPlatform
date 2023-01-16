@@ -40,7 +40,7 @@ QtCanPlatform::QtCanPlatform(QWidget *parent)
     initUi();
     sendTimer = new QTimer();
     connect(sendTimer, &QTimer::timeout, this, &QtCanPlatform::sendData);
-    this->setWindowTitle(tr("PHU-CAN-APP V1.12.12"));
+    this->setWindowTitle(tr("KUS-PHU 功能测试上位机 V2.01.06"));
     this->showMaximized();
     connect(this, &QtCanPlatform::sigEndRunWork, this, &QtCanPlatform::on_recSigEndRunWork);
     readSetFile();
@@ -134,6 +134,8 @@ void QtCanPlatform::closeEvent(QCloseEvent* event)
 
 void QtCanPlatform::initUi()
 {
+   /* QString path = QApplication::applicationDirPath() + "/app-logo.ico";
+    this->setWindowIcon(QIcon(path));*/
     this->setWindowIcon(QIcon(":/QtCanPlatform/app-logo.ico"));
     lostQTimer = new QTimer();
     connect(lostQTimer, SIGNAL(timeout()), this, SLOT(on_recTimeout()));
@@ -265,6 +267,7 @@ void QtCanPlatform::initUi()
     connect(checkTrace, &QCheckBox::stateChanged, this, &QtCanPlatform::on_checkTraceChanged);
     QLabel* pLabel = new QLabel();
     pLabel->setText(tr("平台"));
+    pLabel->setStyleSheet("font:normal bold 18px SimHei");
     QComboBox* cbPlatform = new QComboBox(this);
     cbPlatform->addItem("无分类");
     cbPlatform->addItem("3kW");
@@ -276,6 +279,7 @@ void QtCanPlatform::initUi()
     cbPlatform->addItem("19kW");
     QLabel* mLabel = new QLabel();
     mLabel->setText(tr("当前型号"));
+    mLabel->setStyleSheet("font:normal bold 18px SimHei");
     //hLayout->addWidget(debugLine);
    
     hLayout->addWidget(checkTrace);

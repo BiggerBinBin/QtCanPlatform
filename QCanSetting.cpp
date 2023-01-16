@@ -16,6 +16,8 @@
 #include "qGboleData.h"
 #include "QsLog.h"
 #include <QSplitter>
+#include <qfiledialog.h>
+#include "dbcparser.h"
 QCanSetting::QCanSetting(QWidget *parent)
 	: QWidget(parent)
 {
@@ -56,6 +58,8 @@ void QCanSetting::InitUi()
 	QLOG_INFO() << "正在初始化设置界面……";
 	QStringList listname = { tr("名称") , tr("协议") , tr("波特率") , tr("周期ms"),tr("标准帧"),tr("平台")};
 	//listname << tr("名称") << tr("协议")<<tr("波特率")<<tr("周期ms");
+	QPushButton* pbImportDBC = new QPushButton(tr("导入DBC"));
+	connect(pbImportDBC, &QPushButton::clicked, this, &QCanSetting::on_importDBC_clicked);
 	QPushButton* pbAddModel = new QPushButton("添加型号");
 	pbAddModel->setFixedWidth(60);
 	connect(pbAddModel, &QPushButton::clicked, this, &QCanSetting::on_pbAddModel_clicked);
@@ -77,6 +81,7 @@ void QCanSetting::InitUi()
 
 	//pbSaveModel->setMinimumWidth(40);
 	QHBoxLayout* hLayoutMdeol = new QHBoxLayout();
+	hLayoutMdeol->addWidget(pbImportDBC);
 	hLayoutMdeol->addWidget(pbAddModel);
 	hLayoutMdeol->addWidget(pbMoveUpModel);
 	hLayoutMdeol->addWidget(pbMoveDownModel);
@@ -340,12 +345,21 @@ void QCanSetting::on_pbMoveUpModel_clicked()
 	}
 	//在它上面先插入一行
 	modelView->insertRow(curRow - 1);
-	//把这一行的所有列取出来，也就两个
-	QString idtex = modelView->item(curRow + 1, 0)->text();
-	QComboBox* cb = dynamic_cast<QComboBox*>(modelView->cellWidget(curRow + 1, 1));
+	//把这一行的所有列取出来
+	
+	QString idtex = modelView->item(curRow + 1, 0)->text();								//型号名称
+	QComboBox* cb = dynamic_cast<QComboBox*>(modelView->cellWidget(curRow + 1, 1));		//格式：inter或者motorola
+	QComboBox* cb2 = dynamic_cast<QComboBox*>(modelView->cellWidget(curRow + 1, 2));	//波特率
+	QString cycle = modelView->item(curRow + 1, 3)->text();								//报文周期	
+	QCheckBox* ch = dynamic_cast<QCheckBox*>(modelView->cellWidget(curRow + 1, 4));		//帧格式：标准或者扩展
+	QString platf = modelView->item(curRow + 1, 5)->text();								//平台
 	//在单元格要设置一个Item，不然直接丢元素进去
 	modelView->setItem(curRow - 1, 0, new QTableWidgetItem(idtex));
 	modelView->setCellWidget(curRow - 1, 1, cb);
+	modelView->setCellWidget(curRow - 1, 2, cb2);
+	modelView->setItem(curRow - 1, 3, new QTableWidgetItem(cycle));
+	modelView->setCellWidget(curRow - 1, 4, ch);
+	modelView->setItem(curRow - 1, 5, new QTableWidgetItem(platf));
 	//删除原来行，因为在它前面新增了一行，所以序号要变
 	modelView->removeRow(curRow + 1);
 	modelView->setCurrentCell(curRow - 1, 0);
@@ -370,13 +384,29 @@ void QCanSetting::on_pbMoveDownModel_clicked()
 		return;
 	}
 	
-	modelView->insertRow(curRow + 2);
+	/*modelView->insertRow(curRow + 2);
 	QString idtex = modelView->item(curRow, 0)->text();
 	QComboBox* cb = dynamic_cast<QComboBox*>(modelView->cellWidget(curRow, 1));
 	modelView->setItem(curRow + 2, 0, new QTableWidgetItem(idtex));
+	modelView->setCellWidget(curRow + 2, 1, cb);*/
+	modelView->insertRow(curRow + 2);
+	QString idtex = modelView->item(curRow, 0)->text();							//型号名称
+	QComboBox* cb = dynamic_cast<QComboBox*>(modelView->cellWidget(curRow, 1));		//格式：inter或者motorola
+	QComboBox* cb2 = dynamic_cast<QComboBox*>(modelView->cellWidget(curRow, 2));	//波特率
+	QString cycle = modelView->item(curRow, 3)->text();								//报文周期	
+	QCheckBox* ch = dynamic_cast<QCheckBox*>(modelView->cellWidget(curRow, 4));		//帧格式：标准或者扩展
+	QString platf = modelView->item(curRow, 5)->text();								//平台
+	//在单元格要设置一个Item，不然直接丢元素进去
+	modelView->setItem(curRow + 2, 0, new QTableWidgetItem(idtex));
 	modelView->setCellWidget(curRow + 2, 1, cb);
+	modelView->setCellWidget(curRow + 2, 2, cb2);
+	modelView->setItem(curRow + 2, 3, new QTableWidgetItem(cycle));
+	modelView->setCellWidget(curRow + 2, 4, ch);
+	modelView->setItem(curRow + 2, 5, new QTableWidgetItem(platf));
+
+
 	modelView->removeRow(curRow);
-	modelView->setCurrentCell(curRow + 2, 0);
+	modelView->setCurrentCell(curRow + 1, 0);
 	qGboleData* qGb = qGboleData::getInstance();
 	if (!qGb)return;
 	if (curRow > qGb->pGboleData.size())
@@ -491,12 +521,14 @@ void QCanSetting::on_pbMoveUpCanId_clicked()
 	//把这一行的所有列取出来，也就两个
 	QString idtex = canIdView->item(curRow + 1, 0)->text();
 	QComboBox* cb = dynamic_cast<QComboBox*>(canIdView->cellWidget(curRow + 1, 1));
+	QCheckBox* ch = dynamic_cast<QCheckBox*>(canIdView->cellWidget(curRow + 1, 2));
 	//在单元格要设置一个Item，不然直接丢元素进去
 	canIdView->setItem(curRow - 1, 0, new QTableWidgetItem(idtex));
 	canIdView->setCellWidget(curRow - 1, 1, cb);
+	canIdView->setCellWidget(curRow - 1, 2, ch);
 	//删除原来行，因为在它前面新增了一行，所以序号要变
 	canIdView->removeRow(curRow + 1);
-
+	canIdView->setCurrentCell(curRow - 1, 0);
 	qGboleData* qGb = qGboleData::getInstance();
 	if (!qGb)return;
 	if (curRow > qGb->pGboleData.at(modelCurRow).cItem.size() - 1)
@@ -524,10 +556,12 @@ void QCanSetting::on_pbMoveDownCanId_clicked()
 	canIdView->insertRow(curRow + 2);
 	QString idtex = canIdView->item(curRow , 0)->text();
 	QComboBox* cb = dynamic_cast<QComboBox*>(canIdView->cellWidget(curRow, 1));
+	QCheckBox* ch = dynamic_cast<QCheckBox*>(canIdView->cellWidget(curRow, 2));
 	canIdView->setItem(curRow + 2, 0, new QTableWidgetItem(idtex));
 	canIdView->setCellWidget(curRow + 2, 1, cb);
+	canIdView->setCellWidget(curRow + 2, 2, ch);
 	canIdView->removeRow(curRow );
-
+	canIdView->setCurrentCell(curRow + 1, 0);
 	qGboleData* qGb = qGboleData::getInstance();
 	if (!qGb)return;
 	if (curRow > qGb->pGboleData.at(modelCurRow).cItem.size())
@@ -674,6 +708,7 @@ void QCanSetting::on_pbMoveUpIteam_clicked()
 	QPushButton* qpb = dynamic_cast<QPushButton*>(tableView->cellWidget(curRow + 1, 6));
 	QCheckBox* qcb = dynamic_cast<QCheckBox*>(tableView->cellWidget(curRow + 1, 7));
 	QString str9 = tableView->item(curRow + 1, 8)->text();
+	QCheckBox* qcb2 = dynamic_cast<QCheckBox*>(tableView->cellWidget(curRow + 1, 9));
 	//放到新插入的那一行
 	tableView->setItem(curRow - 1, 0, new QTableWidgetItem(str1));
 	tableView->setItem(curRow - 1, 1, new QTableWidgetItem(str2));
@@ -684,7 +719,7 @@ void QCanSetting::on_pbMoveUpIteam_clicked()
 	tableView->setCellWidget(curRow - 1, 6, qpb);
 	tableView->setCellWidget(curRow - 1, 7, qcb);
 	tableView->setItem(curRow - 1, 8, new QTableWidgetItem(str9));
-	tableView->setCellWidget(curRow - 1, 6, qpb);
+	tableView->setCellWidget(curRow - 1, 9, qcb2);
 	tableView->removeRow(curRow + 1);
 	tableView->setCurrentCell(curRow - 1, 0);
 	qGboleData* qGb = qGboleData::getInstance();
@@ -734,6 +769,7 @@ void QCanSetting::on_pbMoveDownIteam_clicked()
 	QPushButton* qpb = dynamic_cast<QPushButton*>(tableView->cellWidget(curRow , 6));
 	QCheckBox* qcb = dynamic_cast<QCheckBox*>(tableView->cellWidget(curRow , 7));
 	QString str9 = tableView->item(curRow , 8)->text();
+	QCheckBox* qcb2 = dynamic_cast<QCheckBox*>(tableView->cellWidget(curRow, 9));
 	//放到新插入的那一行
 	tableView->setItem(curRow + 2, 0, new QTableWidgetItem(str1));
 	tableView->setItem(curRow + 2, 1, new QTableWidgetItem(str2));
@@ -744,9 +780,10 @@ void QCanSetting::on_pbMoveDownIteam_clicked()
 	tableView->setCellWidget(curRow + 2, 6, qpb);
 	tableView->setCellWidget(curRow + 2, 7, qcb);
 	tableView->setItem(curRow + 2, 8, new QTableWidgetItem(str9));
+	tableView->setCellWidget(curRow + 2, 9, qcb2);
 	tableView->removeRow(curRow);
 
-	tableView->setCurrentCell(curRow + 2, 0);
+	tableView->setCurrentCell(curRow + 1, 0);
 	qGboleData* qGb = qGboleData::getInstance();
 	if (!qGb)return;
 	if (modelCurRow > qGb->pGboleData.size() - 1)
@@ -1383,4 +1420,20 @@ void QCanSetting::on_isHexCheckStateChanged(int isCheck)
 		QMessageBox::warning(this, tr("warning"), QString(tr("Vector超出:") + e.what() + "Infunction:on_CheckStateChanged(int isCheck)"));
 		//return;
 	}
+}
+
+void QCanSetting::on_importDBC_clicked()
+{
+	QString path = QFileDialog::getOpenFileName(this, tr("选择.DBC文件"), QApplication::applicationDirPath(), tr("DBC(*.dbc)"));
+	DbcParser *dp = new ParserZ(path);
+	bool res = false;
+	protoData dd =  dp->parserdbc(res);
+	if (res)
+	{
+		qGboleData* qGb = qGboleData::getInstance();
+		if (!qGb)return;
+		qGb->pGboleData.push_back(dd);
+		SetTableData();
+	}
+
 }

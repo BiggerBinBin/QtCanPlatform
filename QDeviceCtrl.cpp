@@ -1025,14 +1025,14 @@ void QDeviceCtrl::on_dCanRefresh_clicked()
 
 void QDeviceCtrl::on_pbProcessSet_clicked(bool isCheck)
 {
-	ui.pbProcessSet->setChecked(isCheck);
+	/*ui.pbProcessSet->setChecked(isCheck);
 	emit sigWorkRun(isCheck);
 	return;
 	if (!qProcessB)
 	{
 		qProcessB = new QProcessBuild();
 	}
-	qProcessB->show();
+	qProcessB->show();*/
 }
 void QDeviceCtrl::on_setProcessSetState(bool b)
 {

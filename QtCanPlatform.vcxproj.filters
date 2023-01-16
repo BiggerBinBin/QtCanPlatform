@@ -67,9 +67,6 @@
     <ClCompile Include="QMoudBusCtrl.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="QProcessBuild.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="canthread.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -80,6 +77,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="mHttp.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="dbcparser.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -103,9 +103,6 @@
       <Filter>Header Files</Filter>
     </QtMoc>
     <QtMoc Include="QMoudBusCtrl.h">
-      <Filter>Header Files</Filter>
-    </QtMoc>
-    <QtMoc Include="QProcessBuild.h">
       <Filter>Header Files</Filter>
     </QtMoc>
     <QtMoc Include="canthread.h">
@@ -151,7 +148,7 @@
     <ClInclude Include="chex.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="config.h">
+    <ClInclude Include="dbcparser.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

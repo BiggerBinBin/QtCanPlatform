@@ -103,8 +103,13 @@ private slots:
 	void on_tableView_doubleCLicked(int, int);
 	void on_tableView_cellChanged(int row, int col);
 
+	//属性响应
 	void on_property_clicked();
+	//是否滚动显示的checkbox响应
 	void on_CheckStateChanged(int);
+	//是否显示为16进制
 	void on_isHexCheckStateChanged(int);
+
+	void on_importDBC_clicked();
 
 };

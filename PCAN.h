@@ -1,5 +1,5 @@
 /*
- * QtCanPlatform.h - header file of QtCanPlatform class
+ * PCAN.h - header file of PCAN class
  *
  * Copyright (C) 2021-2022 lyb <liyangbinbin@foxmail.com>
  *
