@@ -210,7 +210,7 @@ void QCanSetting::on_pbAddModel_clicked()
 	
 	if (!modelView)
 		return;
-	disconnect(modelView, SIGNAL(itemChanged(cellChanged(int, int))), this, SLOT(on_modelView_cellChanged(int, int)));
+	disconnect(modelView, SIGNAL(itemChanged(cellChanged(int, int))), this, SLOT(on_modelView_cellChangedV2(int, int)));
 	short int row = modelView->rowCount();
 	modelView->setRowCount(row + 1);
 	QComboBox* proto = new QComboBox();
@@ -343,6 +343,7 @@ void QCanSetting::on_pbMoveUpModel_clicked()
 	{
 		return;
 	}
+	disconnect(modelView, SIGNAL(cellChanged(int, int)), this, SLOT(on_modelView_cellChangedV2(int, int)));
 	//在它上面先插入一行
 	modelView->insertRow(curRow - 1);
 	//把这一行的所有列取出来
@@ -354,6 +355,7 @@ void QCanSetting::on_pbMoveUpModel_clicked()
 	QCheckBox* ch = dynamic_cast<QCheckBox*>(modelView->cellWidget(curRow + 1, 4));		//帧格式：标准或者扩展
 	QString platf = modelView->item(curRow + 1, 5)->text();								//平台
 	//在单元格要设置一个Item，不然直接丢元素进去
+	//disconnect(modelView, SIGNAL(itemChanged(cellChanged(int, int))), this, SLOT(on_modelView_cellChangedV2(int, int)));
 	modelView->setItem(curRow - 1, 0, new QTableWidgetItem(idtex));
 	modelView->setCellWidget(curRow - 1, 1, cb);
 	modelView->setCellWidget(curRow - 1, 2, cb2);
@@ -389,6 +391,7 @@ void QCanSetting::on_pbMoveDownModel_clicked()
 	QComboBox* cb = dynamic_cast<QComboBox*>(modelView->cellWidget(curRow, 1));
 	modelView->setItem(curRow + 2, 0, new QTableWidgetItem(idtex));
 	modelView->setCellWidget(curRow + 2, 1, cb);*/
+	disconnect(modelView, SIGNAL(cellChanged(int, int)), this, SLOT(on_modelView_cellChangedV2(int, int)));
 	modelView->insertRow(curRow + 2);
 	QString idtex = modelView->item(curRow, 0)->text();							//型号名称
 	QComboBox* cb = dynamic_cast<QComboBox*>(modelView->cellWidget(curRow, 1));		//格式：inter或者motorola
@@ -515,7 +518,7 @@ void QCanSetting::on_pbMoveUpCanId_clicked()
 		QMessageBox::warning(NULL, "warnning", tr("未选中型号，不能上下移动"));
 		return;
 	}
-		
+	disconnect(canIdView, SIGNAL(cellChanged(int, int)), this, SLOT(on_canIdView_cellChanged(int, int)));
 	//在它上面先插入一行
 	canIdView->insertRow(curRow - 1);
 	//把这一行的所有列取出来，也就两个
@@ -553,6 +556,7 @@ void QCanSetting::on_pbMoveDownCanId_clicked()
 		QMessageBox::warning(NULL, "warnning", tr("未选中型号，不能上下移动"));
 		return;
 	}
+	disconnect(canIdView, SIGNAL(cellChanged(int, int)), this, SLOT(on_canIdView_cellChanged(int, int)));
 	canIdView->insertRow(curRow + 2);
 	QString idtex = canIdView->item(curRow , 0)->text();
 	QComboBox* cb = dynamic_cast<QComboBox*>(canIdView->cellWidget(curRow, 1));
@@ -696,6 +700,8 @@ void QCanSetting::on_pbMoveUpIteam_clicked()
 	{
 		return;
 	}
+	//关闭信号槽，因为下面的setItem会触发cellCHanged这个信号
+	disconnect(tableView, SIGNAL(cellChanged(int, int)), this, SLOT(on_tableView_cellChanged(int, int)));
 	//在它上面先插入一行
 	tableView->insertRow(curRow - 1);
 	//把这行的所有列数据取出来
@@ -739,6 +745,7 @@ void QCanSetting::on_pbMoveUpIteam_clicked()
 		QMessageBox::warning(NULL, "warnning", tr("超出范围，不能上下移动"));
 		return;
 	}
+	//交换两行的数据
 	std::swap(qGb->pGboleData.at(modelCurRow).cItem.at(canidCurRow).pItem[curRow], qGb->pGboleData.at(modelCurRow).cItem.at(canidCurRow).pItem[curRow - 1]);
 }
 
@@ -757,6 +764,8 @@ void QCanSetting::on_pbMoveDownIteam_clicked()
 	{
 		return;
 	}
+	//关闭信号槽，因为下面的setItem会触发cellCHanged这个信号
+	disconnect(tableView, SIGNAL(cellChanged(int, int)), this, SLOT(on_tableView_cellChanged(int, int)));
 	//在它上面先插入一行
 	tableView->insertRow(curRow + 2);
 	//把这行的所有列数据取出来
@@ -918,7 +927,7 @@ void QCanSetting::on_modelView_bundIndexChanged(int index)
 
 
 
-void QCanSetting::on_modelView_cellChanged(int row, int col)
+void QCanSetting::on_modelView_cellChangedV2(int row, int col)
 {
 	qGboleData* qGb = qGboleData::getInstance();
 	if (!qGb)return;
@@ -937,14 +946,15 @@ void QCanSetting::on_modelView_cellChanged(int row, int col)
 		qGb->pGboleData.at(row).sPlatform = modelView->item(row, col)->text();
 	}
 	//关掉这个，防止添加行setData的时候，触发这个信号
-	disconnect(modelView, SIGNAL(itemChanged(cellChanged(int, int))), this, SLOT(on_modelView_cellChanged(int, int)));
+	//disconnect(modelView, SIGNAL(itemChanged(cellChanged(int, int))), this, SLOT(on_modelView_cellChangedV2(int, int)));
+	disconnect(modelView, SIGNAL(cellChanged(int, int)), this, SLOT(on_modelView_cellChangedV2(int, int)));
 }
 
 void QCanSetting::on_modelView_doubleClicked(int, int)
 {
 	//注意QT的这个cellChanged信号，他会当setData的时候触发这个信号
 	//所以曲线救国，在双击的时候才连接这个槽，
-	connect(modelView, SIGNAL(cellChanged(int, int)), this, SLOT(on_modelView_cellChanged(int, int)));
+	connect(modelView, SIGNAL(cellChanged(int, int)), this, SLOT(on_modelView_cellChangedV2(int, int)));
 }
 /***********************************
 *@brief:列表在初始化时，只会初始化型号列表的
@@ -1119,7 +1129,7 @@ void QCanSetting::on_canIdView_cellChanged(int row, int col)
 		QMessageBox::warning(this, tr("warning"), QString(tr("Vector超出:") + e.what() + "Infunction:on_canIdView_cellChanged"));
 	}
 	//关掉这个，防止添加行setData的时候，触发这个信号
-	disconnect(canIdView, SIGNAL(itemChanged(cellChanged(int, int))), this, SLOT(on_canIdView_cellChanged(int, int)));
+	disconnect(canIdView, SIGNAL(cellChanged(int, int)), this, SLOT(on_canIdView_cellChanged(int, int)));
 }
 /*
 * @brief：第二层的双击事件响应，建立被编辑后的槽
