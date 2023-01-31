@@ -40,7 +40,7 @@ QtCanPlatform::QtCanPlatform(QWidget *parent)
     initUi();
     sendTimer = new QTimer();
     connect(sendTimer, &QTimer::timeout, this, &QtCanPlatform::sendData);
-    this->setWindowTitle(tr("KUS-PHU 功能测试上位机 V2.01.06"));
+    this->setWindowTitle(tr("KUS-PHU 功能测试上位机 V2.01.30"));
     this->showMaximized();
     connect(this, &QtCanPlatform::sigEndRunWork, this, &QtCanPlatform::on_recSigEndRunWork);
     readSetFile();
@@ -2523,8 +2523,11 @@ void QtCanPlatform::on_ReceiveData(uint fream_id, QByteArray data)
     communicaLabel->setText(tr("通信正常"));
     communicaLabel->setStyleSheet("background-color:green");
     lostQTimer->start(lostTimeOut);
-    int index = cbSelectModel->currentIndex();
-    
+    //从型号里读出索引
+    int realIndex = cbSelectModel->currentIndex();
+    //转换索引，转换后的才是vector中的正在索引
+    int index = HashArr.at(realIndex);
+   
     qGboleData* qGb = qGboleData::getInstance();
     if (!qGb)return;
     if (index > qGb->pGboleData.size()-1)
