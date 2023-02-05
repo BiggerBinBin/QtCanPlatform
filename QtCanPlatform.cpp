@@ -389,8 +389,36 @@ void QtCanPlatform::initUi()
     ctx->setLayout(clay);
     pbClearText->setText(tr("清除日志"));
     pbClearText->setFixedWidth(80);
-    bootomright->addWidget(dCtrl);
+
+    m_tCaptureTimer = new QTimer(this);
+    m_iTimeStopLineEdit = new QLineEdit(this);
+    m_iTimeStopLineEdit->setText("120");
+    m_pbStartRad = new QPushButton(this);
+    m_pbStartRad->setCheckable(true);
+    m_labShowTime = new QLabel(this);
+    m_labShowTime->setText(tr("运行时间：0秒"));
+    connect(m_tCaptureTimer, &QTimer::timeout, this, &QtCanPlatform::on_CapturePower);
+    QLabel* qlabInputCapTimer = new QLabel(this);
+    qlabInputCapTimer->setText(tr("捕获时间"));
+    QHBoxLayout* layCap = new QHBoxLayout(this);
+    layCap->addWidget(qlabInputCapTimer);
+    layCap->addWidget(m_iTimeStopLineEdit);
+    layCap->addWidget(m_pbStartRad);
+    layCap->addWidget(m_labShowTime);
+    m_pbStartRad->setText(tr("启动记录"));
+    if (m_iShowType)
+    {
+        bootomright->addWidget(dCtrl);
+    }
+    else
+    {
+        QWidget* wg = new QWidget(this);
+        wg->setLayout(layCap);
+        bootomright->addWidget(wg);
+    }
+    
     bootomright->addWidget(ctx);
+    
     bootomright->addWidget(textBrowser);
     bootomright->setStretchFactor(0, 2);
     bootomright->setStretchFactor(1, 1);
@@ -2162,6 +2190,12 @@ void QtCanPlatform::on_pbSend_clicked(bool clicked)
         cycle->setEnabled(false);
         cbBitRate->setEnabled(false);
         reFresh->setEnabled(false);
+        runTimed = m_iTimeStopLineEdit->text().trimmed().toInt();
+        m_labShowTime->setText("运行时间：0秒");
+        if (m_pbStartRad->isChecked())
+        {
+            m_tCaptureTimer->start(1000);
+        }
         //用来检测通信状态的定时器
         if (!lostQTimer)
         {
@@ -2193,6 +2227,7 @@ void QtCanPlatform::on_pbSend_clicked(bool clicked)
     else
     {
         sendTimer->stop();
+        m_tCaptureTimer->stop();
         cycle->setEnabled(true);
         cbBitRate->setEnabled(true);
         reFresh->setEnabled(true);
@@ -2518,8 +2553,9 @@ void QtCanPlatform::on_ReceiveData(uint fream_id, QByteArray data)
     }
     //没有按下发送就不要接收数据
     //才改一天，这新源动力又说这不行，，，，shit
-    /*if (!pbSend->isChecked())
-        return;*/
+    
+    if (m_iRecOnNoSend&&!pbSend->isChecked())
+        return;
     communicaLabel->setText(tr("通信正常"));
     communicaLabel->setStyleSheet("background-color:green");
     lostQTimer->start(lostTimeOut);
@@ -2930,6 +2966,20 @@ void QtCanPlatform::on_pbClearCanData_clicked()
     
     
 }
+void QtCanPlatform::on_CapturePower()
+{
+    countRunTime++;
+    m_labShowTime->setText("运行时间：" + QString::number(countRunTime) + "秒");
+    if (countRunTime >= runTimed)
+    {
+        on_pbSend_clicked(false);
+        pbSend->setChecked(false);
+
+        m_tCaptureTimer->stop();
+        countRunTime = 0;
+    }
+    
+}
 void QtCanPlatform::on_pbGetVer_clicked(bool isCheck)
 {
     if (!t_GetVer)
@@ -3054,7 +3104,8 @@ void QtCanPlatform::readSetFile()
     m_iVoltStep = at.m_iVoltError;
     m_sInWebAddr = at.m_sInWebAddr;
     m_sOutWebAddr = at.m_sOutWebAddr;
-
+    m_iShowType = at.m_iShowType;
+    m_iRecOnNoSend = at.m_iRecOnNoSend;
 
 }
 /******************************************************

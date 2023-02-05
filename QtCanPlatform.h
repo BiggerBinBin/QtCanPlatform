@@ -236,7 +236,18 @@ private:
     QString m1_strPhuCode;
     QString m2_strPhuCode;
     QString m3_strPhuCode;
-   
+
+    int m_iShowType = 0;
+    int m_iRecOnNoSend = 0;
+
+    QLineEdit* m_iTimeStopLineEdit = nullptr;
+    QPushButton* m_pbStartRad = nullptr;
+    QLabel* m_labShowTime = nullptr;
+    QTimer* m_tCaptureTimer = nullptr;
+    int runTimed = 0;
+    int countRunTime = 0;
+  private slots:
+      void on_CapturePower();
 private slots:
     //CAN–≠“È…Ë÷√
     void qCanSettingShow();

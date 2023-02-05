@@ -223,6 +223,8 @@ void DataSave::writeExcelFast(QString fileName, QList<QList<QVariant>>& x_y)
     workbook->dynamicCall("SaveCopyAs(QString)", QDir::toNativeSeparators(fileName));
     workbook->dynamicCall("Close(bool)", false);  //关闭文件
     excel->dynamicCall("Quit()");//关闭excel
+    delete excel;
+    excel = NULL;
 }
 
 void DataSave::castListListVariant2Variant(QList<QList<QVariant>>& cells, QVariant& res)

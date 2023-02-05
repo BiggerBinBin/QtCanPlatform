@@ -78,4 +78,6 @@ struct autoTestData {
 	int m_iOverTime;			//超时
 	QString m_sInWebAddr;		//接口地址
 	QString m_sOutWebAddr;		//接口地址
+	int m_iShowType;
+	int m_iRecOnNoSend;
 };

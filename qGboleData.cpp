@@ -307,6 +307,8 @@ void qGboleData::read_ini()
 	aTdata.m_iVoltStep = setf->value("m_iVoltStep").toInt();
 	aTdata.m_sInWebAddr = setf->value("m_sInWebAddr").toString();
 	aTdata.m_sOutWebAddr = setf->value("m_sOutWebAddr").toString();
+	aTdata.m_iRecOnNoSend = setf->value("m_iRecOnNoSend").toInt();
+	aTdata.m_iShowType = setf->value("m_iShowType").toInt();
 }
 qGboleData::~qGboleData()
 {
