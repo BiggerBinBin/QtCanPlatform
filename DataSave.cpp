@@ -225,6 +225,8 @@ void DataSave::writeExcelFast(QString fileName, QList<QList<QVariant>>& x_y)
     excel->dynamicCall("Quit()");//¹Ø±Õexcel
     delete excel;
     excel = NULL;
+   
+    
 }
 
 void DataSave::castListListVariant2Variant(QList<QList<QVariant>>& cells, QVariant& res)
