@@ -246,7 +246,7 @@ private:
     QTimer* m_tCaptureTimer = nullptr;
     int runTimed = 0;
     int countRunTime = 0;
-  private slots:
+private slots:
       void on_CapturePower();
 private slots:
     //CAN协议设置
@@ -300,6 +300,9 @@ private slots:
     //CAN盒子的类型
     void on_cbCanType_currentIndexChanged(int index);
     void on_commitData(const QByteArray& byte, int id);
+
+    void on_action_About_triggered();
+    void on_action_History_triggered();
 signals:
     void sigNewRoll();
     void sigSendHttp(QByteArray byte, int id);

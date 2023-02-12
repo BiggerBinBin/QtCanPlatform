@@ -37,13 +37,14 @@ QtCanPlatform::QtCanPlatform(QWidget *parent)
     SetThreadExecutionState(ES_CONTINUOUS | ES_DISPLAY_REQUIRED | ES_SYSTEM_REQUIRED);
     initLogger();
     this->setStyleSheet(qmyss);
+    readSetFile();
     initUi();
     sendTimer = new QTimer();
     connect(sendTimer, &QTimer::timeout, this, &QtCanPlatform::sendData);
-    this->setWindowTitle(tr("KUS-PHU 功能测试上位机 V2.01.30"));
+    this->setWindowTitle(tr("KUS-PHU 功能测试上位机 V2.02.10"));
     this->showMaximized();
     connect(this, &QtCanPlatform::sigEndRunWork, this, &QtCanPlatform::on_recSigEndRunWork);
-    readSetFile();
+    
     connect(this, &QtCanPlatform::sigSendHttp, this, &QtCanPlatform::on_commitData);
     //博世的获取版本定时器
     t_GetVer = new QTimer(this);
@@ -390,6 +391,7 @@ void QtCanPlatform::initUi()
     pbClearText->setText(tr("清除日志"));
     pbClearText->setFixedWidth(80);
 
+    //定时界面
     m_tCaptureTimer = new QTimer(this);
     m_iTimeStopLineEdit = new QLineEdit(this);
     m_iTimeStopLineEdit->setText("120");
@@ -406,13 +408,20 @@ void QtCanPlatform::initUi()
     layCap->addWidget(m_pbStartRad);
     layCap->addWidget(m_labShowTime);
     m_pbStartRad->setText(tr("启动记录"));
+    QWidget* wg = new QWidget(this);
+    //根据需要，启动不同的界面
     if (m_iShowType)
     {
         bootomright->addWidget(dCtrl);
+        m_iTimeStopLineEdit->setHidden(true);
+        m_pbStartRad->setHidden(true);
+        m_labShowTime->setHidden(true);
+        qlabInputCapTimer->setHidden(true);
+        
     }
     else
     {
-        QWidget* wg = new QWidget(this);
+        
         wg->setLayout(layCap);
         bootomright->addWidget(wg);
     }
@@ -430,10 +439,36 @@ void QtCanPlatform::initUi()
     gg->addWidget(mainQSpli);
     ui.centralWidget->setLayout(gg);
 
+    //增加about，历史版本，关于
     
 
 }
+void QtCanPlatform::on_action_About_triggered()
+{
+    
+    QFile F(QApplication::QCoreApplication::applicationDirPath() + "/Data/about.kus");
+    if (F.open(QIODevice::ReadOnly | QIODevice::Text))
+    {
+        QMessageBox::about(this, tr("关于"), QString(F.readAll()));
+    }
+    else
+    {
+        QMessageBox::about(this, tr("关于"), "CAN功能测试上位机");
+    }
 
+}
+void QtCanPlatform::on_action_History_triggered()
+{
+    QFile F(QApplication::QCoreApplication::applicationDirPath() + "/Data/history_version.kus");
+    if (F.open(QIODevice::ReadOnly | QIODevice::Text))
+    {
+        QMessageBox::about(this, tr("历史版本"),QString(F.readAll()));
+    }
+    else
+    {
+        QMessageBox::about(this, tr("历史版本"), "历史版本丢失");
+    }
+}
 void QtCanPlatform::initData()
 {
     //获取数据类指针

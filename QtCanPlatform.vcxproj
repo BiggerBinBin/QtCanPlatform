@@ -96,6 +96,7 @@
     <OutDir>$(SolutionDir)\X32\$(Configuration)</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
+    <OutDir>F:\Lyb-file\Code\Release\通用上位机\64位通用上位机\PHU-CAN-UNIVSER</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>$(SolutionDir)\X32\$(Configuration)\</OutDir>

@@ -228,7 +228,12 @@ void DataSave::writeExcelFast(QString fileName, QList<QList<QVariant>>& x_y)
    
     
 }
-
+/*
+* @brief:把list<list<>>转成QVariant
+* @param:
+* cells:原始数据list
+* res:转换后的QVariant
+*/
 void DataSave::castListListVariant2Variant(QList<QList<QVariant>>& cells, QVariant& res)
 {
     QVariantList vars;
@@ -240,9 +245,9 @@ void DataSave::castListListVariant2Variant(QList<QList<QVariant>>& cells, QVaria
     res = QVariant(vars);
 }
 
-// brief 把列数转换为excel的字母列号
-// param data 大于0的数
-// return 字母列号，如1->A 26->Z 27 AA
+// @brief： 把列数转换为excel的字母列号
+// @param： data 大于0的数
+// @return： 字母列号，如1->A 26->Z 27 AA
 void DataSave::convert2ColName(int data, QString& res)
 {
     Q_ASSERT(data > 0 && data < 65535);
