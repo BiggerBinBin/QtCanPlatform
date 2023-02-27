@@ -82,6 +82,12 @@
     <ClCompile Include="dbcparser.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="HardWareBase.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="HardWarePlin.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="QCanSetting.h">
@@ -112,6 +118,12 @@
       <Filter>Header Files</Filter>
     </QtMoc>
     <QtMoc Include="mHttp.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="HardWareBase.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="HardWarePlin.h">
       <Filter>Header Files</Filter>
     </QtMoc>
   </ItemGroup>

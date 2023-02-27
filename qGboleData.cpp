@@ -57,6 +57,7 @@ void qGboleData::save()
 			pItemObj.insert("CanId", pGboleData.at(i).cItem.at(j).strCanId);
 			pItemObj.insert("opt", pGboleData.at(i).cItem.at(j).opt);
 			pItemObj.insert("isSend", pGboleData.at(i).cItem.at(j).isSend);
+			pItemObj.insert("len", pGboleData.at(i).cItem.at(j).len);
 			QJsonObject pDItem;
 			//pItem用一个数组来储存
 			for (int k = 0; k < pGboleData.at(i).cItem.at(j).pItem.size(); k++)
@@ -193,6 +194,7 @@ void qGboleData::read()
 				//opt就是表明该ID是发送报文还是接收报文，1是接收，0是发送
 				ctemp.opt = rootfour["opt"].toInt(0);
 				ctemp.isSend = rootfour["isSend"].toBool(false);
+				ctemp.len = rootfour["len"].toInt(8);
 				if (rootfour["pDItem"].isObject())
 				{
 					//pDitem对应的是std::vector<struct protoItem>pItem;
@@ -309,6 +311,7 @@ void qGboleData::read_ini()
 	aTdata.m_sOutWebAddr = setf->value("m_sOutWebAddr").toString();
 	aTdata.m_iRecOnNoSend = setf->value("m_iRecOnNoSend").toInt();
 	aTdata.m_iShowType = setf->value("m_iShowType").toInt();
+	aTdata.m_iSaveListNum = setf->value("m_iSaveListNum").toInt();
 }
 qGboleData::~qGboleData()
 {

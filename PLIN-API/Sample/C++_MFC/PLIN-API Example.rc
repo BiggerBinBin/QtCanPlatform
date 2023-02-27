@@ -1,0 +1,337 @@
+// Microsoft Visual C++ generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#ifndef APSTUDIO_INVOKED
+#include "targetver.h"
+#endif
+#include "afxres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// English (U.S.) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+#ifdef _WIN32
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
+#endif //_WIN32
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_PLINAPIEXAMPLE_DIALOG DIALOGEX 0, 0, 513, 340
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_MINIMIZEBOX | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
+EXSTYLE WS_EX_APPWINDOW
+CAPTION "PLIN-API Example"
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
+BEGIN
+    GROUPBOX        "Connection",IDC_STATIC,7,7,499,42
+    LTEXT           "Hardware:",IDC_STATIC,14,17,35,8
+    COMBOBOX        IDC_CBBCHANNEL,14,28,150,73,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    PUSHBUTTON      "Refresh",IDC_BTNHWREFRESH,170,27,50,14
+    LTEXT           "Baudrate :",IDC_STATIC,227,17,35,8
+    COMBOBOX        IDC_CBBBAUDRATES,226,28,57,60,CBS_DROPDOWN | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Mode:",IDC_STATIC,288,17,21,8
+    COMBOBOX        IDC_CBBHWMODE,287,28,48,41,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    PUSHBUTTON      "Identify",IDC_BTNIDENT,341,27,50,14
+    PUSHBUTTON      "Initialize",IDC_BTNINIT,396,27,50,14
+    PUSHBUTTON      "Release",IDC_BTNRELEASE,450,27,50,14,WS_DISABLED
+    GROUPBOX        "Configuration && Message Filtering",IDC_STATIC,7,52,499,41
+    PUSHBUTTON      "Configure Global Frames",IDC_BTNCONFIGFRMS,14,73,94,14,WS_DISABLED
+    CONTROL         "Open",IDC_RDBFILTEROPEN,"Button",BS_AUTORADIOBUTTON,128,75,33,10
+    CONTROL         "Close",IDC_RDBFILTERCLOSE,"Button",BS_AUTORADIOBUTTON,166,75,33,10
+    CONTROL         "Custom (expand)",IDC_RDBFILTERCUSTOM,"Button",BS_AUTORADIOBUTTON,205,75,71,10
+    LTEXT           "From:",IDC_STATIC,277,62,20,10
+    EDITTEXT        IDC_TXTFILTERFROM,278,73,40,14,ES_AUTOHSCROLL | WS_DISABLED
+    CONTROL         "",IDC_NUDFILTERFROM,"msctls_updown32",UDS_ARROWKEYS | WS_DISABLED,319,73,11,14
+    LTEXT           "To:",IDC_STATIC,336,62,12,8
+    EDITTEXT        IDC_TXTFILTERTO,336,73,40,14,ES_AUTOHSCROLL | WS_DISABLED
+    CONTROL         "",IDC_NUDFILTERTO,"msctls_updown32",UDS_ARROWKEYS | WS_DISABLED,377,73,11,14
+    PUSHBUTTON      "Apply",IDC_BTNFILTERAPPLY,396,73,50,14,WS_DISABLED
+    PUSHBUTTON      "Query",IDC_BTNFILTERQUERY,450,73,50,14,WS_DISABLED
+    GROUPBOX        "Messages Reading",IDC_STATIC,7,97,499,87
+    CONTROL         "Read using a Timer",IDC_RDBTIMER,"Button",BS_AUTORADIOBUTTON,14,109,77,10
+    CONTROL         "Manual Read",IDC_RDBMANUAL,"Button",BS_AUTORADIOBUTTON,97,109,57,10
+    CONTROL         "Timestamp as period",IDC_CHBTIMESTAMP,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,160,109,81,10
+    CONTROL         "",IDC_LSTMESSAGES,"SysListView32",LVS_REPORT | LVS_ALIGNLEFT | WS_BORDER | WS_TABSTOP,14,121,374,57
+    PUSHBUTTON      "Read",IDC_BTNREAD,396,121,50,14,WS_DISABLED
+    PUSHBUTTON      "Clear",IDC_BTNREADCLEAR,450,121,50,14
+    GROUPBOX        "Write Messages",IDC_STATIC,7,188,499,69
+    LTEXT           "ID (Hex):",IDC_STATIC,14,199,31,8
+    COMBOBOX        IDC_CBBID,14,209,48,124,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "PID (Hex):",IDC_STATIC,77,199,35,8
+    EDITTEXT        IDC_TXTID,77,208,40,14,ES_AUTOHSCROLL | WS_DISABLED
+    LTEXT           "Direction:",IDC_STATIC,130,199,32,8
+    COMBOBOX        IDC_CBBDIRECTION,129,209,94,30,CBS_DROPDOWNLIST | WS_DISABLED | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Checksum Type:",IDC_STATIC,233,199,54,8
+    COMBOBOX        IDC_CBBCST,232,209,78,30,CBS_DROPDOWNLIST | WS_DISABLED | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Length:",IDC_STATIC,14,227,26,8
+    EDITTEXT        IDC_TXTLENGTH,14,238,40,14,ES_AUTOHSCROLL | WS_DISABLED
+    CONTROL         "",IDC_NUDLENGTH,"msctls_updown32",UDS_ARROWKEYS | WS_DISABLED,55,238,11,14
+    LTEXT           "Data (1..8):",IDC_STATIC,77,227,40,8
+    EDITTEXT        IDC_TXTDATA0,77,238,25,14,ES_AUTOHSCROLL | WS_DISABLED
+    EDITTEXT        IDC_TXTDATA1,107,238,25,14,ES_AUTOHSCROLL | WS_DISABLED
+    EDITTEXT        IDC_TXTDATA2,138,238,25,14,ES_AUTOHSCROLL | WS_DISABLED
+    EDITTEXT        IDC_TXTDATA3,169,238,25,14,ES_AUTOHSCROLL | WS_DISABLED
+    EDITTEXT        IDC_TXTDATA4,199,238,25,14,ES_AUTOHSCROLL | WS_DISABLED
+    EDITTEXT        IDC_TXTDATA5,230,238,25,14,ES_AUTOHSCROLL | WS_DISABLED
+    EDITTEXT        IDC_TXTDATA6,261,238,25,14,ES_AUTOHSCROLL | WS_DISABLED
+    EDITTEXT        IDC_TXTDATA7,291,238,25,14,ES_AUTOHSCROLL | WS_DISABLED
+    PUSHBUTTON      "Write",IDC_BTNWRITE,450,208,50,14,WS_DISABLED
+    GROUPBOX        "Information",IDC_STATIC,7,261,499,72
+    LISTBOX         IDC_LSTINFO,14,272,374,57,LBS_SORT | LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP
+    PUSHBUTTON      "Version",IDC_BTNVERSION,396,272,50,14,WS_DISABLED
+    PUSHBUTTON      "Clear",IDC_BTNINFOCLEAR,450,272,50,14
+    PUSHBUTTON      "Status",IDC_BTNSTATUS,396,289,50,14,WS_DISABLED
+    PUSHBUTTON      "Reset",IDC_BTNRESET,450,290,50,14,WS_DISABLED
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Version
+//
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION 1,0,0,1
+ PRODUCTVERSION 1,0,0,1
+ FILEFLAGSMASK 0x3fL
+#ifdef _DEBUG
+ FILEFLAGS 0x1L
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEOS 0x4L
+ FILETYPE 0x1L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904e4"
+        BEGIN
+            VALUE "CompanyName", "TODO: <Company name>"
+            VALUE "FileDescription", "TODO: <File description>"
+            VALUE "FileVersion", "1.0.0.1"
+            VALUE "InternalName", "PLIN-API Example.exe"
+            VALUE "LegalCopyright", "TODO: (c) <Company name>.  All rights reserved."
+            VALUE "OriginalFilename", "PLIN-API Example.exe"
+            VALUE "ProductName", "TODO: <Product name>"
+            VALUE "ProductVersion", "1.0.0.1"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x409, 1252
+    END
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO 
+BEGIN
+    IDD_PLINAPIEXAMPLE_DIALOG, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 506
+        VERTGUIDE, 14
+        VERTGUIDE, 77
+        VERTGUIDE, 341
+        VERTGUIDE, 388
+        VERTGUIDE, 396
+        VERTGUIDE, 450
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 333
+        HORZGUIDE, 17
+        HORZGUIDE, 34
+        HORZGUIDE, 62
+        HORZGUIDE, 80
+        HORZGUIDE, 128
+        HORZGUIDE, 203
+        HORZGUIDE, 215
+        HORZGUIDE, 231
+        HORZGUIDE, 245
+        HORZGUIDE, 272
+        HORZGUIDE, 297
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog Info
+//
+
+IDD_PLINAPIEXAMPLE_DIALOG DLGINIT
+BEGIN
+    IDC_CBBBAUDRATES, 0x403, 5, 0
+0x3432, 0x3030, "\000" 
+    IDC_CBBBAUDRATES, 0x403, 5, 0
+0x3639, 0x3030, "\000" 
+    IDC_CBBBAUDRATES, 0x403, 6, 0
+0x3031, 0x3034, 0x0030, 
+    IDC_CBBBAUDRATES, 0x403, 6, 0
+0x3931, 0x3032, 0x0030, 
+    IDC_CBBHWMODE, 0x403, 6, 0
+0x6c53, 0x7661, 0x0065, 
+    IDC_CBBHWMODE, 0x403, 7, 0
+0x614d, 0x7473, 0x7265, "\000" 
+    IDC_CBBDIRECTION, 0x403, 9, 0
+0x6944, 0x6173, 0x6c62, 0x6465, "\000" 
+    IDC_CBBDIRECTION, 0x403, 10, 0
+0x7550, 0x6c62, 0x7369, 0x6568, 0x0072, 
+    IDC_CBBDIRECTION, 0x403, 11, 0
+0x7553, 0x7362, 0x7263, 0x6269, 0x7265, "\000" 
+    IDC_CBBDIRECTION, 0x403, 28, 0
+0x7553, 0x7362, 0x7263, 0x6269, 0x7265, 0x4120, 0x7475, 0x6d6f, 0x7461, 
+0x6369, 0x4c20, 0x6e65, 0x7467, 0x0068, 
+    IDC_CBBCST, 0x403, 5, 0
+0x7541, 0x6f74, "\000" 
+    IDC_CBBCST, 0x403, 8, 0
+0x6c43, 0x7361, 0x6973, 0x0063, 
+    IDC_CBBCST, 0x403, 9, 0
+0x6e45, 0x6168, 0x636e, 0x6465, "\000" 
+    IDC_CBBCST, 0x403, 7, 0
+0x7543, 0x7473, 0x6d6f, "\000" 
+    0
+END
+
+#endif    // English (U.S.) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+/////////////////////////////////////////////////////////////////////////////
+// French (France) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_FRA)
+#ifdef _WIN32
+LANGUAGE LANG_FRENCH, SUBLANG_FRENCH
+#pragma code_page(1252)
+#endif //_WIN32
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_GFT_DIALOG DIALOGEX 0, 0, 414, 281
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
+EXSTYLE WS_EX_TOOLWINDOW
+CAPTION "Global Frame Table"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    LTEXT           "Global Frame Table:",IDC_STATIC,7,7,64,8
+    CONTROL         "",IDC_LSTFRAMES,"SysListView32",LVS_REPORT | LVS_SHOWSELALWAYS | LVS_ALIGNLEFT | WS_BORDER | WS_TABSTOP,7,17,232,257
+    CONTROL         "",IDC_PROPLIST_LOCATION,"Static",SS_BLACKFRAME,246,16,161,258
+    LTEXT           "Properties:",IDC_STATIC,246,7,36,8
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO 
+BEGIN
+    IDD_GFT_DIALOG, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 407
+        VERTGUIDE, 246
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 274
+        HORZGUIDE, 16
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE 
+BEGIN
+    "#ifndef APSTUDIO_INVOKED\r\n"
+    "#include ""targetver.h""\r\n"
+    "#endif\r\n"
+    "#include ""afxres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE 
+BEGIN
+    "#define _AFX_NO_SPLITTER_RESOURCES\r\n"
+    "#define _AFX_NO_OLE_RESOURCES\r\n"
+    "#define _AFX_NO_TRACKER_RESOURCES\r\n"
+    "#define _AFX_NO_PROPERTY_RESOURCES\r\n"
+    "\r\n"
+    "#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)\r\n"
+    "LANGUAGE 9, 1\r\n"
+    "#pragma code_page(1252)\r\n"
+    "#include ""res\\PLINAPIExample.rc2""  // non-Microsoft Visual C++ edited resources\r\n"
+    "#include ""afxres.rc""     // Standard components\r\n"
+    "#endif\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDR_MAINFRAME           ICON                    "res\\PLIN-API Example.ico"
+#endif    // French (France) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+#define _AFX_NO_SPLITTER_RESOURCES
+#define _AFX_NO_OLE_RESOURCES
+#define _AFX_NO_TRACKER_RESOURCES
+#define _AFX_NO_PROPERTY_RESOURCES
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+LANGUAGE 9, 1
+#pragma code_page(1252)
+#include "res\PLINAPIExample.rc2"  // non-Microsoft Visual C++ edited resources
+#include "afxres.rc"     // Standard components
+#endif
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+

@@ -21,6 +21,18 @@ namespace YB {
 			return value;
 	}
 	
+	inline int idNameInVector(const std::vector<showTableData>&Data, const QString &name)
+	{
+		for (int i = 0; i < Data.size(); i++)
+		{
+			if (Data.at(i).IdName == name)
+			{
+				return i;
+			}
+		}
+		return -1;
+	}
+
 	bool nameInVector(std::vector<RollStruct>& vec, QString name, int& index);
 	inline bool isExistKey(std::map<unsigned int, QStringList>& m, unsigned int key) {
 		std::map<unsigned int, QStringList>::iterator iter;

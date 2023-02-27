@@ -43,6 +43,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <PlatformToolset>v143</PlatformToolset>
+    <UseOfMfc>false</UseOfMfc>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Condition="Exists('$(QtMsBuild)\qt_defaults.props')">
@@ -103,38 +104,39 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>./Qslog/include;./kvaserX64/INC;./ControlCAN;./zdbc_lib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>./Qslog/include;./kvaserX64/INC;./ControlCAN;./zdbc_lib;./PLIN-API/Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>./QsLog/bin;C:\Qt\Qt5.13.2\5.13.2\msvc2017_64\lib;./kvaserX64/lib/X64;./ControlCAN/x64;./zdbc_lib/windows/x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>QsLog2.lib;canlib32.lib;ControlCAN.lib;zdbc.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>./QsLog/bin;C:\Qt\Qt5.13.2\5.13.2\msvc2017_64\lib;./kvaserX64/lib/X64;./ControlCAN/x64;./zdbc_lib/windows/x64;./PLIN-API/x64/VC_LIB;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>QsLog2.lib;canlib32.lib;ControlCAN.lib;zdbc.lib;PLinApi.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>./Qslog/include;./kvaserX64/INC;./ControlCAN;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>./Qslog/include;./kvaserX64/INC;./ControlCAN;./PLIN-API/Include;./zdbc_lib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>./QsLog32/bin/release;./kvaser_INC;./ControlCAN\x32;./zdbc_lib/windows/x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>QsLog2.lib;canlib32.lib;ControlCAN.lib;zdbc.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>./QsLog32/bin/release;./kvaser_INC;./ControlCAN\x32;./zdbc_lib/windows/x86;./PLIN-API/Win32/VC_LIB;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>QsLog2.lib;canlib32.lib;ControlCAN.lib;zdbc.lib;PLinApi.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Link>
-      <AdditionalLibraryDirectories>./QsLog/bin;C:\Qt\Qt5.13.2\5.13.2\msvc2017_64\lib;./kvaserX64/lib/X64;./ControlCAN/x64;./zdbc_lib/windows/x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>QsLog2.lib;canlib32.lib;ControlCAN.lib;zdbc.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>./QsLog/bin;C:\Qt\Qt5.13.2\5.13.2\msvc2017_64\lib;./kvaserX64/lib/X64;./ControlCAN/x64;./zdbc_lib/windows/x64;./PLIN-API/x64/VC_LIB;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>QsLog2.lib;canlib32.lib;ControlCAN.lib;zdbc.lib;PLinApi.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <ClCompile>
-      <AdditionalIncludeDirectories>./QsLog/include;./kvaserX64/INC;./ControlCAN;./zdbc_lib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>./QsLog/include;./kvaserX64/INC;./ControlCAN;./zdbc_lib;./PLIN-API/Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Link>
-      <AdditionalLibraryDirectories>./QsLog32/bin/debug;C:\Qt\Qt5.13.2\5.13.2\msvc2017_64\lib;./kvaser_INC;./ControlCAN/x32;./zdbc_lib/windows/x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>QsLog2.lib;canlib32.lib;ControlCAN.lib;zdbc.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>./QsLog32/bin/debug;C:\Qt\Qt5.13.2\5.13.2\msvc2017_64\lib;./kvaser_INC;./ControlCAN/x32;./zdbc_lib/windows/x86;./PLIN-API/Win32/VC_LIB;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>QsLog2.lib;canlib32.lib;ControlCAN.lib;zdbc.lib;PLinApi.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <ClCompile>
-      <AdditionalIncludeDirectories>./QsLog/include;./kvaserX64/INC;./ControlCAN;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>./QsLog/include;./kvaserX64/INC;./ControlCAN;./PLIN-API/Include;./zdbc_lib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'" Label="Configuration">
@@ -203,6 +205,8 @@
     <ClCompile Include="chex.cpp" />
     <ClCompile Include="DataSave.cpp" />
     <ClCompile Include="dbcparser.cpp" />
+    <ClCompile Include="HardWareBase.cpp" />
+    <ClCompile Include="HardWarePlin.cpp" />
     <ClCompile Include="kvaser.cpp" />
     <ClCompile Include="mHttp.cpp" />
     <ClCompile Include="PCAN.cpp" />
@@ -225,6 +229,8 @@
     <QtMoc Include="QAutoTestIniData.h" />
     <QtMoc Include="mHttp.h" />
     <ClInclude Include="dbcparser.h" />
+    <QtMoc Include="HardWareBase.h" />
+    <QtMoc Include="HardWarePlin.h" />
     <ClInclude Include="resource.h" />
     <QtMoc Include="QMoudBusCtrl.h" />
     <QtMoc Include="DataSave.h" />

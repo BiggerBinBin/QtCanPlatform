@@ -41,7 +41,17 @@ QtCanPlatform::QtCanPlatform(QWidget *parent)
     initUi();
     sendTimer = new QTimer();
     connect(sendTimer, &QTimer::timeout, this, &QtCanPlatform::sendData);
-    this->setWindowTitle(tr("KUS-PHU 功能测试上位机 V2.02.10"));
+    {
+        QFile F(QApplication::QCoreApplication::applicationDirPath() + "/Data/title_version.kus");
+        if (F.open(QIODevice::ReadOnly | QIODevice::Text))
+        {
+            this->setWindowTitle(F.readAll());
+        }
+        else
+        {
+            this->setWindowTitle(tr("KUS-PHU 功能测试上位机 V2.02.10"));
+        }
+    }
     this->showMaximized();
     connect(this, &QtCanPlatform::sigEndRunWork, this, &QtCanPlatform::on_recSigEndRunWork);
     
@@ -194,6 +204,7 @@ void QtCanPlatform::initUi()
     cbCanType->addItem(tr("选择PCAN"));
     cbCanType->addItem(tr("选择Kvaser"));
     cbCanType->addItem(tr("选择CANayst"));
+    cbCanType->addItem(tr("选择PLIN"));
     connect(cbCanType, SIGNAL(currentIndexChanged(int)), this, SLOT(on_cbCanType_currentIndexChanged(int)));
     cbPcan = new QComboBox();
    
@@ -214,11 +225,13 @@ void QtCanPlatform::initUi()
     pcan = new PCAN(this);
     connect(pcan, SIGNAL(getProtocolData(quint32, QByteArray)), this, SLOT(on_ReceiveData(quint32, QByteArray)));
     pcan->DetectDevice();
+    pHardWare = new HardWarePlin(this);
     QStringList canStr = pcanArr[0]->DetectDevice();
     for (int i = 0; i < canStr.size(); ++i)
     {
         cbPcan->addItem(canStr.at(i));
     }
+    cbPcan->setMinimumWidth(100);
     QLOG_INFO() << "CAN Number:" << canStr.size();
     reFresh = new QPushButton(tr("刷新设备"));
     connect(reFresh, SIGNAL(clicked()), this, SLOT(on_pbRefreshDevice_clicked()));
@@ -228,6 +241,10 @@ void QtCanPlatform::initUi()
     cbBitRate->addItem("250kb/s");
     cbBitRate->addItem("500kb/s");
     cbBitRate->addItem("800kb/s");
+    cbBitRate->addItem("2400b/s");
+    cbBitRate->addItem("9600b/s");
+    cbBitRate->addItem("10400b/s");
+    cbBitRate->addItem("19200b/s");
     cbBitRate->setCurrentIndex(1);
     QLabel* Period = new QLabel(tr("报文周期："));
     cycle = new QLineEdit("1000");
@@ -340,6 +357,7 @@ void QtCanPlatform::initUi()
     QPushButton* pbClearCanData = new QPushButton(tr("清除数据"));
     pbGetVer = new QPushButton(tr("获取版本号(博世)"));
     pbGetVer->setCheckable(true);
+    pbGetVer->setEnabled(false);
     QHBoxLayout* canButton = new QHBoxLayout();
     canButton->addWidget(pbSaveCanData);
     canButton->addWidget(pbClearCanData);
@@ -603,7 +621,7 @@ bool QtCanPlatform::recDataIntoTab()
    
     rollTitle.clear();
     recCanData.clear();
-
+    showTableVec.clear();
     for (int ch = 0; ch < 4; ch++)
     {
 
@@ -630,8 +648,15 @@ bool QtCanPlatform::recDataIntoTab()
         //取出操作为接收的信号
         if (0 == pTemp.cItem.at(i).opt)
         {
-            if(ch==0)
+            if (ch == 0)
+            {
                 recCanData.push_back(pTemp.cItem.at(i));
+                //pTemp.cItem.at(i).CanId
+                showTableData dd;
+                dd.IdName = QString::number(pTemp.cItem.at(i).strCanId.toLong(nullptr,16));
+                showTableVec.push_back(dd);
+            }
+                
             // break;
         }
     }
@@ -758,50 +783,70 @@ void QtCanPlatform::sendData()
 {
     uchar s_Data[8];
     getSendDataFromTable();
-    for (int i = 0; i < sendCanData.size(); i++)
+    
     {
+        for (int i = 0; i < sendCanData.size(); i++)
+        {
         
-        if (!sendCanData.at(i).isSend)
-            continue;
-        memset(s_Data, 0, 8 * sizeof(uchar));
-        unsigned int fream_id;
-        bool b= intelProtocol(sendCanData.at(i), s_Data, fream_id);
-        if (!b)
-            continue;
-        if(isTrace)
-        {
-            //QStringList binaryStr;
-            QString hex;
-            for (int k = 0; k < 8; ++k)
+            if (!sendCanData.at(i).isSend)
+                continue;
+            memset(s_Data, 0, 8 * sizeof(uchar));
+            unsigned int fream_id;
+            bool b= intelProtocol(sendCanData.at(i), s_Data, fream_id);
+            if (!b)
+                continue;
+            if(isTrace)
             {
-                QString str = QString("%1").arg((uint8_t)s_Data[k], 2, 16, QLatin1Char('0'));
-                hex += str+" ";
+                //QStringList binaryStr;
+                QString hex;
+                for (int k = 0; k < 8; ++k)
+                {
+                    QString str = QString("%1").arg((uint8_t)s_Data[k], 2, 16, QLatin1Char('0'));
+                    hex += str+" ";
+                }
+                QString strId = "0x"+QString("%1").arg(fream_id, 8, 16, QLatin1Char('0')).toUpper();
+                QLOG_INFO() << "Tx:" << strId << "  " << hex;
             }
-            QString strId = "0x"+QString("%1").arg(fream_id, 8, 16, QLatin1Char('0')).toUpper();
-            QLOG_INFO() << "Tx:" << strId << "  " << hex;
-        }
-        if (cbCanType->currentIndex() == 0)
-        {
-            if(cbIsMutil->currentIndex()==0)
-                pcan->SendFrame(fream_id, s_Data,bStandard);
-            else
+            if (cbCanType->currentIndex() == 0)
             {
-                for(int i=0;i<4;i++)
-                    if(pcanArr[i]->IsOpen())
-                       pcanArr[i]->SendFrame(fream_id, s_Data, bStandard);
+                if(cbIsMutil->currentIndex()==0)
+                    pcan->SendFrame(fream_id, s_Data,bStandard);
+                else
+                {
+                    for(int i=0;i<4;i++)
+                        if(pcanArr[i]->IsOpen())
+                           pcanArr[i]->SendFrame(fream_id, s_Data, bStandard);
+                }
+            
             }
             
+            else if (cbCanType->currentIndex() == 1)
+            {
+                kcan->canSendAll(fream_id, s_Data);
+            }
+            else if (cbCanType->currentIndex() == 2)
+            {
+                canayst->sendData(fream_id, s_Data, bStandard);
+            }
+            else if (cbCanType->currentIndex() == 3)
+            {
+                int other[2];
+                other[0] = sendCanData.at(i).len;
+                other[1] = 0;
+                pHardWare->SendMessage(fream_id, s_Data, other);
+            }
+            //_sleep(20);
         }
-            
-        else if (cbCanType->currentIndex() == 1)
+    }
+    if (cbCanType->currentIndex() == 3)
+    {
+        for (int k = 0; k < recCanData.size(); k++)
         {
-            kcan->canSendAll(fream_id, s_Data);
+            int other[2];
+            other[0] = recCanData.at(k).len;
+            other[1] = 1;
+            pHardWare->SendMessage(recCanData.at(k).strCanId.toInt(NULL,16), s_Data, other);
         }
-        else if (cbCanType->currentIndex() == 2)
-        {
-            canayst->sendData(fream_id, s_Data, bStandard);
-        }
-        //_sleep(20);
     }
 
 }
@@ -923,11 +968,13 @@ void QtCanPlatform::recAnalyseIntel(unsigned int fream_id,QByteArray data)
         float f2;
         int showCount;
     };
+    bool id_in = false;
     for (int i = 0; i < recCanData.size(); i++)
     {
         uint currID = recCanData.at(i).strCanId.toUInt(NULL, 16);
         if (currID != fream_id)
             continue;
+        id_in = true;
         std::vector<parseData>parseArr;
         std::vector<dFromStru>ddFF;
         for (int m = 0; m < recCanData.at(i).pItem.size(); ++m)
@@ -955,6 +1002,25 @@ void QtCanPlatform::recAnalyseIntel(unsigned int fream_id,QByteArray data)
                     ddf.f2 = splt.at(1).toInt();
                     ddf.showCount = -1;
                     ddFF.push_back(ddf);
+                }
+            }
+            else if (datafrom.contains("XOR"))
+            {
+                (uint8_t)data[m];
+                uchar cData[8];
+                for (int d = 0; d < 8; d++)
+                {
+                    cData[d] = (uchar)data[d];
+                }
+                uchar res = checksumXOR(cData);
+                uchar csum = data[m];
+                if (res == csum)
+                {
+                    temp = 0;
+                }
+                else
+                {
+                    temp = 1;
                 }
             }
             else
@@ -1106,17 +1172,32 @@ void QtCanPlatform::recAnalyseIntel(unsigned int fream_id,QByteArray data)
         }
 
         //判断map里面是否已经存在有了
-        if (YB::keyInMap(showTableD, QString::number(fream_id)))
+        //if (YB::keyInMap(showTableD, QString::number(fream_id)))
+        //{
+        //    showTableD[QString::number(fream_id)] = parseArr;
+        //}
+        //else
+        //{
+        //    showTableD.insert({ QString::number(fream_id),parseArr });
+        //    //tableArray[0]->clearContents();
+        //}
+        int i_index = YB::idNameInVector(showTableVec, QString::number(fream_id));
+        if (i_index >= 0)
         {
-            showTableD[QString::number(fream_id)] = parseArr;
+            showTableVec.at(i_index).Pdata = parseArr;
         }
         else
         {
-            showTableD.insert({ QString::number(fream_id),parseArr });
+            showTableData temp;
+            temp.IdName = QString::number(fream_id);
+            temp.Pdata = parseArr;
+            showTableVec.push_back(temp);
         }
+
 
     }
     //recCanData.clear();
+    if (!id_in)return;
     if (!tableArray[0])
         return;
   /*  int rcount = tableRecView->rowCount();
@@ -1129,16 +1210,22 @@ void QtCanPlatform::recAnalyseIntel(unsigned int fream_id,QByteArray data)
     uint curCount = strSaveList.size() + 1;
     QString dTemp = QString::number(curCount) + "," + dTime + ",";
 
-    std::map<QString, std::vector<parseData>>::iterator iBegin = showTableD.begin();
-    std::map<QString, std::vector<parseData>>::iterator iEnd = showTableD.end();
+   // std::map<QString, std::vector<parseData>>::iterator iBegin = showTableD.begin();
+    //std::map<QString, std::vector<parseData>>::iterator iEnd = showTableD.end();
+    std::vector<showTableData>::iterator iBeginV = showTableVec.begin();
+    std::vector<showTableData>::iterator iEndV = showTableVec.end();
     int cr = 0;
-    while (iBegin != iEnd)
+    
+    while (iBeginV != iEndV)
     {
         
         //每加一行就要设置到表格去
-        int num = iBegin->second.size();
+        //int num = iBegin->second.size();
+        int num = iBeginV->Pdata.size();
+        
         int idex = 0;
-        for (int j = 0; j < num; j++, idex++)
+        int j = 0;
+        for (j = 0; j < num; j++, idex++)
         {
             if (idex > 9)   //一行最多放10个数据
             {
@@ -1148,8 +1235,10 @@ void QtCanPlatform::recAnalyseIntel(unsigned int fream_id,QByteArray data)
                 cr += 2;
             } 
             tableArray[0]->resizeRowToContents(cr + 1);
-            QString tnamp = iBegin->second.at(j).name;
-            QString toword = iBegin->second.at(j).toWord;
+            
+            QString tnamp = iBeginV->Pdata.at(j).name;
+            QString toword = iBeginV->Pdata.at(j).toWord;
+            
             try
             {
                 tableArray[0]->setItem(cr, idex, new QTableWidgetItem(tnamp));
@@ -1175,7 +1264,7 @@ void QtCanPlatform::recAnalyseIntel(unsigned int fream_id,QByteArray data)
                 b = tableArray[0]->item(cr + 1, idex);
                 if (!b)
                     continue;
-                b->setBackgroundColor(QColor(iBegin->second.at(j).color.r, iBegin->second.at(j).color.g, iBegin->second.at(j).color.b));
+                b->setBackgroundColor(QColor(iBeginV->Pdata.at(j).color.r, iBeginV->Pdata.at(j).color.g, iBeginV->Pdata.at(j).color.b));
                 b = tableArray[0]->item(cr + 1, idex);
                 if (!b)
                     continue;
@@ -1189,8 +1278,47 @@ void QtCanPlatform::recAnalyseIntel(unsigned int fream_id,QByteArray data)
             
             dTemp += toword + ",";
         }
+        if (idex < 9)
+        {
+            QString tnamp = "";
+            QString toword = "";
+            for (; idex <= 9; idex++)
+            {
+                try
+                {
+                    tableArray[0]->setItem(cr, idex, new QTableWidgetItem(tnamp));
+                    QFont ff;
+                    ff.setBold(true);
+                    QTableWidgetItem* b = tableArray[0]->item(cr, idex);
+                    if (!b)
+                        continue;
+                    b->setFont(ff);
+                    b = tableArray[0]->item(cr, idex);
+                    if (!b)
+                        continue;
+                    b->setTextAlignment(Qt::AlignCenter);
+                    b = tableArray[0]->item(cr, idex);
+                    if (!b)
+                        continue;
+                    b->setBackgroundColor(recBackgroudColor);
+                    b = tableArray[0]->item(cr, idex);
+                    if (!b)
+                        continue;
+                    b->setForeground(QBrush(recFontColor));
+                    tableArray[0]->setItem(cr + 1, idex, new QTableWidgetItem(toword));
+                    b = tableArray[0]->item(cr + 1, idex);
+                    if (!b)
+                        continue;
+                   
+                }
+                catch (const std::exception& e)
+                {
+                    QLOG_INFO() << "Error:" << e.what();
+                }
+            }
+        }
         cr += 2;
-        iBegin++;
+        iBeginV++;
 
     }
     dTemp.remove(dTemp.size() - 1, 1);
@@ -1232,11 +1360,13 @@ void QtCanPlatform::recAnalyseMoto(unsigned int fream_id, QByteArray data)
         float f2;
         int showCount;
     };
+    bool id_in = false;
     for (int i = 0; i < recCanData.size(); i++)
     {
         uint currID = recCanData.at(i).strCanId.toUInt(NULL, 16);
         if (currID != fream_id)
             continue;
+        id_in = true;
         std::vector<parseData>parseArr;
         std::vector<dFromStru>ddFF;
         int countShow = 0;
@@ -1263,6 +1393,25 @@ void QtCanPlatform::recAnalyseMoto(unsigned int fream_id, QByteArray data)
                     ddf.f1 = splt.at(0).toInt();
                     ddf.f2 = splt.at(1).toInt();
                     ddFF.push_back(ddf);
+                }
+            }
+            else if (datafrom.contains("XOR"))
+            {
+                (uint8_t)data[m];
+                uchar cData[8];
+                for (int d = 0; d < 8; d++)
+                {
+                    cData[d] = (uchar)data[d];
+                }
+                uchar res = checksumXOR(cData);
+                uchar csum = data[m];
+                if (res == csum)
+                {
+                    temp = 0;
+                }
+                else
+                {
+                    temp = 1;
                 }
             }
             else
@@ -1371,17 +1520,30 @@ void QtCanPlatform::recAnalyseMoto(unsigned int fream_id, QByteArray data)
             parseArr.push_back(pd);
         }
         //判断map里面是否已经存在有了
-        if (YB::keyInMap(showTableD, QString::number(fream_id)))
+        //if (YB::keyInMap(showTableD, QString::number(fream_id)))
+        //{
+        //    showTableD[QString::number(fream_id)] = parseArr;
+        //}
+        //else
+        //{
+        //    showTableD.insert({ QString::number(fream_id),parseArr });
+        //    //tableArray[0]->clearContents();
+        //}
+        int i_index = YB::idNameInVector(showTableVec, QString::number(fream_id));
+        if (i_index >= 0)
         {
-            showTableD[QString::number(fream_id)] = parseArr;
+            showTableVec.at(i_index).Pdata = parseArr;
         }
         else
         {
-            showTableD.insert({ QString::number(fream_id),parseArr });
+            showTableData temp;
+            temp.IdName = QString::number(fream_id);
+            temp.Pdata = parseArr;
+            showTableVec.push_back(temp);
         }
-
     }
     //recCanData.clear();
+    if (!id_in)return;
     if (!tableArray[0])
         return;
     int rcount = tableArray[0]->rowCount();
@@ -1394,14 +1556,17 @@ void QtCanPlatform::recAnalyseMoto(unsigned int fream_id, QByteArray data)
     uint curCount = strSaveList.size() + 1;
     QString dTemp = QString::number(curCount) + "," + dTime + ",";
 
-    std::map<QString, std::vector<parseData>>::iterator iBegin = showTableD.begin();
-    std::map<QString, std::vector<parseData>>::iterator iEnd = showTableD.end();
+    //std::map<QString, std::vector<parseData>>::iterator iBegin = showTableD.begin();
+    //std::map<QString, std::vector<parseData>>::iterator iEnd = showTableD.end();
+
+    std::vector<showTableData>::iterator iBeginV = showTableVec.begin();
+    std::vector<showTableData>::iterator iEndV = showTableVec.end();
     int cr = 0;
-    while (iBegin != iEnd)
+    while (iBeginV != iEndV)
     {
 
         //每加一行就要设置到表格去
-        int num = iBegin->second.size();
+        int num = iBeginV->Pdata.size();
         int idex = 0;
         for (int j = 0; j < num; j++, idex++)
         {
@@ -1413,8 +1578,8 @@ void QtCanPlatform::recAnalyseMoto(unsigned int fream_id, QByteArray data)
                 cr += 2;
             }
             tableArray[0]->setRowCount(cr+2);
-            QString tnamp = iBegin->second.at(j).name;
-            QString toword = iBegin->second.at(j).toWord;
+            QString tnamp = iBeginV->Pdata.at(j).name;
+            QString toword = iBeginV->Pdata.at(j).toWord;
             try
             {
                 tableArray[0]->setItem(cr, idex, new QTableWidgetItem(tnamp));
@@ -1440,7 +1605,7 @@ void QtCanPlatform::recAnalyseMoto(unsigned int fream_id, QByteArray data)
                 b = tableArray[0]->item(cr + 1, idex);
                 if (!b)
                     continue;
-                b->setBackgroundColor(QColor(iBegin->second.at(j).color.r, iBegin->second.at(j).color.g, iBegin->second.at(j).color.b));
+                b->setBackgroundColor(QColor(iBeginV->Pdata.at(j).color.r, iBeginV->Pdata.at(j).color.g, iBeginV->Pdata.at(j).color.b));
                 b = tableArray[0]->item(cr + 1, idex);
                 if (!b)
                     continue;
@@ -1454,8 +1619,47 @@ void QtCanPlatform::recAnalyseMoto(unsigned int fream_id, QByteArray data)
 
             dTemp += toword + ",";
         }
+        if (idex < 9)
+        {
+            QString tnamp = "";
+            QString toword = "";
+            for (; idex <= 9; idex++)
+            {
+                try
+                {
+                    tableArray[0]->setItem(cr, idex, new QTableWidgetItem(tnamp));
+                    QFont ff;
+                    ff.setBold(true);
+                    QTableWidgetItem* b = tableArray[0]->item(cr, idex);
+                    if (!b)
+                        continue;
+                    b->setFont(ff);
+                    b = tableArray[0]->item(cr, idex);
+                    if (!b)
+                        continue;
+                    b->setTextAlignment(Qt::AlignCenter);
+                    b = tableArray[0]->item(cr, idex);
+                    if (!b)
+                        continue;
+                    b->setBackgroundColor(recBackgroudColor);
+                    b = tableArray[0]->item(cr, idex);
+                    if (!b)
+                        continue;
+                    b->setForeground(QBrush(recFontColor));
+                    tableArray[0]->setItem(cr + 1, idex, new QTableWidgetItem(toword));
+                    b = tableArray[0]->item(cr + 1, idex);
+                    if (!b)
+                        continue;
+
+                }
+                catch (const std::exception& e)
+                {
+                    QLOG_INFO() << "Error:" << e.what();
+                }
+            }
+        }
         cr += 2;
-        iBegin++;
+        iBeginV++;
 
     }
     dTemp.remove(dTemp.size() - 1, 1);
@@ -1532,6 +1736,25 @@ void QtCanPlatform::recAnalyseIntel(int ch,unsigned int fream_id, QByteArray dat
                     ddf.f2 = splt.at(1).toInt();
                     ddf.showCount = -1;
                     ddFF.push_back(ddf);
+                }
+            }
+            else if (datafrom.contains("XOR"))
+            {
+                (uint8_t)data[m];
+                uchar cData[8];
+                for (int d = 0; d < 8; d++)
+                {
+                    cData[d] = (uchar)data[d];
+                }
+                uchar res = checksumXOR(cData);
+                uchar csum = data[m];
+                if (res == csum)
+                {
+                    temp = 0;
+                }
+                else
+                {
+                    temp = 1;
                 }
             }
             else
@@ -1678,13 +1901,27 @@ void QtCanPlatform::recAnalyseIntel(int ch,unsigned int fream_id, QByteArray dat
             }
         }
         //判断map里面是否已经存在有了
-        if (YB::keyInMap(showTableD, QString::number(fream_id)))
+        //if (YB::keyInMap(showTableD, QString::number(fream_id)))
+        //{
+        //    showTableD[QString::number(fream_id)] = parseArr;
+        //}
+        //else
+        //{
+        //    showTableD.insert({ QString::number(fream_id),parseArr });
+        //    //tableArray[0]->clearContents();
+        //}
+
+        int i_index = YB::idNameInVector(showTableVec, QString::number(fream_id));
+        if (i_index >= 0)
         {
-            showTableD[QString::number(fream_id)] = parseArr;
+            showTableVec.at(i_index).Pdata = parseArr;
         }
         else
         {
-            showTableD.insert({ QString::number(fream_id),parseArr });
+            showTableData temp;
+            temp.IdName = QString::number(fream_id);
+            temp.Pdata = parseArr;
+            showTableVec.push_back(temp);
         }
 
     }
@@ -1702,14 +1939,16 @@ void QtCanPlatform::recAnalyseIntel(int ch,unsigned int fream_id, QByteArray dat
 
     QString dTemp = QString::number(curCount) + "," + dTime + ",";
 
-    std::map<QString, std::vector<parseData>>::iterator iBegin = showTableD.begin();
-    std::map<QString, std::vector<parseData>>::iterator iEnd = showTableD.end();
+    /*std::map<QString, std::vector<parseData>>::iterator iBegin = showTableD.begin();
+    std::map<QString, std::vector<parseData>>::iterator iEnd = showTableD.end();*/
+    std::vector<showTableData>::iterator iBeginV = showTableVec.begin();
+    std::vector<showTableData>::iterator iEndV = showTableVec.end();
     int cr = 0;
-    while (iBegin != iEnd)
+    while (iBeginV != iEndV)
     {
 
         //每加一行就要设置到表格去
-        int num = iBegin->second.size();
+        int num = iBeginV->Pdata.size();
         int idex = 0;
         for (int j = 0; j < num; j++, idex++)
         {
@@ -1721,8 +1960,8 @@ void QtCanPlatform::recAnalyseIntel(int ch,unsigned int fream_id, QByteArray dat
                 cr += 2;
             }
 
-            QString tnamp = iBegin->second.at(j).name;
-            QString toword = iBegin->second.at(j).toWord;
+            QString tnamp = iBeginV->Pdata.at(j).name;
+            QString toword = iBeginV->Pdata.at(j).toWord;
             tableArray[ch]->setItem(cr, idex, new QTableWidgetItem(tnamp));
             QFont ff;
             ff.setBold(true);
@@ -1731,12 +1970,51 @@ void QtCanPlatform::recAnalyseIntel(int ch,unsigned int fream_id, QByteArray dat
             tableArray[ch]->item(cr, idex)->setBackgroundColor(recBackgroudColor);
             tableArray[ch]->item(cr, idex)->setForeground(QBrush(recFontColor));
             tableArray[ch]->setItem(cr + 1, idex, new QTableWidgetItem(toword));
-            tableArray[ch]->item(cr + 1, idex)->setBackgroundColor(QColor(iBegin->second.at(j).color.r, iBegin->second.at(j).color.g, iBegin->second.at(j).color.b));
+            tableArray[ch]->item(cr + 1, idex)->setBackgroundColor(QColor(iBeginV->Pdata.at(j).color.r, iBeginV->Pdata.at(j).color.g, iBeginV->Pdata.at(j).color.b));
             tableArray[ch]->item(cr + 1, idex)->setTextAlignment(Qt::AlignCenter);
             dTemp += toword + ",";
         }
+        if (idex < 9)
+        {
+            QString tnamp = "";
+            QString toword = "";
+            for (; idex <= 9; idex++)
+            {
+                try
+                {
+                    tableArray[ch]->setItem(cr, idex, new QTableWidgetItem(tnamp));
+                    QFont ff;
+                    ff.setBold(true);
+                    QTableWidgetItem* b = tableArray[ch]->item(cr, idex);
+                    if (!b)
+                        continue;
+                    b->setFont(ff);
+                    b = tableArray[ch]->item(cr, idex);
+                    if (!b)
+                        continue;
+                    b->setTextAlignment(Qt::AlignCenter);
+                    b = tableArray[ch]->item(cr, idex);
+                    if (!b)
+                        continue;
+                    b->setBackgroundColor(recBackgroudColor);
+                    b = tableArray[ch]->item(cr, idex);
+                    if (!b)
+                        continue;
+                    b->setForeground(QBrush(recFontColor));
+                    tableArray[ch]->setItem(cr + 1, idex, new QTableWidgetItem(toword));
+                    b = tableArray[ch]->item(cr + 1, idex);
+                    if (!b)
+                        continue;
+
+                }
+                catch (const std::exception& e)
+                {
+                    QLOG_INFO() << "Error:" << e.what();
+                }
+            }
+        }
         cr += 2;
-        iBegin++;
+        iBeginV++;
 
     }
     dTemp.remove(dTemp.size() - 1, 1);
@@ -1837,6 +2115,25 @@ void QtCanPlatform::recAnalyseMoto(int ch,unsigned int fream_id, QByteArray data
                     ddf.f1 = splt.at(0).toInt();
                     ddf.f2 = splt.at(1).toInt();
                     ddFF.push_back(ddf);
+                }
+            }
+            else if (datafrom.contains("XOR"))
+            {
+                (uint8_t)data[m];
+                uchar cData[8];
+                for (int d = 0; d < 8; d++)
+                {
+                    cData[d] = (uchar)data[d];
+                }
+                uchar res = checksumXOR(cData);
+                uchar csum = data[m];
+                if (res == csum)
+                {
+                    temp = 0;
+                }
+                else
+                {
+                    temp = 1;
                 }
             }
             else
@@ -1959,13 +2256,25 @@ void QtCanPlatform::recAnalyseMoto(int ch,unsigned int fream_id, QByteArray data
             }
         }
         //判断map里面是否已经存在有了
-        if (YB::keyInMap(showTableD, QString::number(fream_id)))
+        /*if (YB::keyInMap(showTableD, QString::number(fream_id)))
         {
             showTableD[QString::number(fream_id)] = parseArr;
         }
         else
         {
             showTableD.insert({ QString::number(fream_id),parseArr });
+        }*/
+        int i_index = YB::idNameInVector(showTableVec, QString::number(fream_id));
+        if (i_index >= 0)
+        {
+            showTableVec.at(i_index).Pdata = parseArr;
+        }
+        else
+        {
+            showTableData temp;
+            temp.IdName = QString::number(fream_id);
+            temp.Pdata = parseArr;
+            showTableVec.push_back(temp);
         }
 
     }
@@ -1981,12 +2290,15 @@ void QtCanPlatform::recAnalyseMoto(int ch,unsigned int fream_id, QByteArray data
     uint curCount = tableRollDataArray[ch]->rowCount() + 1;
     QString dTemp = QString::number(curCount) + "," + dTime + ",";
 
-    std::map<QString, std::vector<parseData>>::iterator iBegin = showTableD.begin();
-    std::map<QString, std::vector<parseData>>::iterator iEnd = showTableD.end();
+    /*std::map<QString, std::vector<parseData>>::iterator iBegin = showTableD.begin();
+    std::map<QString, std::vector<parseData>>::iterator iEnd = showTableD.end();*/
+
+    std::vector<showTableData>::iterator iBeginV = showTableVec.begin();
+    std::vector<showTableData>::iterator iEndV = showTableVec.end();
     int cr = 0;
-    while (iBegin != iEnd)
+    while (iBeginV != iEndV)
     {
-        int num = iBegin->second.size();
+        int num = iBeginV->Pdata.size();
         int idex = 0;
         for (int j = 0; j < num; j++, idex++)
         {
@@ -1996,8 +2308,8 @@ void QtCanPlatform::recAnalyseMoto(int ch,unsigned int fream_id, QByteArray data
                 cr += 2;
             }
 
-            QString tnamp = iBegin->second.at(j).name;
-            QString toword = iBegin->second.at(j).toWord;
+            QString tnamp = iBeginV->Pdata.at(j).name;
+            QString toword = iBeginV->Pdata.at(j).toWord;
             tableArray[ch]->setItem(cr, idex, new QTableWidgetItem(tnamp));
             QFont ff;
             ff.setBold(true);
@@ -2006,12 +2318,51 @@ void QtCanPlatform::recAnalyseMoto(int ch,unsigned int fream_id, QByteArray data
             tableArray[ch]->item(cr, idex)->setBackgroundColor(recBackgroudColor);
             tableArray[ch]->item(cr, idex)->setForeground(QBrush(recFontColor));
             tableArray[ch]->setItem(cr + 1, idex, new QTableWidgetItem(toword));
-            tableArray[ch]->item(cr + 1, idex)->setBackgroundColor(QColor(iBegin->second.at(j).color.r, iBegin->second.at(j).color.g, iBegin->second.at(j).color.b));
+            tableArray[ch]->item(cr + 1, idex)->setBackgroundColor(QColor(iBeginV->Pdata.at(j).color.r, iBeginV->Pdata.at(j).color.g, iBeginV->Pdata.at(j).color.b));
             tableArray[ch]->item(cr + 1, idex)->setTextAlignment(Qt::AlignCenter);
             dTemp += toword + ",";
         }
+        if (idex < 9)
+        {
+            QString tnamp = "";
+            QString toword = "";
+            for (; idex <= 9; idex++)
+            {
+                try
+                {
+                    tableArray[ch]->setItem(cr, idex, new QTableWidgetItem(tnamp));
+                    QFont ff;
+                    ff.setBold(true);
+                    QTableWidgetItem* b = tableArray[ch]->item(cr, idex);
+                    if (!b)
+                        continue;
+                    b->setFont(ff);
+                    b = tableArray[ch]->item(cr, idex);
+                    if (!b)
+                        continue;
+                    b->setTextAlignment(Qt::AlignCenter);
+                    b = tableArray[ch]->item(cr, idex);
+                    if (!b)
+                        continue;
+                    b->setBackgroundColor(recBackgroudColor);
+                    b = tableArray[ch]->item(cr, idex);
+                    if (!b)
+                        continue;
+                    b->setForeground(QBrush(recFontColor));
+                    tableArray[ch]->setItem(cr + 1, idex, new QTableWidgetItem(toword));
+                    b = tableArray[ch]->item(cr + 1, idex);
+                    if (!b)
+                        continue;
+
+                }
+                catch (const std::exception& e)
+                {
+                    QLOG_INFO() << "Error:" << e.what();
+                }
+            }
+        }
         cr += 2;
-        iBegin++;
+        iBeginV++;
 
     }
     dTemp.remove(dTemp.size() - 1, 1);
@@ -2051,11 +2402,11 @@ void QtCanPlatform::recAnalyseMoto(int ch,unsigned int fream_id, QByteArray data
         saveCanDataMult();
     }
 }
-unsigned char QtCanPlatform::crc_high_first(uchar data[], unsigned char len)
+unsigned char QtCanPlatform::crc_high_first(const uchar data[], unsigned char len)
 {
     //    unsigned char i;
     unsigned char crc = 0xFF; /* 计算的初始crc值 */
-    uchar* ptr = &data[1];
+   const  uchar* ptr = &data[1];
     //    *ptr++;
 
     while (len--)
@@ -2073,6 +2424,10 @@ unsigned char QtCanPlatform::crc_high_first(uchar data[], unsigned char len)
     crc ^= 0xFF;
     qDebug() << "crc:" << crc;
     return (crc);
+}
+unsigned char QtCanPlatform::checksumXOR(const uchar data[])
+{
+    return (data[1] ^ data[2] ^ data[3] ^ data[4] ^ data[5] ^ data[6] ^ data[7]);
 }
 void QtCanPlatform::getModelTitle()
 {
@@ -2307,6 +2662,14 @@ void QtCanPlatform::on_pbRefreshDevice_clicked()
         }
         //canayst
     }
+    else if (cbCanType->currentIndex() == 3)
+    {
+        QStringList n = pHardWare->GetHardWare();
+        for (int m = 0; m < n.size(); m++)
+        {
+            cbPcan->addItem(n.at(m));
+        }
+    }
     
 }
 void QtCanPlatform::on_pbOpenPcan_clicked()
@@ -2493,6 +2856,63 @@ void QtCanPlatform::on_pbOpenPcan_clicked()
             pcanIsOpen = true;
         }
     }
+    else if (cbCanType->currentIndex() == 3)
+    {
+        if (!pHardWare)
+        {
+            pHardWare = new HardWarePlin(this);
+        }
+        if (pcanIsOpen)
+        {
+            pbOpen->setText(tr("打开设备"));
+            cbBitRate->setEnabled(true);
+            cbPcan->setEnabled(true);
+            pbSend->setChecked(false);
+            pbSend->setEnabled(false);
+            pbSend->setStyleSheet("");
+            pcanIsOpen = false;
+            sendTimer->stop();
+            reFresh->setEnabled(true);
+            communicaLabel->setText(tr("待机中..."));
+            pHardWare->CloseHardWare();
+            
+        }
+        else
+        {
+            int curindex = cbBitRate->currentIndex();
+            int bitRate = 19200;
+            switch (curindex)
+            {
+            case 4:
+                bitRate = 2400; break;
+            case 5:
+                bitRate = 9600; break;
+            case 6:
+                bitRate = 10400; break;
+            case 7:
+                bitRate = 19200; break;
+            default:
+                bitRate = 19200;
+                break;
+            }
+            QString dev = cbPcan->currentIndex() == 0 ? "1" : "2";
+            //打开PLIN硬件
+            bool b = pHardWare->OpenHardWare(dev, bitRate, 1);
+            
+            if (!b)
+            {
+                QMessageBox::warning(NULL, tr("错误"), tr("打开KCAN失败,请检测设备是否被占用或者已经连接？"));
+                return;
+            }
+            pbOpen->setText(tr("关闭设备"));
+            cbBitRate->setEnabled(false);
+            cbPcan->setEnabled(false);
+            pbSend->setEnabled(true);
+            pcanIsOpen = true;
+            connect(pHardWare, &HardWarePlin::newMessage, this, &QtCanPlatform::on_ReceiveDataLIN);
+
+        }
+    }
     if (dCtrl) {
         dCtrl->on_dCanRefresh_clicked();
    }
@@ -2612,6 +3032,14 @@ void QtCanPlatform::on_ReceiveData(uint fream_id, QByteArray data)
     {
         recAnalyseMoto(fream_id, data);
     }
+}
+void QtCanPlatform::on_ReceiveDataLIN(uint frame_id, QByteArray data, int reserve)
+{
+    tabRollBox->tabBar()->setTabIcon(0, QApplication::style()->standardIcon((QStyle::StandardPixmap)31));
+    tabRecBox->tabBar()->setTabIcon(0, QApplication::style()->standardIcon((QStyle::StandardPixmap)31));
+    lostQTimerArr[0]->start(lostTimeOut);
+   // for(int i=0;i<)
+    on_ReceiveData(frame_id, data);
 }
 void QtCanPlatform::on_ReceiveDataMulti(uint fream_id, QByteArray data)
 {
@@ -2985,19 +3413,22 @@ void QtCanPlatform::on_pbSaveCanData_clicked()
 void QtCanPlatform::on_pbClearCanData_clicked()
 {
     multErr.clear();
-    strSaveList.clear();
-    multReceData.clear();
-    recDataIntoTab();
+    
+    //recDataIntoTab();
     labelVer1.clear();
     labelVer2.clear();
     labelVer3.clear();
     labelVer4.clear();
+    showTableVec.clear();
     for (int k = 0; k < 4; k++)
     {
         int rcount = tableRollDataArray[k]->rowCount();
         for (int m = 0; m < rcount; m++)
             tableRollDataArray[k]->removeRow(rcount - m - 1);
     }
+    recDataIntoTab();
+    strSaveList.clear();
+    multReceData.clear();
     
     
 }
@@ -3141,6 +3572,9 @@ void QtCanPlatform::readSetFile()
     m_sOutWebAddr = at.m_sOutWebAddr;
     m_iShowType = at.m_iShowType;
     m_iRecOnNoSend = at.m_iRecOnNoSend;
+    saveListNum = at.m_iSaveListNum;
+    if (saveListNum < 600)
+        saveListNum = 600;
 
 }
 /******************************************************

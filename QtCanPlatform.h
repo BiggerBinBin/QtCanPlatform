@@ -42,6 +42,7 @@
 #include <QProgressDialog.h>
 #include "canthread.h"
 #include "mHttp.h"
+#include "HardWarePlin.h"
 #pragma execution_character_set("utf-8")  
 class QtCanPlatform : public QMainWindow
 {
@@ -106,7 +107,8 @@ private:
     void saveCanData();
     void saveCanDataMult();
     //CRC计算
-    unsigned char crc_high_first(uchar data[], unsigned char len);
+    unsigned char crc_high_first(const uchar data[], unsigned char len);
+    unsigned char checksumXOR(const uchar data[]);
 
     //读取配置文件 
     void readSetFile();
@@ -122,16 +124,23 @@ private:
 
 private:
     std::vector<canIdData>recCanData;
+    
     std::vector<canIdData>sendCanData;
     std::vector<int>HashArr;
     //pcan设备指针
     PCAN *pcan = nullptr;
+    //多通道pcan设备指针
     PCAN *pcanArr[4] = { nullptr };
+    //canayst设备指针
     CANThread* canayst= nullptr ;
     //kvaser设备指针
     kvaser* kcan = nullptr;
     //保存kcan的打开状态
     const int* ckHandle = nullptr;
+
+    HardWareBase* pHardWare = nullptr;
+
+
     //发送按钮
     QPushButton* pbSend = nullptr;
     //can通道选择
@@ -166,9 +175,11 @@ private:
     bool isTrace = false;
 
     bool bStandard = false;
-
+    //PTC错误，用于自动化测试
     QSet<QString>multErr;
-    std::map<QString, std::vector<parseData>>showTableD;
+    //std::map<QString, std::vector<parseData>>showTableD;
+    //保存当前接到的数据
+    std::vector<showTableData>showTableVec;
     QStringList rollTitle;
     QStringListModel* titleModel = nullptr;
     //滚动显示的数据
@@ -182,9 +193,8 @@ private:
     std::map<unsigned int, QStringList>multReceData;
     //保存excel的表头
     QString excelTitle;
-    //自动保存的数据条数，即达到这个数量就会自动保存
-    int saveListNum = 600;
-    uint16_t lostTimeOut = 3000;
+    
+    uint16_t lostTimeOut = 8000;
     QColor recBackgroudColor = QColor(0, 120, 215);
     QColor recFontColor = QColor(255, 250, 255);
     QDateTime lastTime;
@@ -237,8 +247,17 @@ private:
     QString m2_strPhuCode;
     QString m3_strPhuCode;
 
+    //右上角操作区显示类型
+    //0：显示风暧操作
+    //1：显示自动化测试操作
     int m_iShowType = 0;
+    //打开设备接收数据
+    //0：打开设备就接收
+    //1：点击发送才接收
     int m_iRecOnNoSend = 0;
+    //每次保存的数据条数
+    //自动保存的数据条数，即达到这个数量就会自动保存
+    int saveListNum = 600;
 
     QLineEdit* m_iTimeStopLineEdit = nullptr;
     QPushButton* m_pbStartRad = nullptr;
@@ -265,8 +284,9 @@ private slots:
     void on_tableDoubleClicked(int,int);
     //表格中的单元格内容发生变化了
     void on_tableClicked(int, int);
-    //CAN 数据接收
+    //CAN/LIN 数据接收
     void on_ReceiveData(uint frame_id, QByteArray data);
+    void on_ReceiveDataLIN(uint frame_id, QByteArray data,int reserve);
     void on_ReceiveDataMulti(uint frame_id, QByteArray data);
     void on_ReceiveData(int ch,uint frame_id, QByteArray data);
     //CAN协议设置的窗口关闭响应，用来刷新设置的数据

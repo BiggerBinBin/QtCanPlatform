@@ -104,7 +104,7 @@ void QCanSetting::InitUi()
 	vLayoutModel->addSpacerItem(new QSpacerItem(20, 80, QSizePolicy::Expanding));
 
 	listname.clear();
-	listname << "CanId" << "接收/发送"<<"启用(Send时)";
+	listname << "CanId" << "接收/发送"<<"启用(Send时)"<<"DLC";
 	QPushButton* pbAddCanId = new QPushButton("添加ID");
 	connect(pbAddCanId, &QPushButton::clicked, this, &QCanSetting::on_pbAddCanId_clicked);
 	QPushButton* pbMoveUpCanId = new QPushButton("上移");
@@ -129,7 +129,7 @@ void QCanSetting::InitUi()
 	hLayoutCanId->addSpacerItem(new QSpacerItem(20, 20, QSizePolicy::Expanding));
 	hLayoutCanId->setSpacing(0);
 	canIdView = new QTableWidget();
-	canIdView->setColumnCount(3);
+	canIdView->setColumnCount(4);
 	canIdView->setHorizontalHeaderLabels(listname);
 	canIdView->setSelectionBehavior(QAbstractItemView::SelectRows);
 	canIdView->setMinimumWidth(350);
@@ -221,6 +221,10 @@ void QCanSetting::on_pbAddModel_clicked()
 	bundRa->addItem("250kb/s");
 	bundRa->addItem("500kb/s");
 	bundRa->addItem("800kb/s");
+	bundRa->addItem("2400b/s");
+	bundRa->addItem("9600b/s");
+	bundRa->addItem("10400b/s");
+	bundRa->addItem("19200b/s");
 	bundRa->setCurrentIndex(1);
 
 	/*QComboBox* cbPlatform = new QComboBox();
@@ -293,6 +297,10 @@ void QCanSetting::SetTableData()
 		bundRa->addItem("250kb/s");
 		bundRa->addItem("500kb/s");
 		bundRa->addItem("800kb/s");
+		bundRa->addItem("2400b/s");
+		bundRa->addItem("9600b/s");
+		bundRa->addItem("10400b/s");
+		bundRa->addItem("19200b/s");
 		bundRa->setCurrentIndex(qGb->pGboleData.at(i).bundRate);
 		connect(bundRa, SIGNAL(currentIndexChanged(int)), this, SLOT(on_modelView_bundIndexChanged(int)));
 		connect(proto, SIGNAL(currentIndexChanged(int)), this, SLOT(on_modelView_currentIndexChanged(int)));
@@ -495,10 +503,11 @@ void QCanSetting::on_pbAddCanId_clicked()
 	QCheckBox* isSend = new QCheckBox();
 	isSend->setChecked(false);
 	canIdView->setCellWidget(row, 2, isSend);
-	
+	canIdView->setItem(row, 3, new QTableWidgetItem(tr("8")));
 	canIdData cdata;
 	cdata.strCanId = canIdView->item(row,0)->text();
 	cdata.opt = 0;
+	cdata.len = 8;
 	qGb->pGboleData.at(curSelectRow).cItem.push_back(cdata);
 	connect(isSend, &QCheckBox::stateChanged, this, &QCanSetting::on_canIdView_SendChanged);
 	connect(proto, SIGNAL(currentIndexChanged(int)), this, SLOT(on_canIdView_currentIndexChanged(int)));
@@ -525,10 +534,12 @@ void QCanSetting::on_pbMoveUpCanId_clicked()
 	QString idtex = canIdView->item(curRow + 1, 0)->text();
 	QComboBox* cb = dynamic_cast<QComboBox*>(canIdView->cellWidget(curRow + 1, 1));
 	QCheckBox* ch = dynamic_cast<QCheckBox*>(canIdView->cellWidget(curRow + 1, 2));
+	QString len = canIdView->item(curRow + 1, 3)->text();
 	//在单元格要设置一个Item，不然直接丢元素进去
 	canIdView->setItem(curRow - 1, 0, new QTableWidgetItem(idtex));
 	canIdView->setCellWidget(curRow - 1, 1, cb);
 	canIdView->setCellWidget(curRow - 1, 2, ch);
+	canIdView->setItem(curRow - 1, 3, new QTableWidgetItem(len));
 	//删除原来行，因为在它前面新增了一行，所以序号要变
 	canIdView->removeRow(curRow + 1);
 	canIdView->setCurrentCell(curRow - 1, 0);
@@ -561,9 +572,11 @@ void QCanSetting::on_pbMoveDownCanId_clicked()
 	QString idtex = canIdView->item(curRow , 0)->text();
 	QComboBox* cb = dynamic_cast<QComboBox*>(canIdView->cellWidget(curRow, 1));
 	QCheckBox* ch = dynamic_cast<QCheckBox*>(canIdView->cellWidget(curRow, 2));
+	QString len = canIdView->item(curRow, 3)->text();
 	canIdView->setItem(curRow + 2, 0, new QTableWidgetItem(idtex));
 	canIdView->setCellWidget(curRow + 2, 1, cb);
 	canIdView->setCellWidget(curRow + 2, 2, ch);
+	canIdView->setItem(curRow + 2, 3, new QTableWidgetItem(len));
 	canIdView->removeRow(curRow );
 	canIdView->setCurrentCell(curRow + 1, 0);
 	qGboleData* qGb = qGboleData::getInstance();
@@ -997,6 +1010,8 @@ void QCanSetting::on_modelView_Clicked(int row, int col)
 			isSend->setChecked(qGb->pGboleData.at(row).cItem.at(i).isSend);
 			canIdView->setCellWidget(i, 2, isSend);
 			connect(isSend, &QCheckBox::stateChanged, this, &QCanSetting::on_canIdView_SendChanged);
+			QString len = QString::number(qGb->pGboleData.at(row).cItem.at(i).len);
+			canIdView->setItem(i, 3, new QTableWidgetItem(len));
 
 		}
 	}
@@ -1116,13 +1131,15 @@ void QCanSetting::on_canIdView_cellChanged(int row, int col)
 	try
 	{
 		//不在范围
-		if (row > qGb->pGboleData.at(mCurRow).cItem.size() - 1 || row <0||col!=0)
+		if (row > qGb->pGboleData.at(mCurRow).cItem.size() - 1 || row <0)
 		{
 			QMessageBox::warning(this, tr("warning"), tr("修改的位置超出范围"));
 			return;
 		}
-		//这里只有ID号是可以修改的
-		qGb->pGboleData.at(mCurRow).cItem.at(row).strCanId = canIdView->item(row,col)->text().trimmed();
+		if(0==col)
+			qGb->pGboleData.at(mCurRow).cItem.at(row).strCanId = canIdView->item(row,col)->text().trimmed();
+		else if(3==col)
+			qGb->pGboleData.at(mCurRow).cItem.at(row).len = canIdView->item(row, col)->text().trimmed().toInt();
 	}
 	catch (const std::exception&e)
 	{

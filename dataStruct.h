@@ -21,6 +21,11 @@ struct parseData
 	QString toWord;
 	struct YBRGB color;
 };
+struct showTableData
+{
+	QString IdName;
+	std::vector<parseData> Pdata;
+};
 //值对含义
 struct cellProperty
 {
@@ -52,7 +57,8 @@ struct protoItem {
 struct canIdData {
 	bool isSend;							//是否启用这个ID
 	uint8_t opt;							//接收报文还是发送报文
-	qint64 CanId;							//CAN-ID，弃用
+	uint8_t len;							//数据长度，LIN通信用
+	//qint64 CanId;							//CAN-ID，弃用
 	QString strCanId;						//CAN-ID
 	std::vector<struct protoItem>pItem;		//数据
 };
@@ -65,8 +71,7 @@ struct protoData {
 	QString modelName;				//名称
 	std::vector<canIdData>cItem;	//数据
 	bool bStandardId;				//是否为标准帧
-	//int iPlatform;					//平台:3kW,5kW,7kW,10kW,15kW
-	QString sPlatform;				//
+	QString sPlatform;				//平台:3kW,5kW,7kW,10kW,15kW
 };
 struct autoTestData {
 	int m_iLowVolt;				//欠压起步电压
@@ -78,6 +83,7 @@ struct autoTestData {
 	int m_iOverTime;			//超时
 	QString m_sInWebAddr;		//接口地址
 	QString m_sOutWebAddr;		//接口地址
-	int m_iShowType;
-	int m_iRecOnNoSend;
+	int m_iShowType;			//右上角显示的方式。0：显示风暧操作，1：显示自动化测试操作
+	int m_iRecOnNoSend;			//是否打开设备就接收数据？
+	int m_iSaveListNum;			//多少条数据保存一次？
 };

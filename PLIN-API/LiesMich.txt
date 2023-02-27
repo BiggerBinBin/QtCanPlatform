@@ -1,0 +1,98 @@
+===============================================================================
+LiesMich.txt
+
+PLIN-API V2.2.29.78
+Copyright (c) 2013 PEAK-System Technik GmbH Darmstadt
+Alle Rechte vorbehalten.
+===============================================================================
+
+Maximieren Sie das Editor-Fenster, um diese Datei leichter lesen zu können.
+
+
+Inhalt:
+-------
+  * Einleitung
+  * Systemvoraussetzungen
+  * Inhalt des Verzeichnisses
+  * Installation
+  * PEAK-System Technik GmbH kontaktieren
+
+
+Einleitung
+----------
+PLIN steht für PEAK LIN Applications und ist ein System für die Entwicklung
+und zum Betrieb von LIN-Bussen. Es ist ein hilfreiches und umfassendes Produkt,
+das sowohl an Entwickler als auch an Endbenutzer gerichtet ist.
+Das PLIN-System erlaubt eine Echtzeitanbindung von Windows-Anwendungen an
+LIN-Busse, die über PCAN-USB Pro Adapter physikalisch an den PC angeschlossen
+sind.
+
+Die PLIN-API ist eine Programmier-Schnittstelle zum PLIN-System. Über eine
+Interface-DLL wird die Verbindung eigener Applikationen an den Gerätetreiber
+und den PCAN-USB Pro Adapter ermöglicht, um eine Kommunikation mit LIN-Bussen
+zu betreiben.
+
+
+Systemvoraussetzungen
+---------------------
+- Betriebssysteme: Windows 7/Vista/XP
+- Ein freier USB Anschluss (empfohlen USB 2.0) am Computer
+- PCAN-USB Pro Adapter
+
+
+Inhalt des Verzeichnisses
+-------------------------
+LiesMich.txt
+    Diese Textdatei.
+
+ReadMe.txt
+    Diese Textdatei in englischer Übersetzung.
+
+PLINAPI_enu.chm
+    Die PLIN-API-Dokumentation im HTML Help Format in englischer Sprache.
+
+PLINAPI_enu.pdf
+    Die PLIN-API-Dokumentation im Acrobat Reader Format in englischer Sprache.
+
+\Include
+    Enthält PLIN-API Header-Dateien für verschiedene Programmiersprachen und
+    Entwicklungsumgebungen.
+
+\Win32
+    Enthält die 32-Bit Interface-DLL.
+
+    \BB_LIB
+        32-Bit LIB-Datei für C++ Builder 
+
+    \VC_LIB
+        32-Bit LIB-Datei für Visual C/C++
+
+\Sample
+    Enthält ein C#-Beispielprojekt, das die Verwendung der PLIN-API demonstriert.
+
+
+Installation
+------------
+Damit die PLIN-API mit dem angeschlossenen PCAN-USB Pro Adapter kommunizieren kann,
+muss das PCAN-USB Pro Setup installiert werden. Dieses befindet sich auf der
+Produkt-CD im Verzeichnis <Produkt-CD>\Tools\PCAN-USB Pro
+
+Für weitere Informationen über die Inbetriebnahme des PCAN-USB Pro Adapters beachten
+Sie bitte die Dokumentation der Hardware. Diese finden Sie im Verzeichnis
+<Produkt-CD>\Pdf
+
+
+PEAK-System Technik GmbH kontaktieren
+-------------------------------------
+Haben Sie Fragen bezüglich der Inbetriebnahme von PCAN-Hardware, oder benötigen
+Sie Informationen über weitere PEAK CAN-Produkte, wenden Sie sich bitte an:
+
+PEAK-System Technik GmbH
+Otto-Röhm-Str. 69
+64293 Darmstadt
+
+Tel. +49 6151 / 8173-20
+FAX  +49 6151 / 8173-29
+
+support@peak-system.com
+http://www.peak-system.com
