@@ -43,6 +43,8 @@
 #include "canthread.h"
 #include "mHttp.h"
 #include "HardWarePlin.h"
+
+#include "QLogPlot.h"
 #pragma execution_character_set("utf-8")  
 class QtCanPlatform : public QMainWindow
 {
@@ -79,7 +81,7 @@ private:
     QWidget* w_rolling[4];
     //control ui
     QDeviceCtrl* dCtrl = nullptr;
-
+   
     std::atomic_bool _bWork = false;
     std::atomic_int _iSetp = 0;
 
@@ -138,8 +140,9 @@ private:
     //保存kcan的打开状态
     const int* ckHandle = nullptr;
 
+    //PLIN硬件接口，未来会扩充到其它硬件，以实现多态
     HardWareBase* pHardWare = nullptr;
-
+    QLogPlot* qlogp = nullptr;
 
     //发送按钮
     QPushButton* pbSend = nullptr;
@@ -265,6 +268,7 @@ private:
     QTimer* m_tCaptureTimer = nullptr;
     int runTimed = 0;
     int countRunTime = 0;
+    uint timeStmp = 0;
 private slots:
       void on_CapturePower();
 private slots:
@@ -323,11 +327,14 @@ private slots:
 
     void on_action_About_triggered();
     void on_action_History_triggered();
+
+    void on_pbLogReplay_clicked();
 signals:
     void sigNewRoll();
     void sigSendHttp(QByteArray byte, int id);
     void sigNewRollMult(int ch);
     void sigEndRunWork(int n,int channel);
+    void sigNewMessageToGraph(unsigned int fream_id, QByteArray byte,int dx);
 public:
     void initLogger();
     void destroyLogger();

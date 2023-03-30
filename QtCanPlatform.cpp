@@ -25,8 +25,8 @@
 
 using namespace QsLogging;
 
-QString qmyss = "QComboBox{border: 1px solid gray;border-radius: 5px;padding:1px 2px 1px 2px;s}\
-QComboBox::drop-down{subcontrol-origin: padding;subcontrol-position: top right;width: 15px;border-left-width: 1px;border-left-color: darkgray;border-left-style: solid;border-top-right-radius: 3px;border-bottom-right-radius: 3px;}";
+QString qmyss = "QComboBox{height:25px;border: 1px solid gray;border-radius: 5px;padding:1px 2px 1px 2px;}\
+QComboBox::drop-down{subcontrol-origin: padding;subcontrol-position: top right;width: 15px;border-left-width: 1px;border-left-color: darkgray;border-left-style: solid;border-top-right-radius: 3px;border-bottom-right-radius: 3px;image: url(:/QtCanPlatform/Resources/down.png)}";
 QString rollTitleStyle = "QHeaderView::section {background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1,stop:0 #0078d7, stop: 0.5 #0078d7,stop: 0.6 #0078d7, stop:1 #0078d7);color: white;border:1px solid;border-color:white;font-weight: bold;}QHeaderView{background-color:#0078d7}";
 
 QtCanPlatform::QtCanPlatform(QWidget *parent)
@@ -259,11 +259,15 @@ void QtCanPlatform::initUi()
     QLabel* cstate = new QLabel(tr(" 通信状态："));
     communicaLabel = new QLabel(tr("待机中…"));
     communicaLabel->setStyleSheet("background-color:yellow");
+
+    QPushButton* blfLogPb = new QPushButton(this);
+    blfLogPb->setText(tr("报文回放&&图形化"));
+    connect(blfLogPb, &QPushButton::clicked, this, &QtCanPlatform::on_pbLogReplay_clicked);
     //添加个水平的布局
     QHBoxLayout* hLayout = new QHBoxLayout();
     //把按钮丢进去
-    hLayout->addWidget(pbAddModel);
-    hLayout->addWidget(pbSend);
+    
+   
     hLayout->addWidget(cbCanType);
     hLayout->addWidget(cbPcan);
     hLayout->addWidget(reFresh);
@@ -272,12 +276,15 @@ void QtCanPlatform::initUi()
     hLayout->addWidget(cycle);
     hLayout->addWidget(cbIsMutil);
     hLayout->addWidget(pbOpen);
+    hLayout->addWidget(pbSend);
     hLayout->addWidget(cstate);
     hLayout->addWidget(communicaLabel);
    
+   
     //把弹簧也丢进去
     hLayout->addSpacerItem(new QSpacerItem(20, 20, QSizePolicy::Expanding));
-
+    hLayout->addWidget(pbAddModel);
+    hLayout->addWidget(blfLogPb);
     QLineEdit* debugLine = new QLineEdit("-1");
     connect(debugLine, &QLineEdit::editingFinished, this, &QtCanPlatform::on_lineEdit_editingFinished);
     QCheckBox* checkTrace = new QCheckBox();
@@ -295,6 +302,7 @@ void QtCanPlatform::initUi()
     cbPlatform->addItem("10kW");
     cbPlatform->addItem("15kW");
     cbPlatform->addItem("19kW");
+    cbPlatform->addItem("CAT-MID");
     QLabel* mLabel = new QLabel();
     mLabel->setText(tr("当前型号"));
     mLabel->setStyleSheet("font:normal bold 18px SimHei");
@@ -456,7 +464,7 @@ void QtCanPlatform::initUi()
     QGridLayout* gg = new QGridLayout();
     gg->addWidget(mainQSpli);
     ui.centralWidget->setLayout(gg);
-
+    ui.menu->setEnabled(true);
     //增加about，历史版本，关于
     
 
@@ -486,6 +494,19 @@ void QtCanPlatform::on_action_History_triggered()
     {
         QMessageBox::about(this, tr("历史版本"), "历史版本丢失");
     }
+}
+void QtCanPlatform::on_pbLogReplay_clicked()
+{
+    int realIndex = HashArr.at(cbSelectModel->currentIndex());
+    if (!qlogp)
+    {
+        qlogp = new QLogPlot(realIndex,this);
+        qlogp->setWindowFlags(qlogp->windowFlags() | Qt::Tool);
+        connect(qlogp, &QLogPlot::sigNewMessage, this, QOverload<uint, QByteArray>::of(&QtCanPlatform::on_ReceiveData));
+        connect(this, &QtCanPlatform::sigNewMessageToGraph, qlogp, &QLogPlot::proLogData);
+    }
+    qlogp->setModelIndex(realIndex);
+    qlogp->show();
 }
 void QtCanPlatform::initData()
 {
@@ -781,6 +802,9 @@ bool QtCanPlatform::recDataIntoTab()
 
 void QtCanPlatform::sendData()
 {
+
+    
+
     uchar s_Data[8];
     getSendDataFromTable();
     
@@ -990,7 +1014,7 @@ void QtCanPlatform::recAnalyseIntel(unsigned int fream_id,QByteArray data)
             QString datafrom = recCanData.at(i).pItem.at(m).dataFrom;
            
             
-            //判断是否跨字节，起止位模8，得出是当前字节的起止位，再加个长度
+            //这个字段的数据来源其它字段的乘或除
             if (datafrom.contains("*") || datafrom.contains("/"))
             {
                 QStringList splt = datafrom.split("*");
@@ -1004,6 +1028,7 @@ void QtCanPlatform::recAnalyseIntel(unsigned int fream_id,QByteArray data)
                     ddFF.push_back(ddf);
                 }
             }
+            //CRC校验的异或
             else if (datafrom.contains("XOR"))
             {
                 (uint8_t)data[m];
@@ -2532,6 +2557,16 @@ void QtCanPlatform::on_CurrentPlatformChanged(int index)
                             break;
                         }
                     break;
+                case 8:
+                    ls = qGb->pGboleData.at(i).sPlatform.split(",");
+                    for (int k = 0; k < ls.size(); k++)
+                        if (ls.at(k) == "CAT-MID")
+                        {
+                            HashArr.push_back(i);
+                            cbSelectModel->addItem(qGb->pGboleData.at(i).modelName);
+                            break;
+                        }
+                    break;
             default:
                 HashArr.push_back(i);
                 cbSelectModel->addItem(qGb->pGboleData.at(i).modelName);
@@ -2573,6 +2608,9 @@ void QtCanPlatform::on_pbSend_clicked(bool clicked)
 {
     if (clicked)
     {
+        qGboleData* qGb = qGboleData::getInstance();
+        if (!qGb)return;
+        
         int period = cycle->text().toInt();
         if (period < 50)
             period = 50;
@@ -2600,11 +2638,11 @@ void QtCanPlatform::on_pbSend_clicked(bool clicked)
         pbSend->setStyleSheet("background-color:#00FF00");
 
         int index = cbSelectModel->currentIndex();
-        qGboleData* qGb = qGboleData::getInstance();
-        if (!qGb)return;
+        
         if (index > qGb->pGboleData.size() - 1)
             return;
-        if (0 == qGb->pGboleData.at(index).agreement)
+        int real = HashArr[index];
+        if (0 == qGb->pGboleData.at(real).agreement)
         {
             pcan->setProperty("isExtend", true);
         }
@@ -3025,13 +3063,31 @@ void QtCanPlatform::on_ReceiveData(uint fream_id, QByteArray data)
         return;
     if (0 == qGb->pGboleData.at(index).agreement)
     {
-        
+        //intel protocol
         recAnalyseIntel(fream_id, data);
     }
     else
     {
+        //moto protocol
         recAnalyseMoto(fream_id, data);
     }
+    int period = cycle->text().toInt();
+
+    //防止数值大，图形曲线刷新太快
+    if (period >= 1000)
+    {
+        timeStmp += (period / 100);
+    }
+    else if(period >= 100)
+    {
+        timeStmp += (period / 10);
+    }
+    else
+    {
+        timeStmp = period;
+    }
+    //把数据传给图形化处理
+    emit sigNewMessageToGraph(fream_id, data, timeStmp);
 }
 void QtCanPlatform::on_ReceiveDataLIN(uint frame_id, QByteArray data, int reserve)
 {

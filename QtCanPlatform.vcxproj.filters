@@ -88,6 +88,21 @@
     <ClCompile Include="HardWarePlin.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="QBLFManage.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="QLogPlot.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="QSignalManage.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="QParseMessages.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="qcustomplot.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="QCanSetting.h">
@@ -126,6 +141,21 @@
     <QtMoc Include="HardWarePlin.h">
       <Filter>Header Files</Filter>
     </QtMoc>
+    <QtMoc Include="QBLFManage.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="QLogPlot.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="QSignalManage.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="QParseMessages.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="qcustomplot.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
   </ItemGroup>
   <ItemGroup>
     <QtUic Include="QCanSetting.ui">
@@ -141,6 +171,12 @@
       <Filter>Form Files</Filter>
     </QtUic>
     <QtUic Include="QAutoTestIniData.ui">
+      <Filter>Form Files</Filter>
+    </QtUic>
+    <QtUic Include="QLogPlot.ui">
+      <Filter>Form Files</Filter>
+    </QtUic>
+    <QtUic Include="QSignalManage.ui">
       <Filter>Form Files</Filter>
     </QtUic>
   </ItemGroup>

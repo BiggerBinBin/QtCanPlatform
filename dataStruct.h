@@ -58,7 +58,6 @@ struct canIdData {
 	bool isSend;							//是否启用这个ID
 	uint8_t opt;							//接收报文还是发送报文
 	uint8_t len;							//数据长度，LIN通信用
-	//qint64 CanId;							//CAN-ID，弃用
 	QString strCanId;						//CAN-ID
 	std::vector<struct protoItem>pItem;		//数据
 };
@@ -86,4 +85,16 @@ struct autoTestData {
 	int m_iShowType;			//右上角显示的方式。0：显示风暧操作，1：显示自动化测试操作
 	int m_iRecOnNoSend;			//是否打开设备就接收数据？
 	int m_iSaveListNum;			//多少条数据保存一次？
+};
+struct messageData
+{
+	uint Id;
+	double TimeStemp;
+	uchar Data[8];
+};
+struct messageMange
+{
+	std::vector<messageData>vData;
+	uint iLen;
+	uint iIndex;
 };

@@ -57,6 +57,10 @@ bool HardWarePlin::OpenHardWare(QString dev, int bundrate, int attach)
 		}
 		QLOG_INFO() << "GOOD JOB";
 	}
+	else
+	{
+		return false;
+	}
 	QtConcurrent::run(this, &HardWarePlin::ReadMessage);
 	return true;
 }
@@ -106,7 +110,13 @@ bool HardWarePlin::ReadMessage()
 	{
 
 		m_LastLINErr = LIN_Read(m_hClient, &pMsg);
-		if (m_LastLINErr == errOK)
+		
+		if (m_LastLINErr != errOK || pMsg.ErrorFlags != errOK)
+		{
+			Sleep(5);
+			continue;
+		}
+			
 		{
 			BYTE id = pMsg.FrameId & 0x3F;
 			QByteArray data;
@@ -114,9 +124,9 @@ bool HardWarePlin::ReadMessage()
 			{
 				data.append(pMsg.Data[m]);
 			}
-			emit newMessage(id, data, m_hHw);
+			emit newMessage(id, data, 0);
 		}
-		Sleep(5);
+		
 	}
 	return true;
 }

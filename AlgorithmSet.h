@@ -21,23 +21,15 @@ namespace YB {
 			return value;
 	}
 	
-	inline int idNameInVector(const std::vector<showTableData>&Data, const QString &name)
-	{
-		for (int i = 0; i < Data.size(); i++)
-		{
-			if (Data.at(i).IdName == name)
-			{
-				return i;
-			}
-		}
-		return -1;
-	}
-
+	int idNameInVector(std::vector<showTableData>& Data, const QString& name);
+	
+	/************************************
+	* @brief：查找name是否已经存在vec里面
+	* @param1 vec：待查找的vector
+	* @param2 name：要查找的name
+	* @param3 index：所在位置
+	************************************/
 	bool nameInVector(std::vector<RollStruct>& vec, QString name, int& index);
-	inline bool isExistKey(std::map<unsigned int, QStringList>& m, unsigned int key) {
-		std::map<unsigned int, QStringList>::iterator iter;
-		iter = m.find(key);
-		if (iter != m.end()) return true;
-		else return false;
-	}
+
+	bool isExistKey(std::map<unsigned int, QStringList>& m, unsigned int key);
 }
