@@ -94,11 +94,11 @@ QtCanPlatform::~QtCanPlatform()
     {
         delete cbPcan; cbPcan = nullptr;
     }
-    if (saveData)
+    /*if (saveData)
     {
         delete saveData;
         saveData = nullptr;
-    }
+    }*/
     if (dCtrl)
     {
         delete dCtrl;
@@ -115,6 +115,7 @@ QtCanPlatform::~QtCanPlatform()
     }
     
     destroyLogger();   //释放
+    
 }
 
 void QtCanPlatform::closeEvent(QCloseEvent* event)
@@ -140,6 +141,10 @@ void QtCanPlatform::closeEvent(QCloseEvent* event)
     }
     if (dCtrl)
         dCtrl->closeSomething();
+    if (qlogp)
+    {
+        delete qlogp; qlogp = nullptr;
+    }
     event->accept();
 }
 
@@ -860,7 +865,31 @@ void QtCanPlatform::sendData()
                 pHardWare->SendMessage(fream_id, s_Data, other);
             }
             //_sleep(20);
+            QByteArray bydd;
+            for (int h = 0; h < 8; h++)
+            {
+                bydd.append(s_Data[h]);
+            }
+            int period = cycle->text().toInt();
+
+            //防止数值大，图形曲线刷新太快
+            if (period >= 1000)
+            {
+                timeStmp_send += (period / 1000);
+            }
+            else if (period >= 100)
+            {
+                timeStmp_send += (period / 100);
+            }
+            else if (period >= 10)
+            {
+                timeStmp_send = period / 10;
+            }
+            else
+                timeStmp_send = period;
+            emit sigNewMessageToGraph(fream_id, bydd, timeStmp_send);
         }
+
     }
     if (cbCanType->currentIndex() == 3)
     {
@@ -2461,12 +2490,16 @@ void QtCanPlatform::getModelTitle()
 }
 void QtCanPlatform::on_CurrentModelChanged(int index)
 {
+    timeStmp = 0;
+    timeStmp_send = 0;
     currentModel = HashArr.at(index);
     sendDataIntoTab();
     recDataIntoTab();
 }
 void QtCanPlatform::on_CurrentPlatformChanged(int index)
 {
+    timeStmp = 0;
+    timeStmp_send = 0;
     HashArr.clear();
     if (index < 0)
         return;
@@ -3076,18 +3109,19 @@ void QtCanPlatform::on_ReceiveData(uint fream_id, QByteArray data)
     //防止数值大，图形曲线刷新太快
     if (period >= 1000)
     {
-        timeStmp += (period / 100);
+        timeStmp += (period / 1000);
     }
     else if(period >= 100)
     {
-        timeStmp += (period / 10);
+        timeStmp += (period / 100);
     }
     else
     {
         timeStmp = period;
     }
     //把数据传给图形化处理
-    emit sigNewMessageToGraph(fream_id, data, timeStmp);
+    if(pbSend->isChecked())
+        emit sigNewMessageToGraph(fream_id, data, timeStmp);
 }
 void QtCanPlatform::on_ReceiveDataLIN(uint frame_id, QByteArray data, int reserve)
 {

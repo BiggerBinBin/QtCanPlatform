@@ -39,18 +39,20 @@ private:
 	QStringList QByteToBinary(const QByteArray& data);
 signals:
 	void sigNewMessage(uint id, QByteArray data);
-	void sinNewMessageInline(uint id, QByteArray data,int x);
+	void sinNewMessageInline(uint id, QByteArray data,const int& x);
+	void sigDataIndexChange(int value);
 private slots:
 	void on_pbOpenFile_clicked();
 	void on_pbSignal_clicked();
 	void on_pbPlay_clicked();
-	void on_pbPause_clicked();
+	void on_pbPause_clicked(bool Checked);
 	void on_pbStop_clicked();
 	void on_GetBLFStaus(int n);
 	void sendMessage();
 	void on_showWidget();
 	void on_AddData(ushort index, double x, double y);
+	void on_setSlider(int value);
 	
 public slots:
-	void proLogData(uint id, QByteArray data, int x);
+	void proLogData(uint id, QByteArray data,const int& x);
 };

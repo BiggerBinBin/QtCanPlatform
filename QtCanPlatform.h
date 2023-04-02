@@ -269,6 +269,7 @@ private:
     int runTimed = 0;
     int countRunTime = 0;
     uint timeStmp = 0;
+    uint timeStmp_send = 0;
 private slots:
       void on_CapturePower();
 private slots:

@@ -34,6 +34,17 @@ QLogPlot::~QLogPlot()
 		signalMan = nullptr;
 
 	}
+	if (BLfLog)
+	{
+		delete BLfLog;
+		BLfLog = nullptr;
+	}
+	if (plot)
+	{
+		removeRect();
+		delete plot;
+		plot = nullptr;
+	}
 }
 void QLogPlot::resizeEvent(QResizeEvent* event)
 {
@@ -90,23 +101,31 @@ void QLogPlot::on_pbPlay_clicked()
 	QtConcurrent::run(this, &QLogPlot::runSendMes, circle);
 
 }
-void QLogPlot::on_pbPause_clicked()
+void QLogPlot::on_pbPause_clicked(bool Checked)
 {
-	m_bRunSend = 2;
+	if(Checked)
+		m_bRunSend = 2;
+	else
+		m_bRunSend = 1;
 }
 void QLogPlot::on_pbStop_clicked()
 {
+	if (this->ui.pbPause->isChecked())
+		this->ui.pbPause->setChecked(false);
 	m_bRunSend = 0;
 	LogData->iIndex = 0;
 	this->ui.pbPlay->setEnabled(true);
 }
 void QLogPlot::on_GetBLFStaus(int n)
 {
-	if (n == 0)
+	if (n == 0 && LogData->iLen>0)
 	{
 		this->ui.pbPlay->setEnabled(true);
 		this->ui.pbPause->setEnabled(true);
 		this->ui.pbStop->setEnabled(true);
+		ui.horizontalSlider->setValue(0);
+		ui.horizontalSlider->setMaximum(LogData->iLen);
+		ui.label_end->setText(QString::number(LogData->iLen));
 		QMessageBox::information(this, QString("读取完成"), QString("读取日志文件完成"));
 	}
 	else if (n == -1)
@@ -174,18 +193,19 @@ void QLogPlot::on_AddData(ushort index, double x, double y)
 	grap->addData(x, y);
 	rect->axis(QCPAxis::atBottom)->rescale();
 	grap->rescaleValueAxis(false, true);
-	rect->axis(QCPAxis::atBottom)->setRange(rect->axis(QCPAxis::atBottom)->range().upper, 1000, Qt::AlignRight);
-	grap->data()->removeBefore(x - 1000);
+	rect->axis(QCPAxis::atBottom)->setRange(rect->axis(QCPAxis::atBottom)->range().upper, 1800, Qt::AlignRight);
+	grap->data()->removeBefore(x - 2000);
 
 	plot->replot(QCustomPlot::rpQueuedReplot);
 }
-void QLogPlot::proLogData(uint id, QByteArray data,int x)
+void QLogPlot::proLogData(uint id, QByteArray data,const int &x)
 {
 	int index = 0;
 	//获取协议
 	ushort protol = pModelMes.agreement;
 	for (int i = 0; i < pModelMes.cItem.size(); i++)
 	{
+		d_x += x;
 		for (int j = 0; j < pModelMes.cItem.at(i).pItem.size(); j++)
 		{
 			if (pModelMes.cItem.at(i).pItem.at(j).isRoll)
@@ -221,10 +241,11 @@ void QLogPlot::proLogData(uint id, QByteArray data,int x)
 					}
 				}
 				
-				on_AddData(index, x, value);
+				on_AddData(index, d_x, value);
 				index++;
 			}
 		}
+		
 	}
 }
 /*****************************************
@@ -237,8 +258,8 @@ void QLogPlot::proLogData(uint id, QByteArray data,int x)
 ******************************************/
 void QLogPlot::runSendMes(float times)
 {
-	qsrand(QTime(0, 0, 0).secsTo(QTime::currentTime()));
-	uint i = 0;
+	//qsrand(QTime(0, 0, 0).secsTo(QTime::currentTime()));
+	//uint i = 0;
 	/*while (m_bRunSend)
 	{
 		on_AddData(0, i++, qrand() % 10);
@@ -249,6 +270,8 @@ void QLogPlot::runSendMes(float times)
 	return;*/
 	times = (times <= 0) ? 1 : times;
 	d_x = 0;
+	LogData->iIndex = 0;
+	emit sigDataIndexChange(0);
 	while (m_bRunSend)
 	{
 		if (LogData->vData.size() <= LogData->iIndex)
@@ -261,10 +284,25 @@ void QLogPlot::runSendMes(float times)
 		}
 		//获取当前时间戳，就是延时
 		float time = LogData->vData[LogData->iIndex].TimeStemp;
-		d_x += time;
+		float tempt = time;
+		//防止数值大，图形曲线刷新太快
+		if (time >= 1000)
+		{
+			time = (time / 1000);
+		}
+		else if (time >= 100)
+		{
+			time = (time / 100);
+		}
+		else if (time >= 10)
+		{
+			time = (time / 10);
+		}
+		
 		emit sigNewMessage(LogData->vData[LogData->iIndex++].Id, data);
-		emit sinNewMessageInline(LogData->vData[LogData->iIndex-1].Id, data, d_x);
-		QThread::msleep(time* times);
+		emit sinNewMessageInline(LogData->vData[LogData->iIndex-1].Id, data, time);
+		emit sigDataIndexChange(LogData->iIndex);
+		QThread::msleep(tempt * times);
 		//2是暂停，意思是卡在这里不发送消息
 		while (m_bRunSend == 2)
 		{
@@ -289,14 +327,18 @@ void QLogPlot::plotItem()
 			{//No show signal
 				continue;
 			}
-			
+			//添加一个坐标轴外框架
 			QCPAxisRect* cpa = new QCPAxisRect(plot, true);
+			//添加标签名
 			cpa->axis(QCPAxis::atLeft)->setLabel(QString(pModelMes.cItem.at(i).pItem.at(j).bitName));
 			QColor cc = QColor(qAbs(qrand() % 255), qAbs(qrand() % 255), qAbs(qrand() % 255));
 			LableLineColor.append(cc);
+			//设置字体颜色和字体
 			cpa->axis(QCPAxis::atLeft)->setLabelColor(cc);
 			cpa->axis(QCPAxis::atLeft)->setLabelFont(QFont("Yahei"));
+			//添加到布局里面
 			plot->plotLayout()->addElement(plot->axisRectCount(), 0, cpa);
+			//用一个List管理坐标轴外框
 			aixsRect.append(cpa);
 		}
 	}
@@ -316,6 +358,7 @@ void QLogPlot::InitGraphUI()
 	plot->replot();
 	//plot->legend->setVisible(true);
 	connect(this, &QLogPlot::sinNewMessageInline, this, &QLogPlot::proLogData);
+	connect(this, &QLogPlot::sigDataIndexChange, this, &QLogPlot::on_setSlider);
 }
 
 void QLogPlot::removeRect()
@@ -550,4 +593,8 @@ QStringList QLogPlot::QByteToBinary(const QByteArray& data)
 
 	}
 	return binaryStr;
+}
+void QLogPlot::on_setSlider(int value)
+{
+	ui.horizontalSlider->setValue(value);
 }
