@@ -302,8 +302,7 @@ void QCanSetting::SetTableData()
 		bundRa->addItem("10400b/s");
 		bundRa->addItem("19200b/s");
 		bundRa->setCurrentIndex(qGb->pGboleData.at(i).bundRate);
-		connect(bundRa, SIGNAL(currentIndexChanged(int)), this, SLOT(on_modelView_bundIndexChanged(int)));
-		connect(proto, SIGNAL(currentIndexChanged(int)), this, SLOT(on_modelView_currentIndexChanged(int)));
+		
 		modelView->setItem(i, 0, new QTableWidgetItem(qGb->pGboleData.at(i).modelName));
 		modelView->setCellWidget(i, 1, proto);
 		modelView->setCellWidget(i, 2, bundRa);
@@ -333,7 +332,8 @@ void QCanSetting::SetTableData()
 		else
 			cbStandard->setChecked(false);
 		connect(cbStandard, SIGNAL(stateChanged(int)), this, SLOT(on_modelView_cbStandar(int)));
-
+		connect(bundRa, SIGNAL(currentIndexChanged(int)), this, SLOT(on_modelView_bundIndexChanged(int)));
+		connect(proto, SIGNAL(currentIndexChanged(int)), this, SLOT(on_modelView_currentIndexChanged(int)));
 
 		
 		//平台选项

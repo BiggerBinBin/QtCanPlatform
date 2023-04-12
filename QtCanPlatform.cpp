@@ -197,7 +197,7 @@ void QtCanPlatform::initUi()
        
     connect(cbSelectModel, SIGNAL(currentIndexChanged(int)), this, SLOT(on_CurrentModelChanged(int)));
     //添加个按钮
-    QPushButton* pbAddModel = new QPushButton(tr("添加Can解析"));
+    QPushButton* pbAddModel = new QPushButton(tr("协议管理"));
     connect(pbAddModel, &QPushButton::clicked, this, &QtCanPlatform::qCanSettingShow);
     pbSend = new QPushButton(tr("发送"));
     pbSend->setCheckable(true);
