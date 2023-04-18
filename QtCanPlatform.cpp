@@ -3495,7 +3495,7 @@ void QtCanPlatform::on_checkTraceChanged(int check)
 }
 void QtCanPlatform::on_pbSaveCanData_clicked()
 {
-    if (cbCanType->currentIndex() == 0 && cbIsMutil->currentIndex() == 0)
+    if ((cbCanType->currentIndex() == 0 || cbCanType->currentIndex() == 3) && cbIsMutil->currentIndex() == 0)
         saveCanData();
     else if (cbCanType->currentIndex() == 1|| cbCanType->currentIndex() ==2|| cbIsMutil->currentIndex() == 1)
         saveCanDataMult();
