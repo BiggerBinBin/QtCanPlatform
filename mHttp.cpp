@@ -1,18 +1,39 @@
 #include "mHttp.h"
 #include <qstringlist.h>
 #include"QsLog.h"
+#include <windows.h>
+#include <locale>//setlocale(LC_ALL,"");
+#include <codecvt>
+#include <sstream>
+
 #pragma execution_character_set("utf-8")  
 ///https://blog.csdn.net/weixin_45647036/article/details/119384749
+#define POST_OK 200
+wchar_t* QStringToWchar(QString qStr)
+{
+	return (wchar_t*)reinterpret_cast<const wchar_t*>(qStr.utf16());
+}
 mHttp::mHttp(QObject *parent)
 	: QObject(parent)
 {
 	/*manager = new QNetworkAccessManager(this);
 	manager2 = new QNetworkAccessManager(this);*/
 	request = new QNetworkRequest();
+	/*soapHttp = new QtSoapHttpTransport(this);
+	connect(soapHttp, SIGNAL(responseReady(const QtSoapMessage&)), this, SLOT(onResponse(const QtSoapMessage&)));*/
+	
 }
 
 mHttp::~mHttp()
 {}
+QString mHttp::sendWebMesIN(QString url, QStringList data)
+{
+	return QString();
+}
+QString mHttp::sendWebMesOUT(QString url, QStringList data)
+{
+	return QString();
+}
 QString mHttp::sendHttp(QByteArray data, QString url)
 {
 	if (data.isEmpty())
@@ -24,12 +45,13 @@ QString mHttp::sendHttp(QByteArray data, QString url)
 	}
 	//QNetworkRequest request;
 	request->setUrl(QUrl(url));
-	/*request.setRawHeader("Host", "eap2mes");*/
-	request->setHeader(QNetworkRequest::ContentTypeHeader, "application/json");	//基础设置
-	//request.setRawHeader("Content-Length", QString(data.size()).toUtf8());//设置发送数据大小
+	//request->setRawHeader("Host", "10.7.1.9:8060");
+	request->setRawHeader("Content-Type", "application/x-www-form-urlencoded");	//基础设置
+	request->setRawHeader("Content-Length", QString(data.size()).toUtf8());//设置发送数据大小
 	manager->post(*request, data);
 	return QString();
 }
+
 QString mHttp::sendHttpSys(QByteArray data, QString url)
 {
 	if (data.isEmpty())
@@ -40,12 +62,9 @@ QString mHttp::sendHttpSys(QByteArray data, QString url)
 		//connect(manager, SIGNAL(finished(QNetworkReply*)), this, SLOT(replyFinished(QNetworkReply*)));
 	}
 	//QNetworkRequest request;
-	request->setUrl(QUrl(url));
-	/*request.setRawHeader("Host", "eap2mes");*/
-	//request->setRawHeader("Content-Type", "application/x-www-form-urlencoded");	//基础设置
-	//request.setRawHeader("Content-Length", QString(data.size()).toUtf8());//设置发送数据大小
-	request->setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
-	QNetworkReply* reply = manager2->post(*request, data);
+	request->setUrl(QUrl("/BarCodeService.asmx/TrackInData_BarCode?DeviceID=PHU7KW-007&Barcode=20221009005-02"));
+	request->setRawHeader("Host", "10.7.1.9:8060");
+	QNetworkReply* reply = manager2->get(*request);
 
 	QEventLoop eventLoop;
 	QTimer tt;

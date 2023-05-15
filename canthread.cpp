@@ -21,14 +21,16 @@ CANThread::CANThread()
 CANThread::~CANThread()
 {
     //delete hex_data;
+    stop();
 }
 
 void CANThread::stop()
 {
     stopped = true;
+    QThread::msleep(60);
 }
 
-bool CANThread::openCAN(ushort deviceIndex, ushort deviceChannel)
+bool CANThread::openCAN(ushort deviceIndex, ushort deviceChannel,int bundrate)
 {
     DWORD nDeviceType = (DWORD)deviceType; /* USBCAN-2A或USBCAN-2C或CANalyst-II */
     debicIndex = deviceIndex;
@@ -54,7 +56,8 @@ bool CANThread::openCAN(ushort deviceIndex, ushort deviceChannel)
     vic.AccMask=0xFFFFFFFFU;
     vic.Filter=1U;
     vic.Mode=0U;
-    switch (baundRate) {
+    baundRate = bundrate;
+    switch (bundrate) {
     case 10:
         vic.Timing0=0x31U;
         vic.Timing1=0x1cU;
@@ -161,6 +164,145 @@ bool CANThread::openCAN(ushort deviceIndex, ushort deviceChannel)
     {
         qDebug()<<"start"<<nCANInd<<"success:";
     }
+    stopped = false;
+    this->start();
+    return true;
+}
+bool CANThread::openCAN(ushort deviceIndex, ushort deviceChannel)
+{
+    DWORD nDeviceType = (DWORD)deviceType; /* USBCAN-2A或USBCAN-2C或CANalyst-II */
+    debicIndex = deviceIndex;
+    DWORD nDeviceInd = (DWORD)debicIndex; /* 第1个设备 */
+    debicCom = deviceChannel;
+    DWORD nCANInd = (DWORD)debicCom; /* 这个是保留的参数，不是通道的，无意义 */
+
+    DWORD dwRel;
+
+    dwRel = VCI_OpenDevice(nDeviceType, nDeviceInd, nCANInd);
+    if (dwRel != 1U)
+    {
+        QLOG_WARN() << "open fail:";
+        return false;
+    }
+    else
+    {
+        qDebug() << "open success";
+    }
+    dwRel = VCI_ClearBuffer(nDeviceType, nDeviceInd, nCANInd);
+    VCI_INIT_CONFIG vic;
+    vic.AccCode = 0x80000008U;
+    vic.AccMask = 0xFFFFFFFFU;
+    vic.Filter = 1U;
+    vic.Mode = 0U;
+    switch (baundRate) {
+    case 10:
+        vic.Timing0 = 0x31U;
+        vic.Timing1 = 0x1cU;
+        break;
+    case 20:
+        vic.Timing0 = 0x18U;
+        vic.Timing1 = 0x1cU;
+        break;
+    case 40:
+        vic.Timing0 = 0x87U;
+        vic.Timing1 = 0xffU;
+        break;
+    case 50:
+        vic.Timing0 = 0x09U;
+        vic.Timing1 = 0x1cU;
+        break;
+    case 80:
+        vic.Timing0 = 0x83U;
+        vic.Timing1 = 0xffU;
+        break;
+    case 100:
+        vic.Timing0 = 0x04U;
+        vic.Timing1 = 0x1cU;
+        break;
+    case 125:
+        vic.Timing0 = 0x03U;
+        vic.Timing1 = 0x1cU;
+        break;
+    case 200:
+        vic.Timing0 = 0x81U;
+        vic.Timing1 = 0xfaU;
+        break;
+    case 250:
+        vic.Timing0 = 0x01U;
+        vic.Timing1 = 0x1cU;
+        break;
+    case 400:
+        vic.Timing0 = 0x80U;
+        vic.Timing1 = 0xfaU;
+        break;
+    case 500:
+        vic.Timing0 = 0x00U;
+        vic.Timing1 = 0x1cU;
+        break;
+    case 666:
+        vic.Timing0 = 0x80U;
+        vic.Timing1 = 0xb6U;
+        break;
+    case 800:
+        vic.Timing0 = 0x00U;
+        vic.Timing1 = 0x16U;
+        break;
+    case 1000:
+        vic.Timing0 = 0x00U;
+        vic.Timing1 = 0x14U;
+        break;
+    case 33:
+        vic.Timing0 = 0x09U;
+        vic.Timing1 = 0x6fU;
+        break;
+    case 66:
+        vic.Timing0 = 0x04U;
+        vic.Timing1 = 0x6fU;
+        break;
+    case 83:
+        vic.Timing0 = 0x03U;
+        vic.Timing1 = 0x6fU;
+        break;
+    default:
+        vic.Timing0 = 0x03U;
+        vic.Timing1 = 0x6fU;
+        break;
+    }
+    dwRel = VCI_InitCAN(nDeviceType, nDeviceInd, nCANInd, &vic);
+    if (dwRel != 1U)
+    {
+        qDebug() << "init fail:";
+        return false;
+    }
+    else
+    {
+        qDebug() << "init success";
+    }
+
+    dwRel = VCI_ReadBoardInfo((DWORD)nDeviceType, (DWORD)nDeviceInd, &vbi);
+    if (dwRel != 1U)
+    {
+        qDebug() << "get dev message fail:";
+        return false;
+    }
+    else
+    {
+        qDebug() << "CAN通道数：" << vbi.can_Num;
+        qDebug() << "硬件版本号:" << vbi.hw_Version;
+        qDebug() << "接口库版本号：" << vbi.in_Version;
+        qDebug() << "中断号" << vbi.irq_Num;
+    }
+
+    if (VCI_StartCAN(nDeviceType, nDeviceInd, nCANInd) != 1U)
+    {
+        return false;
+    }
+    else
+    {
+        qDebug() << "start" << nCANInd << "success:";
+    }
+    stopped = false;
+    this->start();
     return true;
 }
 bool CANThread::openCANAll(int bundRate)
@@ -360,7 +502,7 @@ void CANThread::sendData(UINT ID, uchar qbt[],bool bStandard)
             {
                 QLOG_INFO() << "CANayst Send fail:" << QString::number(dwRel);
             }
-            msleep(5);
+            msleep(10);
         }
 
 }

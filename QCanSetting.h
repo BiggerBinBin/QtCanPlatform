@@ -29,7 +29,7 @@
 #include "dataStruct.h"
 #include "QSetProperty.h"
 #include <QCloseEvent>
-
+#include <QPushButton>
 class QCanSetting : public QWidget
 {
 	Q_OBJECT
@@ -38,6 +38,8 @@ public:
 	QCanSetting(QWidget *parent = nullptr);
 	~QCanSetting();
 	virtual void closeEvent(QCloseEvent* event) override;
+	virtual void showEvent(QShowEvent* event) override;
+	void setUserType(const int userTp);
 private:
 	Ui::QCanSettingClass ui;
 	void InitUi();
@@ -46,13 +48,21 @@ private:
 	QTableWidget* modelView = nullptr;
 	//can id table
 	QTableWidget* canIdView = nullptr;
+
+	//自动测试的参数部分
+	QTableWidget* paramView = nullptr;
+
 	//std::vector<struct protoData>pGboleData;
 	void savepGboleData();
 	void InitpGboleData();
 	void SetTableData();
 	std::map<QString, cellProperty>ItemProperty;
 	QSetProperty *pp=nullptr;
-	
+	QList<QPushButton*>modelPb;
+	QList<QPushButton*>canIDPb;
+	QList<QPushButton*>itemdataPb;
+protected:
+	int userType;
 signals:
 	void settingWidowsClose();
 private slots:
@@ -111,5 +121,11 @@ private slots:
 	void on_isHexCheckStateChanged(int);
 
 	void on_importDBC_clicked();
+
+	//自动测试参数按钮槽
+	
+	void on_pbSaveItemParam_clicked();
+	void on_paramView_doubleCLicked(int, int);
+	void on_paramView_cellChanged(int row, int col);
 
 };

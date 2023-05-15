@@ -50,6 +50,30 @@ void qGboleData::save()
 		mItem.insert("bStandardId", pGboleData.at(i).bStandardId);
 		//mItem.insert("iPlatform", pGboleData.at(i).iPlatform);
 		mItem.insert("sPlatform", pGboleData.at(i).sPlatform);
+		mItem.insert("m_iEnableInLine", pGboleData.at(i).ats.m_iEnableInLine);
+		mItem.insert("m_iEnOp", pGboleData.at(i).ats.m_iEnOp);
+		mItem.insert("m_iPowerInLine", pGboleData.at(i).ats.m_iPowerInLine);
+		mItem.insert("m_iLowVoltage", pGboleData.at(i).ats.m_iLowVoltage);
+		mItem.insert("m_iLowVoltageRe", pGboleData.at(i).ats.m_iLowVoltageRe);
+		mItem.insert("m_iOverVoltage", pGboleData.at(i).ats.m_iOverVoltage);
+		mItem.insert("m_iOverVoltageRe", pGboleData.at(i).ats.m_iOverVoltageRe);
+		mItem.insert("m_iOverTemperature", pGboleData.at(i).ats.m_iOverTemperature);
+		mItem.insert("m_iOverTempRe", pGboleData.at(i).ats.m_iOverTempRe);
+		mItem.insert("m_iOverTempTolerance", pGboleData.at(i).ats.m_iOverTempTolerance);
+		mItem.insert("m_fRequirePW", pGboleData.at(i).ats.m_fRequirePW);
+		mItem.insert("m_fRatedPW", pGboleData.at(i).ats.m_fRatedPW);
+		mItem.insert("m_iRatedVolt", pGboleData.at(i).ats.m_iRatedVolt);
+		mItem.insert("m_strTolerance", pGboleData.at(i).ats.m_strTolerance);
+		mItem.insert("m_strVer", pGboleData.at(i).ats.m_strVer);
+		mItem.insert("m_strVerRecID", pGboleData.at(i).ats.m_strVerRecID);
+		mItem.insert("m_usIDBytelen", pGboleData.at(i).ats.m_usIDBytelen);
+		mItem.insert("m_usIDByteStartbit", pGboleData.at(i).ats.m_usIDByteStartbit);
+		mItem.insert("m_usRatedPWTemp", pGboleData.at(i).ats.m_usRatedPWTemp);
+		mItem.insert("m_usRatedPWFlow", pGboleData.at(i).ats.m_usRatedPWFlow);
+		mItem.insert("m_usHeatTemp", pGboleData.at(i).ats.m_usHeatTemp);
+
+
+
 		QJsonObject cItemObj;
 		for (int j = 0; j < pGboleData.at(i).cItem.size(); j++)
 		{
@@ -175,6 +199,30 @@ void qGboleData::read()
 		ptem.bStandardId = rootSecond["bStandardId"].toBool(0);
 		//ptem.iPlatform = rootSecond["iPlatform"].toInt(0);
 		ptem.sPlatform = rootSecond["sPlatform"].toString("Non");
+
+		ptem.ats.m_iEnableInLine = rootSecond["m_iEnableInLine"].toInt(0);
+		ptem.ats.m_iPowerInLine = rootSecond["m_iPowerInLine"].toInt(0);
+		ptem.ats.m_iLowVoltage = rootSecond["m_iLowVoltage"].toInt(0);
+		ptem.ats.m_iLowVoltageRe = rootSecond["m_iLowVoltageRe"].toInt(0);
+		ptem.ats.m_iOverVoltage = rootSecond["m_iOverVoltage"].toInt(0);
+		ptem.ats.m_iOverVoltageRe = rootSecond["m_iOverVoltageRe"].toInt(0);
+		ptem.ats.m_iOverTemperature = rootSecond["m_iOverTemperature"].toInt(0);
+		ptem.ats.m_iOverTempRe = rootSecond["m_iOverTempRe"].toInt(0);
+		ptem.ats.m_iOverTempTolerance = rootSecond["m_iOverTempTolerance"].toInt(0);
+		ptem.ats.m_iEnOp = rootSecond["m_iEnOp"].toInt(1);
+		ptem.ats.m_fRatedPW = rootSecond["m_fRatedPW"].toInt(7000);
+		ptem.ats.m_fRequirePW = rootSecond["m_fRequirePW"].toInt(100);
+		ptem.ats.m_iRatedVolt = rootSecond["m_iRatedVolt"].toInt(600);
+		ptem.ats.m_strTolerance = rootSecond["m_strTolerance"].toString("+10;-5");
+		ptem.ats.m_strVer = rootSecond["m_strVer"].toString("Non");
+		ptem.ats.m_strVerRecID = rootSecond["m_strVerRecID"].toString("18AD8DE4");
+		ptem.ats.m_usIDBytelen = rootSecond["m_usIDBytelen"].toInt(4);
+		ptem.ats.m_usIDByteStartbit = rootSecond["m_usIDByteStartbit"].toInt(8);
+		ptem.ats.m_usRatedPWTemp = rootSecond["m_usRatedPWTemp"].toInt(0);
+		ptem.ats.m_usRatedPWFlow = rootSecond["m_usRatedPWFlow"].toInt(10);
+		ptem.ats.m_usHeatTemp = rootSecond["m_usHeatTemp"].toInt(-15);
+
+
 		//如果还有嵌套对象
 		if (rootSecond["mDItem"].type() == QJsonValue::Object)
 		{

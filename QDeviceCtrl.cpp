@@ -77,18 +77,18 @@ QDeviceCtrl::QDeviceCtrl(QWidget *parent)
 		checkThree[i] = c3;
 	}
 	hLaout->addLayout(vLaout1);
-	hLaout->addLayout(vLaout2);
+	/*hLaout->addLayout(vLaout2);
 	hLaout->addLayout(vLaout3);
-	ui.tab_2->setLayout(hLaout);
+	ui.tab_2->setLayout(hLaout);*/
 	tcp = new QTcpSocket(this);
 	connect(tcp, &QTcpSocket::stateChanged, this, &QDeviceCtrl::on_SocketStateChanged);
 	//connect(tcp, &QTcpSocket::readyRead, this, &QDeviceCtrl::_readyRead);
 	connect(this, &QDeviceCtrl::timeToSend, this, &QDeviceCtrl::on_timeToSend);
-	tcp->connectToHost(ipAddress, port);
+	//tcp->connectToHost(ipAddress, port);
 	std::thread t(&QDeviceCtrl::getInStateRun, this);
 	t.detach();
-	std::thread t2(&QDeviceCtrl::getPowerRun, this);
-	t2.detach();
+	/*std::thread t2(&QDeviceCtrl::getPowerRun, this);
+	t2.detach();*/
 
 	moudBus = new QMoudBusCtrl(this);
 	on_pbRefresh_clicked();
@@ -147,7 +147,7 @@ void QDeviceCtrl::closeSomething()
 }
 void QDeviceCtrl::setResInLabel(int ch, QString str,QColor color)
 {
-	if (0 == ch)
+	/*if (0 == ch)
 	{
 		ui.label_1Res->setText(str);
 		ui.label_1Res->setStyleSheet("color:#" + QString::number(color.red(),16) + QString::number(color.green(),16) + QString::number(color.blue(),16));
@@ -161,16 +161,16 @@ void QDeviceCtrl::setResInLabel(int ch, QString str,QColor color)
 	{
 		ui.label_3Res->setText(str);
 		ui.label_3Res->setStyleSheet("color:#" + QString::number(color.red(),16) + QString::number(color.green(),16) + QString::number(color.blue(),16));
-	}
+	}*/
 }
 QString QDeviceCtrl::getPhuCode(int ch)
 {
 	if (1 == ch)
 		return ui.lineEdit_1ResCode->text();
-	else if (2 == ch)
-		return ui.lineEdit_2ResCode->text();
-	else if (3 == ch)
-		return ui.lineEdit_3ResCode->text();
+	//else if (2 == ch)
+	//	return ui.lineEdit_2ResCode->text();
+	//else if (3 == ch)
+	//	return ui.lineEdit_3ResCode->text();
 	else
 		return QString();
 }
@@ -559,7 +559,7 @@ void QDeviceCtrl::getPowerRun()
 }
 void QDeviceCtrl::setOffPower()
 {
-	auto temp = QModbusDataUnit(QModbusDataUnit::HoldingRegisters, 0x7, 5);
+	/*auto temp = QModbusDataUnit(QModbusDataUnit::HoldingRegisters, 0x7, 5);
 	temp.setValue(4, 0x0000);
 	if(ui.cbSelectMachine->currentIndex()==0 || ui.cbSelectMachine->currentIndex() == 1)
 		moudBus->sendWriteMdu(temp, 0x1);
@@ -569,7 +569,7 @@ void QDeviceCtrl::setOffPower()
 		QApplication::processEvents();
 	}
 	if (ui.cbSelectMachine->currentIndex() == 0 || ui.cbSelectMachine->currentIndex() == 2)
-		moudBus->sendWriteMdu(temp, 0x2);
+		moudBus->sendWriteMdu(temp, 0x2);*/
 }
 void QDeviceCtrl::getAnSetWaterRun()
 {
@@ -646,81 +646,57 @@ void QDeviceCtrl::on_pbSetVoltAndCurr_clicked()
 	auto mdu = QModbusDataUnit(QModbusDataUnit::HoldingRegisters, 0x7, 5);
 	auto mdub = QModbusDataUnit(QModbusDataUnit::HoldingRegisters, 0x7, 5);
 	//获取界面上的电压流，需要乘1000，以便传输小数。
-	uint volt = ui.spinBoxVolt->text().toUInt() * 1000;
+	/*uint volt = ui.spinBoxVolt->text().toUInt() * 1000;
 	uint current = ui.spinBoxCurrent->text().toDouble() * 1000;
 	uint volt2 = ui.spinBoxVolt_2->text().toUInt() * 1000;
-	uint current2 = ui.spinBoxCurrent_2->text().toDouble() * 1000;
+	uint current2 = ui.spinBoxCurrent_2->text().toDouble() * 1000;*/
 	//数据要拆分成2字节+2字节，高位在前，低位在后
-	uint low8bit;
-	uint hight8bit;
-	uint low8bit2;
-	uint hight8bit2;
+	//uint low8bit;
+	//uint hight8bit;
+	//uint low8bit2;
+	//uint hight8bit2;
 
-	uint low8bit_b;
-	uint hight8bit_b;
-	uint low8bit2_b;
-	uint hight8bit2_b;
+	//uint low8bit_b;
+	//uint hight8bit_b;
+	//uint low8bit2_b;
+	//uint hight8bit2_b;
 
-	//拆分，这里使用更Low的方法，更快的是: 低位：0xFF&volt，高位：0xFF&(volt>>16)
-	QString volt_hex = QString("%1").arg(volt, 8, 16, QLatin1Char('0'));
-	low8bit = volt_hex.right(4).toInt(nullptr, 16);
-	hight8bit = volt_hex.left(4).toInt(nullptr, 16);
-	QString currl_hex = QString("%1").arg(current, 8, 16, QLatin1Char('0'));
-	low8bit2 = currl_hex.right(4).toInt(nullptr, 16);
-	hight8bit2 = currl_hex.left(4).toInt(nullptr, 16);
+	////拆分，这里使用更Low的方法，更快的是: 低位：0xFF&volt，高位：0xFF&(volt>>16)
+	//QString volt_hex = QString("%1").arg(volt, 8, 16, QLatin1Char('0'));
+	//low8bit = volt_hex.right(4).toInt(nullptr, 16);
+	//hight8bit = volt_hex.left(4).toInt(nullptr, 16);
+	//QString currl_hex = QString("%1").arg(current, 8, 16, QLatin1Char('0'));
+	//low8bit2 = currl_hex.right(4).toInt(nullptr, 16);
+	//hight8bit2 = currl_hex.left(4).toInt(nullptr, 16);
 
-	low8bit2 = 0;
-	hight8bit2 = 0;
+	//low8bit2 = 0;
+	//hight8bit2 = 0;
 
-	QString volt_hex_b = QString("%1").arg(volt2, 8, 16, QLatin1Char('0'));
-	low8bit_b = volt_hex_b.right(4).toInt(nullptr, 16);
-	hight8bit_b = volt_hex_b.left(4).toInt(nullptr, 16);
-	QString currl_hex_b = QString("%1").arg(current2, 8, 16, QLatin1Char('0'));
-	low8bit2_b = currl_hex_b.right(4).toInt(nullptr, 16);
-	hight8bit2_b = currl_hex_b.left(4).toInt(nullptr, 16);
+	//QString volt_hex_b = QString("%1").arg(volt2, 8, 16, QLatin1Char('0'));
+	//low8bit_b = volt_hex_b.right(4).toInt(nullptr, 16);
+	//hight8bit_b = volt_hex_b.left(4).toInt(nullptr, 16);
+	//QString currl_hex_b = QString("%1").arg(current2, 8, 16, QLatin1Char('0'));
+	//low8bit2_b = currl_hex_b.right(4).toInt(nullptr, 16);
+	//hight8bit2_b = currl_hex_b.left(4).toInt(nullptr, 16);
 
-	low8bit2_b = 0;
-	hight8bit2_b = 0;
-	/*mdu.setValue(0, qint16(0));
-	mdu.setValue(1, qint16(0));
-	mdu.setValue(2, qint16(0));
-	mdu.setValue(3, qint16(0));
-	mdu.setValue(4, qint16(0x0000));*/
-	/*if (0 == ui.cbSelectMachine->currentIndex())
-	{
-		QTime tt = QTime::currentTime().addMSecs(100);
-		moudBus->sendWriteMdu(mdu, 0x1);
-		while (QTime::currentTime() < tt)
-		{
-			QApplication::processEvents();
-		}
-		moudBus->sendWriteMdu(mdu, 0x2);
+	//low8bit2_b = 0;
+	//hight8bit2_b = 0;
 
-	}
-	else if (1 == ui.cbSelectMachine->currentIndex())
-	{
-		moudBus->sendWriteMdu(mdu, 0x1);
-	}
-	else if (2 == ui.cbSelectMachine->currentIndex())
-	{
-		moudBus->sendWriteMdu(mdu, 0x2);
-	}*/
-		
-	mdu.setValue(0, qint16(hight8bit));
-	mdu.setValue(1, qint16(low8bit));
-	mdu.setValue(2, qint16(hight8bit2));
-	mdu.setValue(3, qint16(low8bit2));
-	mdu.setValue(4, qint16(0xFF00));
+	//	
+	//mdu.setValue(0, qint16(hight8bit));
+	//mdu.setValue(1, qint16(low8bit));
+	//mdu.setValue(2, qint16(hight8bit2));
+	//mdu.setValue(3, qint16(low8bit2));
+	//mdu.setValue(4, qint16(0xFF00));
 
-	mdub.setValue(0, qint16(hight8bit_b));
-	mdub.setValue(1, qint16(low8bit_b));
-	mdub.setValue(2, qint16(hight8bit2_b));
-	mdub.setValue(3, qint16(low8bit2_b));
-	mdub.setValue(4, qint16(0xFF00));
-	m_mdu = mdu;
-	m_mdu2 = mdub;
-	//timeSend->start(500);
-	on_delaySend();
+	//mdub.setValue(0, qint16(hight8bit_b));
+	//mdub.setValue(1, qint16(low8bit_b));
+	//mdub.setValue(2, qint16(hight8bit2_b));
+	//mdub.setValue(3, qint16(low8bit2_b));
+	//mdub.setValue(4, qint16(0xFF00));
+	//m_mdu = mdu;
+	//m_mdu2 = mdub;
+	//on_delaySend();
 }
 /*
 * @brief: timeSend定时器响应槽函数，这是为了防止过快发送，导致线路堵塞
@@ -730,64 +706,64 @@ void QDeviceCtrl::on_delaySend()
 
 
 
-	if (0 == ui.cbSelectMachine->currentIndex())
-	{
-		QTime tt = QTime::currentTime().addMSecs(200);
-		moudBus->sendWriteMdu(m_mdu, 0x1);
-		while (QTime::currentTime() < tt)
-		{
-			QApplication::processEvents();
-		}
-		moudBus->sendWriteMdu(m_mdu2, 0x2);
+	//if (0 == ui.cbSelectMachine->currentIndex())
+	//{
+	//	QTime tt = QTime::currentTime().addMSecs(200);
+	//	moudBus->sendWriteMdu(m_mdu, 0x1);
+	//	while (QTime::currentTime() < tt)
+	//	{
+	//		QApplication::processEvents();
+	//	}
+	//	moudBus->sendWriteMdu(m_mdu2, 0x2);
 
-	}
-	else if (1 == ui.cbSelectMachine->currentIndex())
-	{
-		moudBus->sendWriteMdu(m_mdu, 0x1);
-	}
-	else if (2 == ui.cbSelectMachine->currentIndex())
-	{
-		moudBus->sendWriteMdu(m_mdu2, 0x2);
-	}
-	//moudBus->sendWriteMdu(m_mdu, 0x1);
-	timeSend->stop();
-	timeGetPower->start(1000);
+	//}
+	//else if (1 == ui.cbSelectMachine->currentIndex())
+	//{
+	//	moudBus->sendWriteMdu(m_mdu, 0x1);
+	//}
+	//else if (2 == ui.cbSelectMachine->currentIndex())
+	//{
+	//	moudBus->sendWriteMdu(m_mdu2, 0x2);
+	//}
+	////moudBus->sendWriteMdu(m_mdu, 0x1);
+	//timeSend->stop();
+	//timeGetPower->start(1000);
 }
 
 void QDeviceCtrl::on_pbConnectRTU_clicked(bool isCheck)
 {
-	if (isCheck)
-	{
-		if (ui.cbSerialPort->currentIndex() < 0)
-		{
-			QLOG_INFO() << "No Device!";
-			deviceState &= 0x6; //6为110
-			return;
-		}
-		QString serialName = ui.cbSerialPort->currentText();
-		bool b = moudBus->connectToDevice(serialName, ui.cbPaity->currentText().toInt(), ui.cbBudRate->currentText().toUInt(), ui.cbStopBit->currentText().toUInt(), ui.cbDataBit->currentText().toUInt());
-		if (!b)
-		{
-			deviceState &= 0x6; //6为110
-			QLOG_INFO() << "connect to  Device error!";
-			return;
-		}
-		timeGetPower->start(1000);
-		deviceState |= 0x1; //
-	}
-	else
-	{
-		timeGetPower->stop();
-		deviceState &= 0x6; //6为110
-		moudBus->disConnectDevice();
-	}
-	
+	//if (isCheck)
+	//{
+	//	if (ui.cbSerialPort->currentIndex() < 0)
+	//	{
+	//		QLOG_INFO() << "No Device!";
+	//		deviceState &= 0x6; //6为110
+	//		return;
+	//	}
+	//	QString serialName = ui.cbSerialPort->currentText();
+	//	bool b = moudBus->connectToDevice(serialName, ui.cbPaity->currentText().toInt(), ui.cbBudRate->currentText().toUInt(), ui.cbStopBit->currentText().toUInt(), ui.cbDataBit->currentText().toUInt());
+	//	if (!b)
+	//	{
+	//		deviceState &= 0x6; //6为110
+	//		QLOG_INFO() << "connect to  Device error!";
+	//		return;
+	//	}
+	//	timeGetPower->start(1000);
+	//	deviceState |= 0x1; //
+	//}
+	//else
+	//{
+	//	timeGetPower->stop();
+	//	deviceState &= 0x6; //6为110
+	//	moudBus->disConnectDevice();
+	//}
+	//
 
 }
 
 void QDeviceCtrl::on_spinBoxVolt_editingFinished()
 {
-	auto mdu = QModbusDataUnit(QModbusDataUnit::HoldingRegisters, 0x7, 2);
+	/*auto mdu = QModbusDataUnit(QModbusDataUnit::HoldingRegisters, 0x7, 2);
 	uint volt = ui.spinBoxVolt->text().toUInt() * 1000;
 	uint low8bit;
 	uint hight8bit;
@@ -795,13 +771,13 @@ void QDeviceCtrl::on_spinBoxVolt_editingFinished()
 	low8bit = volt_hex.right(4).toInt(nullptr, 16);
 	hight8bit = volt_hex.left(4).toInt(nullptr, 16);
 	mdu.setValue(0, qint16(hight8bit));
-	mdu.setValue(1, qint16(low8bit));
+	mdu.setValue(1, qint16(low8bit));*/
 	/*moudBus->sendWriteMdu(mdu, 0x1);
 	Sleep(500);*/
 }
 void QDeviceCtrl::on_spinBoxCurrent_editingFinished()
 {
-	auto mdu = QModbusDataUnit(QModbusDataUnit::HoldingRegisters, 0x9, 2);
+	/*auto mdu = QModbusDataUnit(QModbusDataUnit::HoldingRegisters, 0x9, 2);
 	uint volt = ui.spinBoxCurrent->text().toDouble() * 1000;
 	uint low8bit;
 	uint hight8bit;
@@ -809,7 +785,7 @@ void QDeviceCtrl::on_spinBoxCurrent_editingFinished()
 	low8bit = Current_hex.right(4).toInt(nullptr, 16);
 	hight8bit = Current_hex.left(4).toInt(nullptr, 16);
 	mdu.setValue(0, qint16(hight8bit));
-	mdu.setValue(1, qint16(low8bit));
+	mdu.setValue(1, qint16(low8bit));*/
 	/*moudBus->sendWriteMdu(mdu, 0x1);
 	Sleep(500);*/
 }
@@ -821,11 +797,11 @@ void QDeviceCtrl::on_pbOffVolt_clicked()
 
 void QDeviceCtrl::on_pbRefresh_clicked()
 {
-	ui.cbSerialPort->clear();
+	/*ui.cbSerialPort->clear();
 	for (int i = 0; i < moudBus->getSerialInfo().size(); i++)
 	{
 		ui.cbSerialPort->addItem(moudBus->getSerialInfo().at(i).portName());
-	}
+	}*/
 }
 void QDeviceCtrl::onReceiveData(unsigned int fream_id, QByteArray data)
 {
@@ -1045,7 +1021,7 @@ void QDeviceCtrl::on_setProcessSetState(bool b)
 */
 void QDeviceCtrl::on_sendMdu()
 {
-	if (!moudBus->connectState())
+	/*if (!moudBus->connectState())
 		return;
 	auto mdu = QModbusDataUnit(QModbusDataUnit::HoldingRegisters, 0x0, 6);
 	if (0 == ui.cbSelectMachine->currentIndex() || 1 == ui.cbSelectMachine->currentIndex())
@@ -1090,7 +1066,7 @@ void QDeviceCtrl::on_sendMdu()
 		ui.label_Volt_2->setText(QString::number(volt, 'f', 1) + "V");
 		ui.label_Current_2->setText(QString::number(current, 'f', 1) + "A");
 		ui.label_Power_2->setText(QString::number(powerState, 'f', 1) + "kW");
-	}
+	}*/
 	
 		
 
@@ -1109,11 +1085,11 @@ void QDeviceCtrl::on_dCbProcess3_stateChanged(int state)
 }
 void QDeviceCtrl::on_linedSetp_editingFinished()
 {
-	int  setp = ui.linedSetp->text().toInt();
+	/*int  setp = ui.linedSetp->text().toInt();
 	if (setp < 1)
 		setp = 1;
 	ui.spinBoxVolt->setSingleStep(setp);
-	ui.spinBoxVolt_2->setSingleStep(setp);
+	ui.spinBoxVolt_2->setSingleStep(setp);*/
 }
 bool QDeviceCtrl::getProcess1State()
 {
@@ -1137,15 +1113,15 @@ void QDeviceCtrl::setWorkButton(int n)
 }
 void QDeviceCtrl::setHV_1(int hv, float current)
 {
-	ui.spinBoxVolt->setValue(hv);
+	/*ui.spinBoxVolt->setValue(hv);
 	ui.spinBoxCurrent->setValue(current);
-	on_pbSetVoltAndCurr_clicked();
+	on_pbSetVoltAndCurr_clicked();*/
 }
 void QDeviceCtrl::setHV_2(int hv, float current)
 {
-	ui.spinBoxVolt_2->setValue(hv);
+	/*ui.spinBoxVolt_2->setValue(hv);
 	ui.spinBoxCurrent_2->setValue(current);
-	on_pbSetVoltAndCurr_clicked();
+	on_pbSetVoltAndCurr_clicked();*/
 }
 void QDeviceCtrl::on_pbTestParamSet_clicked()
 {
@@ -1160,8 +1136,8 @@ void QDeviceCtrl::on_lineEdit_1ResCode_editingFinished()
 	if (!ui.lineEdit_1ResCode->hasFocus()) return;
 	QString code = ui.lineEdit_1ResCode->text();
 	QJsonObject json;
-	json.insert("DeviceID", "PHU");
-	json.insert("Barcode", code);
+	json.insert("DeviceID", "PHU7KW-007");
+	json.insert("Barcode", "12345678");
 	QJsonDocument document;
 	document.setObject(json);
 	QByteArray dataArray = document.toJson(QJsonDocument::Compact);
@@ -1173,19 +1149,19 @@ void QDeviceCtrl::on_lineEdit_1ResCode_editingFinished()
 	if (status.isEmpty() || status.at(0)!="Y")
 	{
 		QMessageBox::warning(this, tr("警告"), tr("入站失败，没有找到相关设备所在工位信息，不能生产"));
-		ui.dCbProcess1->setChecked(false);
+		//ui.dCbProcess1->setChecked(false);
 	}
 	else if (status.at(0) == "Y")
 	{
 		QMessageBox::about(this, tr("提示"), tr("入站成功"));
-		ui.dCbProcess1->setChecked(true);
+		//ui.dCbProcess1->setChecked(true);
 	}
 	
 
 }
 void QDeviceCtrl::on_lineEdit_2ResCode_editingFinished()
 {
-	if (!ui.lineEdit_2ResCode->hasFocus()) return;
+	/*if (!ui.lineEdit_2ResCode->hasFocus()) return;
 	QString code = ui.lineEdit_2ResCode->text();
 	QJsonObject json;
 	json.insert("DeviceID", "PHU");
@@ -1207,12 +1183,12 @@ void QDeviceCtrl::on_lineEdit_2ResCode_editingFinished()
 	{
 		QMessageBox::about(this, tr("提示"), tr("入站成功"));
 		ui.dCbProcess2->setChecked(true);
-	}
+	}*/
 }
 
 void QDeviceCtrl::on_lineEdit_3ResCode_editingFinished()
 {
-	if (!ui.lineEdit_3ResCode->hasFocus()) return;
+	/*if (!ui.lineEdit_3ResCode->hasFocus()) return;
 	QString code = ui.lineEdit_3ResCode->text();
 	QJsonObject json;
 	json.insert("DeviceID", "PHU");
@@ -1234,5 +1210,5 @@ void QDeviceCtrl::on_lineEdit_3ResCode_editingFinished()
 	{
 		QMessageBox::about(this, tr("提示"), tr("入站成功"));
 		ui.dCbProcess3->setChecked(true);
-	}
+	}*/
 }

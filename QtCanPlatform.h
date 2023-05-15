@@ -39,18 +39,43 @@
 #include "kvaser.h"
 #include <QtConcurrent>
 #include <set>
+#include <qset.h>
 #include <QProgressDialog.h>
 #include "canthread.h"
 #include "mHttp.h"
 #include "HardWarePlin.h"
-
+#include "AutoDeviceManage.h"
 #include "QLogPlot.h"
+#include <qpointer.h>
+#include <qreadwritelock.h>
+#include <QMetaType>
+#include "Login.h"
 #pragma execution_character_set("utf-8")  
+
+struct UpMesData {
+    QString m_strRatedTemp;             //测额定功率冷却液的温度
+    QString m_strRatedVoltage;          //测额定功率高压电源的电压
+    QString m_strRatedFlow;             //测额定功率冷却液的流量
+    QString m_strBundrate;              //CAN通信的波特率
+    QString m_strLowVoltage;            //低压的电压
+    QString m_strVer;                   //软件版本
+    QString m_strLowProtected;          //欠压保护电压
+    QString m_strLowProtectedRe;        //欠压故障恢复电压
+    QString m_strHighProtected;         //过压保护电压
+    QString m_strHighProtectedRe;       //过压故障恢复电压
+    QString m_strRatedPW;               //测出来的额定功率
+    QString m_strOverTempProtected;     //过温保护
+    QString m_strOverTempProtectedRe;   //过温保护恢复
+    QString m_strOtherFault;            //其它错误
+    QString m_strTestResult;            //测试结果
+};
+
 class QtCanPlatform : public QMainWindow
 {
     Q_OBJECT
-
+   
 public:
+    
     QtCanPlatform(QWidget *parent = nullptr);
     ~QtCanPlatform();
     virtual void closeEvent(QCloseEvent* event) override;
@@ -89,6 +114,7 @@ private:
 private:
     void initUi();
     void initData();
+    void initAutoResTableWidget();
     bool sendDataIntoTab();
     bool recDataIntoTab();
     void sendData();
@@ -103,6 +129,12 @@ private:
     void recAnalyseIntel(int ch,unsigned int fream_id, QByteArray data);
     void recAnalyseMoto(int ch,unsigned int fream_id, QByteArray data);
 
+    void getByteInfo(const std::vector<parseData>& parse,int ch);
+    void setPowerSupply(const AutoTestStruct& at, int op);
+    void setHeatint(const AutoTestStruct& at, float value);
+    void setCancelHeatint(const AutoTestStruct& at, float value);
+    void getAveragePW(const AutoTestStruct& at);
+  
     //未使用
     void getModelTitle();
     //数据保存
@@ -118,11 +150,25 @@ private:
     void configSetFile();
     //自动测试工作流程函数
     void workRun();
+    void workAutoTest();
 
     //读取发送的数据
     void getSendDataFromTable();
 
     void saveAutoTestRes(const QString &fileName,const QStringList& data);
+    void showAutoTestStep(int n, QString data, QString remake);
+    void getVerAuto(const AutoTestStruct& at);
+    QStringList ucharToBinay(const uchar data[8]);
+
+    void on_pbMESConnect(bool);
+    void on_TCPStateChanged(QAbstractSocket::SocketState state);
+    void on_TCPDataReadyRec();
+    void on_TCPDataSend_MES(QByteArray data);
+    void runPostMes(QString str);
+    bool getMesResponed(QString str);
+    float getPowerResponed(QString str);
+    QString parserMESStr(QString str);
+    bool upMesOutData();
 
 private:
     std::vector<canIdData>recCanData;
@@ -209,10 +255,10 @@ private:
     int m_iHeatTempture = -15;                 //°C，进水口这个温度下开始测加热
     int m_iPowerTempture = 0;              //°C，这个温度下的额定功率
     int m_iOverTime = 300;                //秒，超过这个时间，这个测试部分就要跳过了
-    int m_iVoltError = 8;                  //电压误差
-    int m_iVoltStep = 4;                   //电压步进
+    int m_iVoltError = 8;                //电压误差
+    int m_iVoltStep = 4;                 //电压步进
     int rmFirstFream = 3;               //测功率时，到达指定条件后延迟帧数
-    int agvPowerFream = 60;             //测功率时的平均帧数;
+    int agvPowerFream = 10;             //测功率时的平均帧数;
     int m_iPowerVolt = 600;
     int bundRate = 250;
     QString m_sInWebAddr = "";
@@ -223,13 +269,50 @@ private:
     QString realHVErr[4] = { ""};
     QString realHvLv[4] = { ""};
     QString realOTPro[4] = { ""};
+    QString realOVTemp[4] = { ""};
     QString strErrorName = "高压异常";
     QString strOkName = "高压正常";
+    QString strBundRate[8] = { "200","250","500","800","2400","9600","10400","19200"};
     std::vector<float>PowerArr[4];
-    std::set<QString>Error[4];
+    QSet<QString>Error[4];
     int runStep = -1;
     bool isRecordError = false;
+    int _period_ = 1000;
+    QStringList testItemList;
+    QPushButton* pbStartAutoTest;
+    QPushButton* pbDevicesManage;
+    QPushButton* pbGeneralParameter;
+    QLineEdit* lineEditCodeIn;
+    QPushButton* pbSummitCode;
+    QTableWidget* tableAutoResults;
+    AutoDeviceManage* autoDevMan;
+    int m_bCommunication = 0;
+    struct protoData currentTestModel;
+    bool m_bGetVer;
+    bool m_bParseVer;
+    uchar m_arrVerCanMessage[8];
+    QStringList m_strVerCanMessage;
+    QReadWriteLock rw_Lock;
+    QReadWriteLock lock;
+    bool m_bResetfault;             //插入错误前清理已有的错误
+    bool CodeOk = false;
+    bool m_bMesOK = false;
+    //bool m_bPowerOK = false;
+    QLineEdit* LineEdit_IPAddr_Mes = nullptr;
+    QLineEdit* LineEdit_Port_Mes = nullptr;
+    QPushButton* pbConnectPLC_Mes = nullptr;
 
+    QTcpSocket* postMes = nullptr;
+    QMutex m_Mutex_Mes;
+    QMutex m_Mutex_Mes_Pop;
+    QMutex m_Mutex_Pow;
+    QMutex m_Mutex_Pow_Pop;
+    QQueue<QString>m_MESData;
+    QQueue<QString>m_PowerData;
+    std::atomic_bool _bIsRec_Mes = false;
+    std::atomic_bool _bIsRec_Pow = false;
+    QString m_strPHUCode;
+    UpMesData up_mes_var;
     QTimer* t_GetVer = nullptr;         //
     QPushButton* pbGetVer = nullptr;
     QLabel labelVer1;
@@ -270,8 +353,12 @@ private:
     int countRunTime = 0;
     uint timeStmp = 0;
     uint timeStmp_send = 0;
+
+    Login* canSeting;
+
 private slots:
       void on_CapturePower();
+      void on_canSettingShowFromLogin(int n);
 private slots:
     //CAN协议设置
     void qCanSettingShow();
@@ -330,12 +417,37 @@ private slots:
     void on_action_History_triggered();
 
     void on_pbLogReplay_clicked();
+    
+    //***************新版测试*****************//
+    //开启自动测试
+    void on_pbStartAutoTest_clicked(bool b);
+    //设备管理
+    void on_pbDevicesManage_clicked();
+    //通用参数
+    void on_pbGeneralParameter_clicked();
+    //处理测试线程的一些界面需求
+    void on_processAutoTestSignal(int n, QString str);
+    void on_lineEditCodeIn_editingFinished();
+    void on_pbSummitCode_clicked();
+    void on_SendMesState(int n, QString str);
+
+    void on_sigFromPowerNewData(QString data);
+    void on_sigFroMesNewData(QString data);
+
+    void on_sigFromThisPowerSet(QString data);
+
+   
+
 signals:
     void sigNewRoll();
     void sigSendHttp(QByteArray byte, int id);
     void sigNewRollMult(int ch);
     void sigEndRunWork(int n,int channel);
     void sigNewMessageToGraph(unsigned int fream_id, QByteArray byte,int dx);
+    void sigAutoTestSend(int n, QString str);
+    void sigSendPutMesData(QByteArray data);
+    void sigSendPutPowData(QString data);
+    void sigSendMesState(int n, QString str);
 public:
     void initLogger();
     void destroyLogger();

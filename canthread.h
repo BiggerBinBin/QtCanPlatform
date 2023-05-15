@@ -43,6 +43,7 @@ public:
     void stop();
     QStringList DetectDevice();
     bool openCAN(ushort debicIndex, ushort deviceChannel);
+    bool openCAN(ushort debicIndex, ushort deviceChannel, int bundRate);
     bool openCANAll(int bundRate);
 
     void closeCAN();

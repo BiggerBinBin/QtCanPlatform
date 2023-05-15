@@ -61,12 +61,12 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'" Label="QtSettings">
     <QtInstall>msvc2017_64</QtInstall>
-    <QtModules>core;network;gui;axcontainer;widgets;serialport;printsupport;concurrent;serialbus</QtModules>
+    <QtModules>core;xml;network;gui;axcontainer;widgets;serialport;printsupport;concurrent;serialbus</QtModules>
     <QtBuildConfig>release</QtBuildConfig>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="QtSettings">
     <QtInstall>msvc2017_32</QtInstall>
-    <QtModules>core;network;gui;axcontainer;widgets;serialport;concurrent;serialbus</QtModules>
+    <QtModules>core;xml;network;gui;axcontainer;widgets;serialport;concurrent;serialbus</QtModules>
     <QtBuildConfig>release</QtBuildConfig>
   </PropertyGroup>
   <Target Name="QtMsBuildNotFound" BeforeTargets="CustomBuild;ClCompile" Condition="!Exists('$(QtMsBuild)\qt.targets') or !Exists('$(QtMsBuild)\qt.props')">
@@ -104,7 +104,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>./Qslog/include;./kvaserX64/INC;./ControlCAN;./zdbc_lib;./PLIN-API/Include;./BLF/Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>./Qslog/include;./kvaserX64/INC;./ControlCAN;./zdbc_lib;./PLIN-API/Include;./BLF/Include;./QtSoap;./gSoapWeb;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>./QsLog/bin;C:\Qt\Qt5.13.2\5.13.2\msvc2017_64\lib;./kvaserX64/lib/X64;./ControlCAN/x64;./zdbc_lib/windows/x64;./PLIN-API/x64/VC_LIB;./BLF/LIB/x64_Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
@@ -113,7 +113,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>./Qslog/include;./kvaserX64/INC;./ControlCAN;./PLIN-API/Include;./zdbc_lib;./BLF/Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>./Qslog/include;./kvaserX64/INC;./ControlCAN;./PLIN-API/Include;./zdbc_lib;./BLF/Include;./QtSoap;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
@@ -127,7 +127,7 @@
       <AdditionalDependencies>QsLog2.lib;canlib32.lib;ControlCAN.lib;zdbc.lib;PLinApi.lib;binlog.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <ClCompile>
-      <AdditionalIncludeDirectories>./QsLog/include;./kvaserX64/INC;./ControlCAN;./zdbc_lib;./PLIN-API/Include;./BLF/Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>./QsLog/include;./kvaserX64/INC;./ControlCAN;./zdbc_lib;./PLIN-API/Include;./BLF/Include;./QtSoap;./gSoapWeb;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -136,7 +136,7 @@
       <AdditionalDependencies>QsLog2.lib;canlib32.lib;ControlCAN.lib;zdbc.lib;PLinApi.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <ClCompile>
-      <AdditionalIncludeDirectories>./QsLog/include;./kvaserX64/INC;./ControlCAN;./PLIN-API/Include;./zdbc_lib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>./QsLog/include;./kvaserX64/INC;./ControlCAN;./PLIN-API/Include;./zdbc_lib;./QtSoap;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'" Label="Configuration">
@@ -193,6 +193,8 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <QtRcc Include="QtCanPlatform.qrc" />
+    <QtUic Include="AutoDeviceManage.ui" />
+    <QtUic Include="Login.ui" />
     <QtUic Include="QAutoTestIniData.ui" />
     <QtUic Include="QCanSetting.ui" />
     <QtUic Include="QDeviceCtrl.ui" />
@@ -203,6 +205,7 @@
     <QtUic Include="QtCanPlatform.ui" />
     <QtMoc Include="QtCanPlatform.h" />
     <ClCompile Include="AlgorithmSet.cpp" />
+    <ClCompile Include="AutoDeviceManage.cpp" />
     <ClCompile Include="canthread.cpp" />
     <ClCompile Include="chex.cpp" />
     <ClCompile Include="DataSave.cpp" />
@@ -210,6 +213,7 @@
     <ClCompile Include="HardWareBase.cpp" />
     <ClCompile Include="HardWarePlin.cpp" />
     <ClCompile Include="kvaser.cpp" />
+    <ClCompile Include="Login.cpp" />
     <ClCompile Include="mHttp.cpp" />
     <ClCompile Include="PCAN.cpp" />
     <ClCompile Include="QAutoTestIniData.cpp" />
@@ -232,6 +236,7 @@
   <ItemGroup>
     <ClInclude Include="AlgorithmSet.h" />
     <QtMoc Include="canthread.h" />
+    <QtMoc Include="AutoDeviceManage.h" />
     <ClInclude Include="chex.h" />
     <QtMoc Include="QAutoTestIniData.h" />
     <QtMoc Include="mHttp.h" />
@@ -243,6 +248,7 @@
     <QtMoc Include="QSignalManage.h" />
     <QtMoc Include="QParseMessages.h" />
     <QtMoc Include="qcustomplot.h" />
+    <QtMoc Include="Login.h" />
     <ClInclude Include="resource.h" />
     <QtMoc Include="QMoudBusCtrl.h" />
     <QtMoc Include="DataSave.h" />

@@ -7,13 +7,13 @@
     <x>0</x>
     <y>0</y>
     <width>479</width>
-    <height>433</height>
+    <height>411</height>
    </rect>
   </property>
   <property name="minimumSize">
    <size>
     <width>400</width>
-    <height>433</height>
+    <height>300</height>
    </size>
   </property>
   <property name="windowTitle">
@@ -31,7 +31,7 @@
       </attribute>
       <layout class="QGridLayout" name="gridLayout_12">
        <item row="0" column="0">
-        <layout class="QVBoxLayout" name="verticalLayout_8" stretch="1,7">
+        <layout class="QVBoxLayout" name="verticalLayout_4">
          <item>
           <layout class="QHBoxLayout" name="horizontalLayout_25">
            <item>
@@ -45,27 +45,6 @@
             </widget>
            </item>
            <item>
-            <widget class="QCheckBox" name="dCbProcess1">
-             <property name="text">
-              <string>测试1#</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QCheckBox" name="dCbProcess2">
-             <property name="text">
-              <string>测试2#</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QCheckBox" name="dCbProcess3">
-             <property name="text">
-              <string>测试3#</string>
-             </property>
-            </widget>
-           </item>
-           <item>
             <widget class="QPushButton" name="pbTestParamSet">
              <property name="text">
               <string>参数SET</string>
@@ -75,117 +54,39 @@
           </layout>
          </item>
          <item>
-          <layout class="QVBoxLayout" name="verticalLayout_7" stretch="0,0,0,7">
+          <layout class="QHBoxLayout" name="horizontalLayout_26">
            <item>
-            <layout class="QHBoxLayout" name="horizontalLayout_26">
-             <item>
-              <widget class="QLabel" name="label_29">
-               <property name="text">
-                <string>1#二维码：</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QLineEdit" name="lineEdit_1ResCode"/>
-             </item>
-            </layout>
+            <widget class="QLabel" name="label_29">
+             <property name="text">
+              <string>1#二维码：</string>
+             </property>
+            </widget>
            </item>
            <item>
-            <layout class="QHBoxLayout" name="horizontalLayout_27">
-             <item>
-              <widget class="QLabel" name="label_30">
-               <property name="text">
-                <string>2#二维码：</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QLineEdit" name="lineEdit_2ResCode"/>
-             </item>
-            </layout>
+            <widget class="QLineEdit" name="lineEdit_1ResCode"/>
            </item>
            <item>
-            <layout class="QHBoxLayout" name="horizontalLayout_28">
-             <item>
-              <widget class="QLabel" name="label_31">
-               <property name="text">
-                <string>3#二维码：</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QLineEdit" name="lineEdit_3ResCode"/>
-             </item>
-            </layout>
-           </item>
-           <item>
-            <layout class="QHBoxLayout" name="horizontalLayout_23">
-             <item>
-              <layout class="QVBoxLayout" name="verticalLayout_4" stretch="0,7">
-               <item>
-                <widget class="QLabel" name="label_25">
-                 <property name="text">
-                  <string>1#结果</string>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QLabel" name="label_1Res">
-                 <property name="text">
-                  <string/>
-                 </property>
-                 <property name="alignment">
-                  <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
-                 </property>
-                </widget>
-               </item>
-              </layout>
-             </item>
-             <item>
-              <layout class="QVBoxLayout" name="verticalLayout_5" stretch="0,7">
-               <item>
-                <widget class="QLabel" name="label_27">
-                 <property name="text">
-                  <string>2#结果</string>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QLabel" name="label_2Res">
-                 <property name="text">
-                  <string/>
-                 </property>
-                 <property name="alignment">
-                  <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
-                 </property>
-                </widget>
-               </item>
-              </layout>
-             </item>
-             <item>
-              <layout class="QVBoxLayout" name="verticalLayout_6" stretch="0,7">
-               <item>
-                <widget class="QLabel" name="label_28">
-                 <property name="text">
-                  <string>3#结果</string>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QLabel" name="label_3Res">
-                 <property name="text">
-                  <string/>
-                 </property>
-                 <property name="alignment">
-                  <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
-                 </property>
-                </widget>
-               </item>
-              </layout>
-             </item>
-            </layout>
+            <widget class="QPushButton" name="pushButton">
+             <property name="text">
+              <string>提交</string>
+             </property>
+            </widget>
            </item>
           </layout>
+         </item>
+         <item>
+          <widget class="QTableWidget" name="tableWidget">
+           <column>
+            <property name="text">
+             <string>测试项</string>
+            </property>
+           </column>
+           <column>
+            <property name="text">
+             <string>测试结果</string>
+            </property>
+           </column>
+          </widget>
          </item>
         </layout>
        </item>
@@ -763,275 +664,7 @@
       <attribute name="title">
        <string>电源</string>
       </attribute>
-      <layout class="QGridLayout" name="gridLayout_8">
-       <item row="0" column="0">
-        <widget class="QGroupBox" name="groupBox_4">
-         <property name="maximumSize">
-          <size>
-           <width>16777215</width>
-           <height>150</height>
-          </size>
-         </property>
-         <property name="title">
-          <string>连接</string>
-         </property>
-         <layout class="QGridLayout" name="gridLayout_6">
-          <item row="0" column="0">
-           <layout class="QHBoxLayout" name="horizontalLayout_13">
-            <item>
-             <layout class="QVBoxLayout" name="verticalLayout">
-              <item>
-               <layout class="QHBoxLayout" name="horizontalLayout_3">
-                <item>
-                 <widget class="QLabel" name="label_3">
-                  <property name="sizePolicy">
-                   <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
-                    <horstretch>0</horstretch>
-                    <verstretch>0</verstretch>
-                   </sizepolicy>
-                  </property>
-                  <property name="text">
-                   <string>端口号：</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QComboBox" name="cbSerialPort"/>
-                </item>
-               </layout>
-              </item>
-              <item>
-               <layout class="QHBoxLayout" name="horizontalLayout_4">
-                <item>
-                 <widget class="QLabel" name="label_5">
-                  <property name="sizePolicy">
-                   <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
-                    <horstretch>0</horstretch>
-                    <verstretch>0</verstretch>
-                   </sizepolicy>
-                  </property>
-                  <property name="text">
-                   <string>数据位：</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QComboBox" name="cbDataBit">
-                  <item>
-                   <property name="text">
-                    <string>8</string>
-                   </property>
-                  </item>
-                  <item>
-                   <property name="text">
-                    <string>7</string>
-                   </property>
-                  </item>
-                  <item>
-                   <property name="text">
-                    <string>6</string>
-                   </property>
-                  </item>
-                  <item>
-                   <property name="text">
-                    <string>5</string>
-                   </property>
-                  </item>
-                 </widget>
-                </item>
-               </layout>
-              </item>
-              <item>
-               <layout class="QHBoxLayout" name="horizontalLayout_6">
-                <item>
-                 <widget class="QLabel" name="label_7">
-                  <property name="sizePolicy">
-                   <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
-                    <horstretch>0</horstretch>
-                    <verstretch>0</verstretch>
-                   </sizepolicy>
-                  </property>
-                  <property name="text">
-                   <string>停止位：</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QComboBox" name="cbStopBit">
-                  <item>
-                   <property name="text">
-                    <string>1</string>
-                   </property>
-                  </item>
-                  <item>
-                   <property name="text">
-                    <string>2</string>
-                   </property>
-                  </item>
-                  <item>
-                   <property name="text">
-                    <string>3</string>
-                   </property>
-                  </item>
-                 </widget>
-                </item>
-               </layout>
-              </item>
-             </layout>
-            </item>
-            <item>
-             <spacer name="horizontalSpacer_3">
-              <property name="orientation">
-               <enum>Qt::Horizontal</enum>
-              </property>
-              <property name="sizeHint" stdset="0">
-               <size>
-                <width>40</width>
-                <height>20</height>
-               </size>
-              </property>
-             </spacer>
-            </item>
-            <item>
-             <layout class="QVBoxLayout" name="verticalLayout_2">
-              <item>
-               <layout class="QHBoxLayout" name="horizontalLayout_2">
-                <item>
-                 <widget class="QLabel" name="label_4">
-                  <property name="text">
-                   <string>校验位</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QComboBox" name="cbPaity">
-                  <item>
-                   <property name="text">
-                    <string>无</string>
-                   </property>
-                  </item>
-                  <item>
-                   <property name="text">
-                    <string>偶校验</string>
-                   </property>
-                  </item>
-                  <item>
-                   <property name="text">
-                    <string>奇校验</string>
-                   </property>
-                  </item>
-                  <item>
-                   <property name="text">
-                    <string>空格校验</string>
-                   </property>
-                  </item>
-                  <item>
-                   <property name="text">
-                    <string>标记校验</string>
-                   </property>
-                  </item>
-                 </widget>
-                </item>
-               </layout>
-              </item>
-              <item>
-               <layout class="QHBoxLayout" name="horizontalLayout_5">
-                <item>
-                 <widget class="QLabel" name="label_6">
-                  <property name="text">
-                   <string>波特率</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QComboBox" name="cbBudRate">
-                  <property name="currentIndex">
-                   <number>3</number>
-                  </property>
-                  <item>
-                   <property name="text">
-                    <string>1200</string>
-                   </property>
-                  </item>
-                  <item>
-                   <property name="text">
-                    <string>2400</string>
-                   </property>
-                  </item>
-                  <item>
-                   <property name="text">
-                    <string>4800</string>
-                   </property>
-                  </item>
-                  <item>
-                   <property name="text">
-                    <string>9600</string>
-                   </property>
-                  </item>
-                  <item>
-                   <property name="text">
-                    <string>19200</string>
-                   </property>
-                  </item>
-                  <item>
-                   <property name="text">
-                    <string>38400</string>
-                   </property>
-                  </item>
-                  <item>
-                   <property name="text">
-                    <string>57600</string>
-                   </property>
-                  </item>
-                  <item>
-                   <property name="text">
-                    <string>115200</string>
-                   </property>
-                  </item>
-                 </widget>
-                </item>
-               </layout>
-              </item>
-              <item>
-               <layout class="QHBoxLayout" name="horizontalLayout_7">
-                <item>
-                 <widget class="QPushButton" name="pbConnectRTU">
-                  <property name="maximumSize">
-                   <size>
-                    <width>80</width>
-                    <height>16777215</height>
-                   </size>
-                  </property>
-                  <property name="text">
-                   <string>连接</string>
-                  </property>
-                  <property name="checkable">
-                   <bool>true</bool>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QPushButton" name="pbRefresh">
-                  <property name="maximumSize">
-                   <size>
-                    <width>60</width>
-                    <height>16777215</height>
-                   </size>
-                  </property>
-                  <property name="text">
-                   <string>刷新</string>
-                  </property>
-                 </widget>
-                </item>
-               </layout>
-              </item>
-             </layout>
-            </item>
-           </layout>
-          </item>
-         </layout>
-        </widget>
-       </item>
+      <layout class="QGridLayout" name="gridLayout_6">
        <item row="1" column="0">
         <widget class="QGroupBox" name="groupBox_5">
          <property name="title">
@@ -1039,155 +672,58 @@
          </property>
          <layout class="QGridLayout" name="gridLayout_7">
           <item row="0" column="0">
-           <layout class="QVBoxLayout" name="verticalLayout_3">
+           <layout class="QVBoxLayout" name="verticalLayout">
             <item>
-             <layout class="QHBoxLayout" name="horizontalLayout_14">
+             <layout class="QHBoxLayout" name="horizontalLayout_6">
               <item>
-               <widget class="QLabel" name="label_12">
-                <property name="text">
-                 <string>A路&gt; 电压：</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QLabel" name="label_Volt">
-                <property name="text">
-                 <string>000 V</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QLabel" name="label_14">
-                <property name="text">
-                 <string>电流：</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QLabel" name="label_Current">
-                <property name="text">
-                 <string>0 A</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QLabel" name="label_16">
-                <property name="text">
-                 <string>功率：</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QLabel" name="label_Power">
-                <property name="text">
-                 <string>0 kW</string>
-                </property>
-               </widget>
-              </item>
-             </layout>
-            </item>
-            <item>
-             <layout class="QHBoxLayout" name="horizontalLayout_15">
-              <item>
-               <widget class="QLabel" name="label_13">
-                <property name="text">
-                 <string>B路&gt; 电压：</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QLabel" name="label_Volt_2">
-                <property name="text">
-                 <string>000 V</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QLabel" name="label_15">
-                <property name="text">
-                 <string>电流：</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QLabel" name="label_Current_2">
-                <property name="text">
-                 <string>0 A</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QLabel" name="label_17">
-                <property name="text">
-                 <string>功率：</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QLabel" name="label_Power_2">
-                <property name="text">
-                 <string>0 kW</string>
-                </property>
-               </widget>
-              </item>
-             </layout>
-            </item>
-            <item>
-             <layout class="QHBoxLayout" name="horizontalLayout_8">
-              <item>
-               <widget class="QLabel" name="label_8">
-                <property name="text">
-                 <string>A路 电压(V)</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QSpinBox" name="spinBoxVolt">
-                <property name="minimumSize">
-                 <size>
-                  <width>80</width>
-                  <height>35</height>
-                 </size>
-                </property>
-                <property name="baseSize">
-                 <size>
-                  <width>60</width>
-                  <height>30</height>
-                 </size>
-                </property>
-                <property name="maximum">
-                 <number>1000</number>
-                </property>
-                <property name="singleStep">
-                 <number>10</number>
-                </property>
-                <property name="value">
-                 <number>100</number>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <layout class="QHBoxLayout" name="horizontalLayout_10">
+               <layout class="QHBoxLayout" name="horizontalLayout_3">
                 <item>
-                 <widget class="QLabel" name="label_9">
+                 <widget class="QLabel" name="label_5">
                   <property name="text">
-                   <string>电流(A)</string>
+                   <string>电源电压：</string>
                   </property>
                  </widget>
                 </item>
                 <item>
-                 <widget class="QDoubleSpinBox" name="spinBoxCurrent">
-                  <property name="minimumSize">
-                   <size>
-                    <width>80</width>
-                    <height>35</height>
-                   </size>
+                 <widget class="QLabel" name="label_ResVoltage">
+                  <property name="text">
+                   <string>0V</string>
                   </property>
-                  <property name="maximum">
-                   <double>70.000000000000000</double>
+                 </widget>
+                </item>
+               </layout>
+              </item>
+              <item>
+               <layout class="QHBoxLayout" name="horizontalLayout_4">
+                <item>
+                 <widget class="QLabel" name="label_7">
+                  <property name="text">
+                   <string>电源电流：</string>
                   </property>
-                  <property name="value">
-                   <double>30.000000000000000</double>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QLabel" name="label_ResCurrent">
+                  <property name="text">
+                   <string>0A</string>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </item>
+              <item>
+               <layout class="QHBoxLayout" name="horizontalLayout_5">
+                <item>
+                 <widget class="QLabel" name="label_8">
+                  <property name="text">
+                   <string>电源功率：</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QLabel" name="label_Reskilo">
+                  <property name="text">
+                   <string>0W</string>
                   </property>
                  </widget>
                 </item>
@@ -1198,59 +734,28 @@
             <item>
              <layout class="QHBoxLayout" name="horizontalLayout_9">
               <item>
-               <widget class="QLabel" name="label_10">
-                <property name="text">
-                 <string>B路 电压(V)</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QSpinBox" name="spinBoxVolt_2">
-                <property name="minimumSize">
-                 <size>
-                  <width>80</width>
-                  <height>35</height>
-                 </size>
-                </property>
-                <property name="baseSize">
-                 <size>
-                  <width>60</width>
-                  <height>30</height>
-                 </size>
-                </property>
-                <property name="maximum">
-                 <number>1000</number>
-                </property>
-                <property name="singleStep">
-                 <number>10</number>
-                </property>
-                <property name="value">
-                 <number>100</number>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <layout class="QHBoxLayout" name="horizontalLayout_11">
+               <layout class="QHBoxLayout" name="horizontalLayout_7">
                 <item>
-                 <widget class="QLabel" name="label_11">
+                 <widget class="QLineEdit" name="lineEdit"/>
+                </item>
+                <item>
+                 <widget class="QPushButton" name="pbSetVolate">
                   <property name="text">
-                   <string>电流(A)</string>
+                   <string>设置电压</string>
                   </property>
                  </widget>
                 </item>
+               </layout>
+              </item>
+              <item>
+               <layout class="QHBoxLayout" name="horizontalLayout_8">
                 <item>
-                 <widget class="QDoubleSpinBox" name="spinBoxCurrent_2">
-                  <property name="minimumSize">
-                   <size>
-                    <width>80</width>
-                    <height>35</height>
-                   </size>
-                  </property>
-                  <property name="maximum">
-                   <double>70.000000000000000</double>
-                  </property>
-                  <property name="value">
-                   <double>30.000000000000000</double>
+                 <widget class="QLineEdit" name="lineEdit_2"/>
+                </item>
+                <item>
+                 <widget class="QPushButton" name="pbSetCurrent">
+                  <property name="text">
+                   <string>设置电流</string>
                   </property>
                  </widget>
                 </item>
@@ -1259,21 +764,7 @@
              </layout>
             </item>
             <item>
-             <layout class="QHBoxLayout" name="horizontalLayout_12">
-              <item>
-               <widget class="QLabel" name="label_24">
-                <property name="text">
-                 <string>Step:</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QLineEdit" name="linedSetp">
-                <property name="text">
-                 <string>3</string>
-                </property>
-               </widget>
-              </item>
+             <layout class="QHBoxLayout" name="horizontalLayout_10">
               <item>
                <spacer name="horizontalSpacer">
                 <property name="orientation">
@@ -1288,35 +779,9 @@
                </spacer>
               </item>
               <item>
-               <widget class="QComboBox" name="cbSelectMachine">
-                <item>
-                 <property name="text">
-                  <string>双路</string>
-                 </property>
-                </item>
-                <item>
-                 <property name="text">
-                  <string>A路</string>
-                 </property>
-                </item>
-                <item>
-                 <property name="text">
-                  <string>B路</string>
-                 </property>
-                </item>
-               </widget>
-              </item>
-              <item>
-               <widget class="QPushButton" name="pbSetVoltAndCurr">
+               <widget class="QPushButton" name="pbOutPower">
                 <property name="text">
-                 <string>设置</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QPushButton" name="pbOffVolt">
-                <property name="text">
-                 <string>下高压</string>
+                 <string>输出</string>
                 </property>
                </widget>
               </item>
@@ -1326,6 +791,94 @@
           </item>
          </layout>
         </widget>
+       </item>
+       <item row="0" column="0">
+        <widget class="QGroupBox" name="groupBox_4">
+         <property name="maximumSize">
+          <size>
+           <width>16777215</width>
+           <height>150</height>
+          </size>
+         </property>
+         <property name="title">
+          <string>连接</string>
+         </property>
+         <layout class="QGridLayout" name="gridLayout_8">
+          <item row="0" column="0">
+           <layout class="QHBoxLayout" name="horizontalLayout_2">
+            <item>
+             <widget class="QLabel" name="label_3">
+              <property name="text">
+               <string>IP地址：</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLineEdit" name="lineEdit_PowerAddr">
+              <property name="maximumSize">
+               <size>
+                <width>200</width>
+                <height>16777215</height>
+               </size>
+              </property>
+              <property name="text">
+               <string>192.168.200.10</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="label_4">
+              <property name="text">
+               <string>端口：</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLineEdit" name="lineEdit_PowerPort">
+              <property name="maximumSize">
+               <size>
+                <width>50</width>
+                <height>16777215</height>
+               </size>
+              </property>
+              <property name="text">
+               <string>1001</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="pbTcpConnectPower">
+              <property name="maximumSize">
+               <size>
+                <width>40</width>
+                <height>16777215</height>
+               </size>
+              </property>
+              <property name="text">
+               <string>连接</string>
+              </property>
+              <property name="checkable">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item row="2" column="0">
+        <spacer name="verticalSpacer">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
        </item>
       </layout>
      </widget>

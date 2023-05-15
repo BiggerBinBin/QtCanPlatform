@@ -18,12 +18,14 @@
 #include <QSplitter>
 #include <qfiledialog.h>
 #include "dbcparser.h"
+#include <qlabel.h>
 QCanSetting::QCanSetting(QWidget *parent)
 	: QWidget(parent)
 {
 	ui.setupUi(this);
 	//让widget模态运行
 	this->setWindowModality(Qt::ApplicationModal);
+	this->userType = 0;
 	InitUi();
 	InitpGboleData();
 	this->showMaximized();
@@ -44,6 +46,21 @@ QCanSetting::~QCanSetting()
 	{
 		delete tableView; tableView = nullptr;
 	}
+	for (int m = 0; m < modelPb.size(); m++)
+	{
+		delete modelPb.at(m);
+		
+	}
+	for (int m = 0; m < canIDPb.size(); m++)
+	{
+		delete canIDPb.at(m);
+
+	}
+	for (int m = 0; m < itemdataPb.size(); m++)
+	{
+		delete itemdataPb.at(m);
+
+	}
 }
 
 void QCanSetting::closeEvent(QCloseEvent* event)
@@ -52,7 +69,26 @@ void QCanSetting::closeEvent(QCloseEvent* event)
 	emit settingWidowsClose();
 	QLOG_INFO() << "设备窗口关闭";
 }
+void QCanSetting::showEvent(QShowEvent* event)
+{
+	event->accept();
+	InitpGboleData();
+	for (int m = 0; m < modelPb.size(); m++)
+	{
+		modelPb.at(m)->setEnabled(this->userType);
 
+	}
+	for (int m = 0; m < canIDPb.size(); m++)
+	{
+		canIDPb.at(m)->setEnabled(this->userType);
+
+	}
+	for (int m = 0; m < itemdataPb.size(); m++)
+	{
+		itemdataPb.at(m)->setEnabled(this->userType);
+
+	}
+}
 void QCanSetting::InitUi()
 {
 	QLOG_INFO() << "正在初始化设置界面……";
@@ -90,6 +126,13 @@ void QCanSetting::InitUi()
 	hLayoutMdeol->addWidget(pbCopy);
 	hLayoutMdeol->addSpacerItem(new QSpacerItem(60, 20, QSizePolicy::Expanding));
 	hLayoutMdeol->setSpacing(0);
+	modelPb.append(pbImportDBC);
+	modelPb.append(pbAddModel);
+	modelPb.append(pbMoveUpModel);
+	modelPb.append(pbMoveDownModel);
+	modelPb.append(pbDelModel);
+	modelPb.append(pbCopy);
+
 	modelView = new QTableWidget();
 	modelView->setColumnCount(listname.size());
 	modelView->setHorizontalHeaderLabels(listname);
@@ -101,7 +144,7 @@ void QCanSetting::InitUi()
 	QVBoxLayout* vLayoutModel = new QVBoxLayout();
 	vLayoutModel->addLayout(hLayoutMdeol);
 	vLayoutModel->addWidget(modelView);
-	vLayoutModel->addSpacerItem(new QSpacerItem(20, 80, QSizePolicy::Expanding));
+	//vLayoutModel->addSpacerItem(new QSpacerItem(20, 80, QSizePolicy::Expanding));
 
 	listname.clear();
 	listname << "CanId" << "接收/发送"<<"启用(Send时)"<<"DLC";
@@ -128,6 +171,10 @@ void QCanSetting::InitUi()
 	hLayoutCanId->addWidget(pbSaveCanId);
 	hLayoutCanId->addSpacerItem(new QSpacerItem(20, 20, QSizePolicy::Expanding));
 	hLayoutCanId->setSpacing(0);
+	canIDPb.append(pbAddCanId);
+	canIDPb.append(pbMoveUpCanId);
+	canIDPb.append(pbMoveDownCanId);
+	canIDPb.append(pbDelCanId);
 	canIdView = new QTableWidget();
 	canIdView->setColumnCount(4);
 	canIdView->setHorizontalHeaderLabels(listname);
@@ -135,9 +182,23 @@ void QCanSetting::InitUi()
 	canIdView->setMinimumWidth(350);
 	connect(canIdView, SIGNAL(cellDoubleClicked(int, int)), this, SLOT(on_canIdView_doubleClicked(int, int)));
 	connect(canIdView, SIGNAL(cellClicked(int, int)), this, SLOT(on_canIdView_Clicked(int, int)));
+
+	//自动化测试参数部分
+	paramView = new QTableWidget(this);
+	listname.clear();
+	listname << tr("参数名称") << tr("参数值");
+	paramView->setColumnCount(2);
+	paramView->setHorizontalHeaderLabels(listname);
+	connect(paramView, SIGNAL(cellChanged(int, int)), this, SLOT(on_paramView_cellChanged(int, int)));
+	connect(paramView, SIGNAL(cellDoubleClicked(int, int)), this, SLOT(on_paramView_doubleCLicked(int, int)));
+	QLabel* autoTitle = new QLabel(this);
+	autoTitle->setText("自动测试参数");
+
 	QVBoxLayout* vLayoutCanId = new QVBoxLayout();
 	vLayoutCanId->addLayout(hLayoutCanId);
 	vLayoutCanId->addWidget(canIdView);
+	vLayoutCanId->addWidget(autoTitle);
+	vLayoutCanId->addWidget(paramView);
 	
 	//vLayoutCanId->addSpacerItem(new QSpacerItem(20, 80, QSizePolicy::Expanding));
 
@@ -159,6 +220,11 @@ void QCanSetting::InitUi()
 	hLayout->addWidget(pbSaveIteam);
 	hLayout->addSpacerItem(new QSpacerItem(20, 20, QSizePolicy::Expanding));
 	hLayout->setSpacing(0);
+	itemdataPb.append(pbAddIteam);
+	itemdataPb.append(pbMoveUpIteam);
+	itemdataPb.append(pbMoveDownIteam);
+	itemdataPb.append(pbDelIteam);
+
 	//hLayout->addSpacerItem(new QSpacerItem(20, 80, QSizePolicy::Expanding));
 	listname.clear();
 	listname << tr("字段名称") << tr("起止字节") << tr("起止位") << tr("长度") << tr("精度") << tr("偏移量")<<tr("属性")<<tr("滚动显示")<<tr("数据来源")<<tr("16进制");
@@ -170,9 +236,15 @@ void QCanSetting::InitUi()
 	connect(tableView, SIGNAL(cellDoubleClicked(int, int)), this, SLOT(on_tableView_doubleCLicked(int, int)));
 	tableView->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 	QVBoxLayout* vLayout = new QVBoxLayout();
+	
+
+	
+
+
 	vLayout->addLayout(hLayout);
 	vLayout->addWidget(tableView);
-	
+	//vLayout->addWidget(paramView);
+
 	QSplitter* splitterHor = new QSplitter(Qt::Horizontal);
 	QWidget* w1 = new QWidget(this);
 	QWidget* w2 = new QWidget(this);
@@ -204,6 +276,11 @@ void QCanSetting::InitUi()
 	
 	
 	QLOG_INFO() << "设置界面初始化完成，Good Job！";
+}
+void QCanSetting::setUserType(const int userTp) 
+{ 
+	this->userType = userTp;
+	
 }
 void QCanSetting::on_pbAddModel_clicked()
 {
@@ -285,9 +362,17 @@ void QCanSetting::SetTableData()
 	if (!qGb)return;
 	if (qGb->pGboleData.size() < 0)
 		return;
+	if (this->userType == 0)
+	{
+		modelView->setEditTriggers(QAbstractItemView::NoEditTriggers);
+	}
+	else
+	{
+		modelView->setEditTriggers(QAbstractItemView::DoubleClicked);
+	}
 	for (int i = 0; i < qGb->pGboleData.size(); ++i)
 	{
-		
+
 		modelView->setRowCount(i + 1);
 		QComboBox* proto = new QComboBox();
 		proto->addItem(tr("Intel"));
@@ -302,7 +387,9 @@ void QCanSetting::SetTableData()
 		bundRa->addItem("10400b/s");
 		bundRa->addItem("19200b/s");
 		bundRa->setCurrentIndex(qGb->pGboleData.at(i).bundRate);
+
 		
+
 		modelView->setItem(i, 0, new QTableWidgetItem(qGb->pGboleData.at(i).modelName));
 		modelView->setCellWidget(i, 1, proto);
 		modelView->setCellWidget(i, 2, bundRa);
@@ -311,7 +398,7 @@ void QCanSetting::SetTableData()
 		{
 			circle = 50;
 			qGb->pGboleData.at(i).circle = 50;
-		}	
+		}
 		else if (qGb->pGboleData.at(i).circle > 100000)
 		{
 			circle = 1000;
@@ -321,7 +408,7 @@ void QCanSetting::SetTableData()
 		{
 			circle = qGb->pGboleData.at(i).circle;
 		}
-			
+
 		modelView->setItem(i, 3, new QTableWidgetItem(QString::number(circle)));
 		proto->setCurrentIndex(qGb->pGboleData.at(i).agreement);
 
@@ -335,10 +422,22 @@ void QCanSetting::SetTableData()
 		connect(bundRa, SIGNAL(currentIndexChanged(int)), this, SLOT(on_modelView_bundIndexChanged(int)));
 		connect(proto, SIGNAL(currentIndexChanged(int)), this, SLOT(on_modelView_currentIndexChanged(int)));
 
-		
+
 		//平台选项
 		modelView->setItem(i, 5, new QTableWidgetItem(qGb->pGboleData.at(i).sPlatform));
-		
+
+		if (this->userType == 0) {
+			bundRa->setEnabled(false);
+			proto->setEnabled(false);
+			cbStandard->setEnabled(false);
+		}
+		else 
+		{ 
+			bundRa->setEnabled(true);
+			proto->setEnabled(true);
+			cbStandard->setEnabled(true);
+		}
+
 	}
 }
 
@@ -745,7 +844,7 @@ void QCanSetting::on_pbMoveUpIteam_clicked()
 	if (!qGb)return;
 	if (modelCurRow > qGb->pGboleData.size() - 1)
 	{
-		QMessageBox::warning(NULL, "warnning", tr("超出范围，不能上下移动"));
+		QMessageBox::warning(NULL, "warnning", QString("超出范围，不能上下移动"));
 		return;
 	}
 	if (canidCurRow > qGb->pGboleData.at(modelCurRow).cItem.size() - 1)
@@ -991,6 +1090,14 @@ void QCanSetting::on_modelView_Clicked(int row, int col)
 
 	if (row > qGb->pGboleData.size() - 1)
 		return;
+	if (0 == this->userType)
+	{
+		canIdView->setEditTriggers(QAbstractItemView::NoEditTriggers);
+	}
+	else
+	{
+		canIdView->setEditTriggers(QAbstractItemView::DoubleClicked);
+	}
 	try
 	{
 		for (int i = 0; i < qGb->pGboleData.at(row).cItem.size(); ++i)
@@ -1013,6 +1120,16 @@ void QCanSetting::on_modelView_Clicked(int row, int col)
 			QString len = QString::number(qGb->pGboleData.at(row).cItem.at(i).len);
 			canIdView->setItem(i, 3, new QTableWidgetItem(len));
 
+			if (0 == this->userType)
+			{
+				proto->setEnabled(false);
+				isSend->setEnabled(false);
+			}
+			else
+			{
+				proto->setEnabled(true);
+				isSend->setEnabled(true);
+			}
 		}
 	}
 	catch (const std::exception&e)
@@ -1024,6 +1141,62 @@ void QCanSetting::on_modelView_Clicked(int row, int col)
 	if (!tableView)
 		return;
 	on_canIdView_Clicked(0, 0);
+	int mc = paramView->rowCount();
+	for (int p = 0; p < paramView->rowCount(); p++)
+		paramView->removeRow(mc - p - 1);
+	paramView->setRowCount(21);
+	paramView->setItem(0, 0, new QTableWidgetItem(QString("使能所在行")));
+	paramView->setItem(0, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_iEnableInLine)));
+	paramView->setItem(1, 0, new QTableWidgetItem(QString("使能操作")));
+	paramView->setItem(1, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_iEnOp)));
+	paramView->setItem(2, 0, new QTableWidgetItem(QString("功率所在行")));
+	paramView->setItem(2, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_iPowerInLine)));
+	paramView->setItem(3, 0, new QTableWidgetItem(QString("欠压阈值V")));
+	paramView->setItem(3, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_iLowVoltage)));
+	paramView->setItem(4, 0, new QTableWidgetItem(QString("欠压恢复V")));
+	paramView->setItem(4, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_iLowVoltageRe)));
+
+
+	paramView->setItem(5, 0, new QTableWidgetItem(QString("过压阈值V")));
+	paramView->setItem(5, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_iOverVoltage)));
+	paramView->setItem(6, 0, new QTableWidgetItem(QString("过压恢复V")));
+	paramView->setItem(6, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_iOverVoltageRe)));
+
+	paramView->setItem(7, 0, new QTableWidgetItem(QString("过温保护°C")));
+	paramView->setItem(7, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_iOverTemperature)));
+	paramView->setItem(8, 0, new QTableWidgetItem(QString("过温恢复°C")));
+	paramView->setItem(8, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_iOverTempRe)));
+	paramView->setItem(9, 0, new QTableWidgetItem(QString("过温OK/NG误差°C")));
+	paramView->setItem(9, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_iOverTempTolerance)));
+
+
+	paramView->setItem(10, 0, new QTableWidgetItem(QString("额定电压V")));
+	paramView->setItem(10, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_iRatedVolt)));
+
+	paramView->setItem(11, 0, new QTableWidgetItem(QString("功率请求大小")));
+	paramView->setItem(11, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_fRequirePW)));
+	paramView->setItem(12, 0, new QTableWidgetItem(QString("额定功率")));
+	paramView->setItem(12, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_fRatedPW)));
+	paramView->setItem(13, 0, new QTableWidgetItem(QString("额定功率误差")));
+	paramView->setItem(13, 1, new QTableWidgetItem(qGb->pGboleData.at(row).ats.m_strTolerance));
+	
+
+	paramView->setItem(14, 0, new QTableWidgetItem(QString("软件版本")));
+	paramView->setItem(14, 1, new QTableWidgetItem(qGb->pGboleData.at(row).ats.m_strVer));
+	paramView->setItem(15, 0, new QTableWidgetItem(QString("版本接收ID")));
+	paramView->setItem(15, 1, new QTableWidgetItem(qGb->pGboleData.at(row).ats.m_strVerRecID));
+	paramView->setItem(16, 0, new QTableWidgetItem(QString("版本号个数")));
+	paramView->setItem(16, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_usIDBytelen)));
+	paramView->setItem(17, 0, new QTableWidgetItem(QString("Ver起止位")));
+	paramView->setItem(17, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_usIDByteStartbit)));
+
+	paramView->setItem(18, 0, new QTableWidgetItem(QString("测额定功率温度°C")));
+	paramView->setItem(18, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_usRatedPWTemp)));
+	paramView->setItem(19, 0, new QTableWidgetItem(QString("测额定功率流量L")));
+	paramView->setItem(19, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_usRatedPWFlow)));
+	paramView->setItem(20, 0, new QTableWidgetItem(QString("加热起始温度°C")));
+	paramView->setItem(20, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_usHeatTemp)));
+
 }
 
 void QCanSetting::on_modelView_cbStandar(int bStandard)
@@ -1184,6 +1357,14 @@ void QCanSetting::on_canIdView_Clicked(int row, int col)
 	int count = qGb->pGboleData.at(mRow).cItem.size()-1;
 	if (row > count)
 		return;
+	if (0 == this->userType)
+	{
+		tableView->setEditTriggers(QAbstractItemView::NoEditTriggers);
+	}
+	else
+	{
+		tableView->setEditTriggers(QAbstractItemView::DoubleClicked);
+	}
 	try
 	{
 		//显示对应CanID的项
@@ -1211,6 +1392,18 @@ void QCanSetting::on_canIdView_Clicked(int row, int col)
 			tableView->setCellWidget(i, 9, isHex);
 			isHex->setChecked(qGb->pGboleData.at(mRow).cItem.at(row).pItem.at(i).octhex);
 			connect(isHex, &QCheckBox::stateChanged, this, &QCanSetting::on_isHexCheckStateChanged);
+			if (0 == this->userType)
+			{
+				property->setEnabled(false);
+				isRoll->setEnabled(false);
+				isHex->setEnabled(false);
+			}
+			else
+			{
+				property->setEnabled(true);
+				isRoll->setEnabled(true);
+				isHex->setEnabled(true);
+			}
 		}
 	}
 	catch (const std::exception&e)
@@ -1463,4 +1656,108 @@ void QCanSetting::on_importDBC_clicked()
 		SetTableData();
 	}
 
+}
+
+void QCanSetting::on_pbSaveItemParam_clicked()
+{
+}
+
+void QCanSetting::on_paramView_doubleCLicked(int, int)
+{
+	connect(paramView, SIGNAL(cellChanged(int, int)), this, SLOT(on_paramView_cellChanged(int, int)));
+}
+
+void QCanSetting::on_paramView_cellChanged(int row, int col)
+{
+	if (row > 21 || col > 1 || row < 0 || col < 0)
+	{
+		disconnect(paramView, SIGNAL(cellChanged(int, int)), this, SLOT(on_paramView_cellChanged(int, int)));
+		return;
+	}
+	if (col != 1)
+	{
+		disconnect(paramView, SIGNAL(cellChanged(int, int)), this, SLOT(on_paramView_cellChanged(int, int)));
+		return;
+	}
+	int n = modelView->currentRow();
+	qGboleData* qGb = qGboleData::getInstance();
+	if (!qGb)
+	{
+		disconnect(paramView, SIGNAL(cellChanged(int, int)), this, SLOT(on_paramView_cellChanged(int, int)));
+		return;
+	}
+	if (n < 0 || n>qGb->pGboleData.size() - 1)
+	{
+		disconnect(paramView, SIGNAL(cellChanged(int, int)), this, SLOT(on_paramView_cellChanged(int, int)));
+		return;
+	}
+	switch (row)
+	{
+	case 0:
+		qGb->pGboleData.at(n).ats.m_iEnableInLine = paramView->item(row, col)->text().toInt();
+		break;
+	case 1:
+		qGb->pGboleData.at(n).ats.m_iEnOp = paramView->item(row, col)->text().toInt();
+		break;
+	case 2:
+		qGb->pGboleData.at(n).ats.m_iPowerInLine = paramView->item(row, col)->text().toInt();
+		break;
+	case 3:
+		qGb->pGboleData.at(n).ats.m_iLowVoltage = paramView->item(row, col)->text().toInt();
+		break;
+	case 4:
+		qGb->pGboleData.at(n).ats.m_iLowVoltageRe = paramView->item(row, col)->text().toInt();
+		break;
+	case 5:
+		qGb->pGboleData.at(n).ats.m_iOverVoltage = paramView->item(row, col)->text().toInt();
+		break;
+	case 6:
+		qGb->pGboleData.at(n).ats.m_iOverVoltageRe = paramView->item(row, col)->text().toInt();
+		break;
+	case 7:
+		qGb->pGboleData.at(n).ats.m_iOverTemperature = paramView->item(row, col)->text().toInt();
+		break;
+	case 8:
+		qGb->pGboleData.at(n).ats.m_iOverTempRe = paramView->item(row, col)->text().toInt();
+		break;
+	case 9:
+		qGb->pGboleData.at(n).ats.m_iOverTempTolerance = paramView->item(row, col)->text().toInt();
+		break;
+	case 10:
+		qGb->pGboleData.at(n).ats.m_iRatedVolt = paramView->item(row, col)->text().toInt();
+		break;
+	case 11:
+		qGb->pGboleData.at(n).ats.m_fRequirePW = paramView->item(row, col)->text().toInt();
+		break;
+	case 12:
+		qGb->pGboleData.at(n).ats.m_fRatedPW = paramView->item(row, col)->text().toInt();
+		break;
+	case 13:
+		qGb->pGboleData.at(n).ats.m_strTolerance = paramView->item(row, col)->text();
+		break;
+	case 14:
+		qGb->pGboleData.at(n).ats.m_strVer = paramView->item(row, col)->text();
+		break;
+	case 15:
+		qGb->pGboleData.at(n).ats.m_strVerRecID = paramView->item(row, col)->text();
+		break;
+	case 16:
+		qGb->pGboleData.at(n).ats.m_usIDBytelen = paramView->item(row, col)->text().toUShort();
+		break;
+	case 17:
+		qGb->pGboleData.at(n).ats.m_usIDByteStartbit = paramView->item(row, col)->text().toUShort();
+		break;
+	case 18:
+		qGb->pGboleData.at(n).ats.m_usRatedPWTemp = paramView->item(row, col)->text().toShort();
+		break;
+	case 19:
+		qGb->pGboleData.at(n).ats.m_usRatedPWFlow = paramView->item(row, col)->text().toUShort();
+		break;
+	case 20:
+		qGb->pGboleData.at(n).ats.m_usHeatTemp = paramView->item(row, col)->text().toShort();
+		break;
+	default:
+		break;
+	}
+	disconnect(paramView, SIGNAL(cellChanged(int, int)), this, SLOT(on_paramView_cellChanged(int, int)));
 }

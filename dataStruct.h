@@ -3,6 +3,33 @@
 #include <iostream>
 #include<vector>
 #include <QColor>
+
+struct AutoTestStruct
+{
+	int m_iEnableInLine;		//0 使能按钮所在行
+	int m_iEnOp;				//1 使能时下拉框选哪个，亿华通是2，其它是1，唉
+	int m_iPowerInLine;			//2 功率输入框所在行
+	int m_iLowVoltage;			//3 高压欠压阈值
+	int m_iLowVoltageRe;		//4 欠压恢复
+	int m_iOverVoltage;			//5 高压过压阈值
+	int m_iOverVoltageRe;		//6 过压恢复
+	int m_iOverTemperature;		//7 过温保护
+	int m_iOverTempRe;			//8 过温恢复
+	int m_iOverTempTolerance;	//9 过温恢复/保护误差
+	int m_iRatedVolt;			//10 额定电压
+	float m_fRequirePW;			//11 测试时请求的功率，有的是占空比，有的是功率，所以需要这个参数
+	float m_fRatedPW;			//12 额定功率
+	QString m_strTolerance;		//13 功率误差
+	QString m_strVer;			//14 软件版本号
+	QString m_strVerRecID;		//15 版本号解析的ID
+	ushort m_usIDBytelen;		//16 版本由几个字段组成
+	ushort m_usIDByteStartbit;	//17 版本解析的起止位
+	int m_usRatedPWTemp;		//18 额定功率的温度
+	int m_usRatedPWFlow;		//19 额定功率的流量
+	int m_usHeatTemp;			//20 加热起始温度
+	//bool isIndepandSend;
+
+};
 struct RollStruct
 {
 	float value;
@@ -71,6 +98,7 @@ struct protoData {
 	std::vector<canIdData>cItem;	//数据
 	bool bStandardId;				//是否为标准帧
 	QString sPlatform;				//平台:3kW,5kW,7kW,10kW,15kW
+	struct AutoTestStruct ats;		//自动测试参数
 };
 struct autoTestData {
 	int m_iLowVolt;				//欠压起步电压

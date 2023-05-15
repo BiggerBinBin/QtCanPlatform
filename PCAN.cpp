@@ -147,6 +147,7 @@ void PCAN::SendFrame(int FrameID, uchar Data[])
     frame.setPayload(payload);
     //    qDebug()<<"打印输出"<<payload;
     m_canDevice->writeFrame(frame);
+    m_canDevice->waitForFramesWritten(100);
 }
 void PCAN::SendFrame(int FrameID, uchar Data[],bool bStandard)
 {
@@ -168,6 +169,7 @@ void PCAN::SendFrame(int FrameID, uchar Data[],bool bStandard)
     frame.setPayload(payload);
     //    qDebug()<<"打印输出"<<payload;
     m_canDevice->writeFrame(frame);
+    m_canDevice->waitForFramesWritten(100);
 }
 void PCAN::CloseCan()
 {
