@@ -65,7 +65,7 @@ QtCanPlatform::QtCanPlatform(QWidget *parent)
     autoDevMan = nullptr;
     m_bGetVer = false;
     m_bParseVer = false;
-
+    m_usRoll = 0;
 }
 
 QtCanPlatform::~QtCanPlatform()
@@ -1039,6 +1039,14 @@ bool QtCanPlatform::intelProtocol(canIdData& cdata,uchar data[], unsigned int& f
             crc = true;
         }
         startbyte = YB::InRang(0, 7, startbyte);
+        if (itemp.dataFrom.contains("++"))
+        {
+            int iTemp = itemp.dataFrom.mid(2).toInt();
+            if (m_usRoll > iTemp)m_usRoll = 0;
+            data[startbyte] = m_usRoll++;
+            continue;
+        }
+        
         if (lengght <= 8)
         {
             int pos = startbit % 8;             //起止位，模8，1字节8位，uchar是1节长度的
@@ -2742,6 +2750,7 @@ void QtCanPlatform::on_pbSend_clicked(bool clicked)
 {
     if (clicked)
     {
+        m_usRoll = 0;
         qGboleData* qGb = qGboleData::getInstance();
         if (!qGb)return;
         

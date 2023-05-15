@@ -111,6 +111,7 @@ private:
     std::atomic_int _iSetp = 0;
 
     int currentModel = -1;
+    ushort m_usRoll;
 private:
     void initUi();
     void initData();
