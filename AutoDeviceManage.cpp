@@ -396,7 +396,7 @@ bool AutoDeviceManage::setCoolantTemp(int temp2, int flow2,bool cooling, bool ou
 	h8bit = flow >> 8;
 	data[3] = h8bit;
 	data[2] = l8bit;
-	m_pWaterCAN->sendData(0x1, data);
+	m_pWaterCAN->sendData(0x01, data,false);
 	return true;
 }
 void AutoDeviceManage::onReceiveData(int ch , quint32 fream_id, QByteArray data)
@@ -499,7 +499,7 @@ void AutoDeviceManage::on_pbStartInCricle_clicked(bool isCheck)
 	h8bit = flow >> 8;
 	data[3] = h8bit;
 	data[2] = l8bit;
-	m_pWaterCAN.data()->sendData(0x1, data);
+	m_pWaterCAN.data()->sendData(0x01, data, false);
 }
 void AutoDeviceManage::on_pbStartOutCricle_clicked(bool isCheck)
 {
@@ -521,7 +521,6 @@ void AutoDeviceManage::on_pbStartOutCricle_clicked(bool isCheck)
 		var = temp * 10;
 	//µÍ8Î»
 	uchar l8bit = 0xFF & var;
-	//¸ß8Î»
 	uchar h8bit = var >> 8;
 	data[1] = h8bit;
 	data[0] = l8bit;
@@ -531,7 +530,7 @@ void AutoDeviceManage::on_pbStartOutCricle_clicked(bool isCheck)
 	h8bit = flow >> 8;
 	data[3] = h8bit;
 	data[2] = l8bit;
-	m_pWaterCAN.data()->sendData(0x1, data);
+	m_pWaterCAN.data()->sendData(0x01, data,false);
 }
 void AutoDeviceManage::on_pbBlowWater_clicked(bool isCheck)
 {
@@ -560,7 +559,7 @@ void AutoDeviceManage::on_pbBlowWater_clicked(bool isCheck)
 	}
 	else
 		data[6] = 0x1;
-	m_pWaterCAN.data()->sendData(0x1, data);
+	m_pWaterCAN.data()->sendData(0x01, data);
 }
 void AutoDeviceManage::on_pbGrasp_clicked(bool isClicked)
 {

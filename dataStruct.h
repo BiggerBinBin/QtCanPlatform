@@ -3,7 +3,7 @@
 #include <iostream>
 #include<vector>
 #include <QColor>
-
+#include <QTimer>
 struct AutoTestStruct
 {
 	int m_iEnableInLine;		//0 使能按钮所在行
@@ -27,6 +27,8 @@ struct AutoTestStruct
 	int m_usRatedPWTemp;		//18 额定功率的温度
 	int m_usRatedPWFlow;		//19 额定功率的流量
 	int m_usHeatTemp;			//20 加热起始温度
+	int m_usCoolTemp;			//21 制冷温度
+	int m_bTurnOffFlow;			//22 测试过温保护时是否关闭流量
 	//bool isIndepandSend;
 
 };
@@ -85,6 +87,8 @@ struct canIdData {
 	bool isSend;							//是否启用这个ID
 	uint8_t opt;							//接收报文还是发送报文
 	uint8_t len;							//数据长度，LIN通信用
+	int circle;						//当为发送ID时，此ID的发送周期
+	QTimer* timeAdd;							//定时器地址
 	QString strCanId;						//CAN-ID
 	std::vector<struct protoItem>pItem;		//数据
 };

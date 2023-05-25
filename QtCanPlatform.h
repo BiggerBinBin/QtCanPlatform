@@ -50,6 +50,7 @@
 #include <qreadwritelock.h>
 #include <QMetaType>
 #include "Login.h"
+
 #pragma execution_character_set("utf-8")  
 
 struct UpMesData {
@@ -150,13 +151,13 @@ private:
     //配置
     void configSetFile();
     //自动测试工作流程函数
-    void workRun();
+    //void workRun();
     void workAutoTest();
 
     //读取发送的数据
     void getSendDataFromTable();
 
-    void saveAutoTestRes(const QString &fileName,const QStringList& data);
+    //void saveAutoTestRes(const QString &fileName,const QStringList& data);
     void showAutoTestStep(int n, QString data, QString remake);
     void getVerAuto(const AutoTestStruct& at);
     QStringList ucharToBinay(const uchar data[8]);
@@ -180,6 +181,8 @@ private:
     PCAN *pcan = nullptr;
     //多通道pcan设备指针
     PCAN *pcanArr[4] = { nullptr };
+  
+    
     //canayst设备指针
     CANThread* canayst= nullptr ;
     //kvaser设备指针
@@ -250,17 +253,17 @@ private:
     QDateTime lastTime;
 
     //自动判断的条件与判断值
-    int lowVolt = 330;      //V,这个电压下开始测低压保护
-    int highVolt = 740;     //V,这个电压下开始测高压保护
-    int avgPower = 7000;    //平均功率,未用到
-    int m_iHeatTempture = -15;                 //°C，进水口这个温度下开始测加热
-    int m_iPowerTempture = 0;              //°C，这个温度下的额定功率
-    int m_iOverTime = 300;                //秒，超过这个时间，这个测试部分就要跳过了
-    int m_iVoltError = 8;                //电压误差
-    int m_iVoltStep = 4;                 //电压步进
-    int rmFirstFream = 3;               //测功率时，到达指定条件后延迟帧数
+    //int lowVolt = 330;      //V,这个电压下开始测低压保护
+    //int highVolt = 740;     //V,这个电压下开始测高压保护
+    //int avgPower = 7000;    //平均功率,未用到
+    //int m_iHeatTempture = -15;                 //°C，进水口这个温度下开始测加热
+    //int m_iPowerTempture = 0;              //°C，这个温度下的额定功率
+    //int m_iOverTime = 300;                //秒，超过这个时间，这个测试部分就要跳过了
+    //int m_iVoltError = 8;                //电压误差
+    //int m_iVoltStep = 4;                 //电压步进
+    //int rmFirstFream = 3;               //测功率时，到达指定条件后延迟帧数
     int agvPowerFream = 10;             //测功率时的平均帧数;
-    int m_iPowerVolt = 600;
+    //int m_iPowerVolt = 600;
     int bundRate = 250;
     QString m_sInWebAddr = "";
     QString m_sOutWebAddr = "";
@@ -354,8 +357,10 @@ private:
     int countRunTime = 0;
     uint timeStmp = 0;
     uint timeStmp_send = 0;
-
+    //登录界面
     Login* canSeting;
+    //多个发送周期标识，>1即为多个发送周期
+    int multiCircle;
 
 private slots:
       void on_CapturePower();
@@ -382,6 +387,7 @@ private slots:
     void on_ReceiveDataLIN(uint frame_id, QByteArray data,int reserve);
     void on_ReceiveDataMulti(uint frame_id, QByteArray data);
     void on_ReceiveData(int ch,uint frame_id, QByteArray data);
+    //void on_ReceiveData2(ushort ch,uint frame_id, uchar data[8]);
     //CAN协议设置的窗口关闭响应，用来刷新设置的数据
     void on_SettingWidowsClose();
     //“发送表格”中的下拉框操作
@@ -401,9 +407,9 @@ private slots:
     void on_recTimeout();
     void on_recTimeoutMutil();
     //自动化工作
-    void on_autoWork(bool isRun);
+    //void on_autoWork(bool isRun);
     //自动化工作线程发出的信号的接收函数
-    void on_recSigEndRunWork(int n,int channel);
+    //void on_recSigEndRunWork(int n,int channel);
     //debug用的step
     void on_lineEdit_editingFinished();
     //获取版本号（博世专用）

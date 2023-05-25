@@ -104,7 +104,8 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>./Qslog/include;./kvaserX64/INC;./ControlCAN;./zdbc_lib;./PLIN-API/Include;./BLF/Include;./QtSoap;./gSoapWeb;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>./Qslog/include;./kvaserX64/INC;./ControlCAN;./zdbc_lib;./PLIN-API/Include;./BLF/Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>./QsLog/bin;C:\Qt\Qt5.13.2\5.13.2\msvc2017_64\lib;./kvaserX64/lib/X64;./ControlCAN/x64;./zdbc_lib/windows/x64;./PLIN-API/x64/VC_LIB;./BLF/LIB/x64_Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
@@ -113,7 +114,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>./Qslog/include;./kvaserX64/INC;./ControlCAN;./PLIN-API/Include;./zdbc_lib;./BLF/Include;./QtSoap;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>./Qslog/include;./kvaserX64/INC;./ControlCAN;./PLIN-API/Include;./zdbc_lib;./BLF/Include;./QtSoap;F:\Lyb-file\Code\BootLoader\Kus_PHU_Bootloader_2.0\DeviceIO;F:\Lyb-file\Code\BootLoader\Kus_PHU_Bootloader_2.0\DeviceIO\third-part\PCAN-Basic API\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
@@ -204,10 +205,12 @@
     <QtUic Include="QSignalManage.ui" />
     <QtUic Include="QtCanPlatform.ui" />
     <QtMoc Include="QtCanPlatform.h" />
+    <ClCompile Include="Abstract\LogAbstract.cpp" />
     <ClCompile Include="AlgorithmSet.cpp" />
     <ClCompile Include="AutoDeviceManage.cpp" />
     <ClCompile Include="canthread.cpp" />
     <ClCompile Include="chex.cpp" />
+    <ClCompile Include="CoolantAbstract.cpp" />
     <ClCompile Include="DataSave.cpp" />
     <ClCompile Include="dbcparser.cpp" />
     <ClCompile Include="HardWareBase.cpp" />
@@ -234,12 +237,14 @@
     <QtMoc Include="QCanSetting.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Abstract\LogAbstract.h" />
     <ClInclude Include="AlgorithmSet.h" />
     <QtMoc Include="canthread.h" />
     <QtMoc Include="AutoDeviceManage.h" />
     <ClInclude Include="chex.h" />
     <QtMoc Include="QAutoTestIniData.h" />
     <QtMoc Include="mHttp.h" />
+    <QtMoc Include="CoolantAbstract.h" />
     <ClInclude Include="dbcparser.h" />
     <QtMoc Include="HardWareBase.h" />
     <QtMoc Include="HardWarePlin.h" />

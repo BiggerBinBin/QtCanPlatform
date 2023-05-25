@@ -72,22 +72,7 @@ void QCanSetting::closeEvent(QCloseEvent* event)
 void QCanSetting::showEvent(QShowEvent* event)
 {
 	event->accept();
-	InitpGboleData();
-	for (int m = 0; m < modelPb.size(); m++)
-	{
-		modelPb.at(m)->setEnabled(this->userType);
-
-	}
-	for (int m = 0; m < canIDPb.size(); m++)
-	{
-		canIDPb.at(m)->setEnabled(this->userType);
-
-	}
-	for (int m = 0; m < itemdataPb.size(); m++)
-	{
-		itemdataPb.at(m)->setEnabled(this->userType);
-
-	}
+	
 }
 void QCanSetting::InitUi()
 {
@@ -147,7 +132,7 @@ void QCanSetting::InitUi()
 	//vLayoutModel->addSpacerItem(new QSpacerItem(20, 80, QSizePolicy::Expanding));
 
 	listname.clear();
-	listname << "CanId" << "接收/发送"<<"启用(Send时)"<<"DLC";
+	listname << "CanId" << "接收/发送"<<"启用(Send时)"<<"DLC"<<"Circle";
 	QPushButton* pbAddCanId = new QPushButton("添加ID");
 	connect(pbAddCanId, &QPushButton::clicked, this, &QCanSetting::on_pbAddCanId_clicked);
 	QPushButton* pbMoveUpCanId = new QPushButton("上移");
@@ -176,7 +161,7 @@ void QCanSetting::InitUi()
 	canIDPb.append(pbMoveDownCanId);
 	canIDPb.append(pbDelCanId);
 	canIdView = new QTableWidget();
-	canIdView->setColumnCount(4);
+	canIdView->setColumnCount(5);
 	canIdView->setHorizontalHeaderLabels(listname);
 	canIdView->setSelectionBehavior(QAbstractItemView::SelectRows);
 	canIdView->setMinimumWidth(350);
@@ -281,6 +266,25 @@ void QCanSetting::setUserType(const int userTp)
 { 
 	this->userType = userTp;
 	
+}
+void QCanSetting::reInitUI()
+{
+	InitpGboleData();
+	for (int m = 0; m < modelPb.size(); m++)
+	{
+		modelPb.at(m)->setEnabled(this->userType);
+
+	}
+	for (int m = 0; m < canIDPb.size(); m++)
+	{
+		canIDPb.at(m)->setEnabled(this->userType);
+
+	}
+	for (int m = 0; m < itemdataPb.size(); m++)
+	{
+		itemdataPb.at(m)->setEnabled(this->userType);
+
+	}
 }
 void QCanSetting::on_pbAddModel_clicked()
 {
@@ -603,10 +607,12 @@ void QCanSetting::on_pbAddCanId_clicked()
 	isSend->setChecked(false);
 	canIdView->setCellWidget(row, 2, isSend);
 	canIdView->setItem(row, 3, new QTableWidgetItem(tr("8")));
+	canIdView->setItem(row, 4, new QTableWidgetItem(tr("-1")));
 	canIdData cdata;
 	cdata.strCanId = canIdView->item(row,0)->text();
 	cdata.opt = 0;
 	cdata.len = 8;
+	cdata.circle = -1;
 	qGb->pGboleData.at(curSelectRow).cItem.push_back(cdata);
 	connect(isSend, &QCheckBox::stateChanged, this, &QCanSetting::on_canIdView_SendChanged);
 	connect(proto, SIGNAL(currentIndexChanged(int)), this, SLOT(on_canIdView_currentIndexChanged(int)));
@@ -634,11 +640,13 @@ void QCanSetting::on_pbMoveUpCanId_clicked()
 	QComboBox* cb = dynamic_cast<QComboBox*>(canIdView->cellWidget(curRow + 1, 1));
 	QCheckBox* ch = dynamic_cast<QCheckBox*>(canIdView->cellWidget(curRow + 1, 2));
 	QString len = canIdView->item(curRow + 1, 3)->text();
+	QString circle = canIdView->item(curRow + 1, 4)->text();
 	//在单元格要设置一个Item，不然直接丢元素进去
 	canIdView->setItem(curRow - 1, 0, new QTableWidgetItem(idtex));
 	canIdView->setCellWidget(curRow - 1, 1, cb);
 	canIdView->setCellWidget(curRow - 1, 2, ch);
 	canIdView->setItem(curRow - 1, 3, new QTableWidgetItem(len));
+	canIdView->setItem(curRow - 1, 4, new QTableWidgetItem(circle));
 	//删除原来行，因为在它前面新增了一行，所以序号要变
 	canIdView->removeRow(curRow + 1);
 	canIdView->setCurrentCell(curRow - 1, 0);
@@ -672,10 +680,12 @@ void QCanSetting::on_pbMoveDownCanId_clicked()
 	QComboBox* cb = dynamic_cast<QComboBox*>(canIdView->cellWidget(curRow, 1));
 	QCheckBox* ch = dynamic_cast<QCheckBox*>(canIdView->cellWidget(curRow, 2));
 	QString len = canIdView->item(curRow, 3)->text();
+	QString circle = canIdView->item(curRow, 4)->text();
 	canIdView->setItem(curRow + 2, 0, new QTableWidgetItem(idtex));
 	canIdView->setCellWidget(curRow + 2, 1, cb);
 	canIdView->setCellWidget(curRow + 2, 2, ch);
 	canIdView->setItem(curRow + 2, 3, new QTableWidgetItem(len));
+	canIdView->setItem(curRow + 2, 4, new QTableWidgetItem(circle));
 	canIdView->removeRow(curRow );
 	canIdView->setCurrentCell(curRow + 1, 0);
 	qGboleData* qGb = qGboleData::getInstance();
@@ -1119,6 +1129,7 @@ void QCanSetting::on_modelView_Clicked(int row, int col)
 			connect(isSend, &QCheckBox::stateChanged, this, &QCanSetting::on_canIdView_SendChanged);
 			QString len = QString::number(qGb->pGboleData.at(row).cItem.at(i).len);
 			canIdView->setItem(i, 3, new QTableWidgetItem(len));
+			canIdView->setItem(i, 4, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).cItem.at(i).circle)));
 
 			if (0 == this->userType)
 			{
@@ -1144,7 +1155,7 @@ void QCanSetting::on_modelView_Clicked(int row, int col)
 	int mc = paramView->rowCount();
 	for (int p = 0; p < paramView->rowCount(); p++)
 		paramView->removeRow(mc - p - 1);
-	paramView->setRowCount(21);
+	paramView->setRowCount(23);
 	paramView->setItem(0, 0, new QTableWidgetItem(QString("使能所在行")));
 	paramView->setItem(0, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_iEnableInLine)));
 	paramView->setItem(1, 0, new QTableWidgetItem(QString("使能操作")));
@@ -1196,6 +1207,11 @@ void QCanSetting::on_modelView_Clicked(int row, int col)
 	paramView->setItem(19, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_usRatedPWFlow)));
 	paramView->setItem(20, 0, new QTableWidgetItem(QString("加热起始温度°C")));
 	paramView->setItem(20, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_usHeatTemp)));
+	paramView->setItem(21, 0, new QTableWidgetItem(QString("制冷温度°C")));
+	paramView->setItem(21, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_usCoolTemp)));
+
+	paramView->setItem(22, 0, new QTableWidgetItem(QString("测过温关流量？")));
+	paramView->setItem(22, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_bTurnOffFlow)));
 
 }
 
@@ -1313,6 +1329,8 @@ void QCanSetting::on_canIdView_cellChanged(int row, int col)
 			qGb->pGboleData.at(mCurRow).cItem.at(row).strCanId = canIdView->item(row,col)->text().trimmed();
 		else if(3==col)
 			qGb->pGboleData.at(mCurRow).cItem.at(row).len = canIdView->item(row, col)->text().trimmed().toInt();
+		else if(4==col)
+			qGb->pGboleData.at(mCurRow).cItem.at(row).circle = canIdView->item(row, col)->text().trimmed().toInt();
 	}
 	catch (const std::exception&e)
 	{
@@ -1669,7 +1687,7 @@ void QCanSetting::on_paramView_doubleCLicked(int, int)
 
 void QCanSetting::on_paramView_cellChanged(int row, int col)
 {
-	if (row > 21 || col > 1 || row < 0 || col < 0)
+	if (row > 23 || col > 1 || row < 0 || col < 0)
 	{
 		disconnect(paramView, SIGNAL(cellChanged(int, int)), this, SLOT(on_paramView_cellChanged(int, int)));
 		return;
@@ -1755,6 +1773,12 @@ void QCanSetting::on_paramView_cellChanged(int row, int col)
 		break;
 	case 20:
 		qGb->pGboleData.at(n).ats.m_usHeatTemp = paramView->item(row, col)->text().toShort();
+		break;
+	case 21:
+		qGb->pGboleData.at(n).ats.m_usCoolTemp = paramView->item(row, col)->text().toShort();
+		break;
+	case 22:
+		qGb->pGboleData.at(n).ats.m_bTurnOffFlow = paramView->item(row, col)->text().toUShort();
 		break;
 	default:
 		break;

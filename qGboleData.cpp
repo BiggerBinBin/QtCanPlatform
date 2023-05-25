@@ -71,6 +71,8 @@ void qGboleData::save()
 		mItem.insert("m_usRatedPWTemp", pGboleData.at(i).ats.m_usRatedPWTemp);
 		mItem.insert("m_usRatedPWFlow", pGboleData.at(i).ats.m_usRatedPWFlow);
 		mItem.insert("m_usHeatTemp", pGboleData.at(i).ats.m_usHeatTemp);
+		mItem.insert("m_usCoolTemp", pGboleData.at(i).ats.m_usCoolTemp);
+		mItem.insert("m_bTurnOffFlow", pGboleData.at(i).ats.m_bTurnOffFlow);
 
 
 
@@ -82,6 +84,7 @@ void qGboleData::save()
 			pItemObj.insert("opt", pGboleData.at(i).cItem.at(j).opt);
 			pItemObj.insert("isSend", pGboleData.at(i).cItem.at(j).isSend);
 			pItemObj.insert("len", pGboleData.at(i).cItem.at(j).len);
+			pItemObj.insert("circle", pGboleData.at(i).cItem.at(j).circle);
 			QJsonObject pDItem;
 			//pItem用一个数组来储存
 			for (int k = 0; k < pGboleData.at(i).cItem.at(j).pItem.size(); k++)
@@ -221,6 +224,8 @@ void qGboleData::read()
 		ptem.ats.m_usRatedPWTemp = rootSecond["m_usRatedPWTemp"].toInt(0);
 		ptem.ats.m_usRatedPWFlow = rootSecond["m_usRatedPWFlow"].toInt(10);
 		ptem.ats.m_usHeatTemp = rootSecond["m_usHeatTemp"].toInt(-15);
+		ptem.ats.m_usCoolTemp = rootSecond["m_usCoolTemp"].toInt(-20);
+		ptem.ats.m_bTurnOffFlow = rootSecond["m_bTurnOffFlow"].toBool(true);
 
 
 		//如果还有嵌套对象
@@ -243,6 +248,7 @@ void qGboleData::read()
 				ctemp.opt = rootfour["opt"].toInt(0);
 				ctemp.isSend = rootfour["isSend"].toBool(false);
 				ctemp.len = rootfour["len"].toInt(8);
+				ctemp.circle = rootfour["circle"].toInt(-1);
 				if (rootfour["pDItem"].isObject())
 				{
 					//pDitem对应的是std::vector<struct protoItem>pItem;

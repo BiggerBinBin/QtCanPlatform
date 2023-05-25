@@ -40,6 +40,7 @@ public:
 	virtual void closeEvent(QCloseEvent* event) override;
 	virtual void showEvent(QShowEvent* event) override;
 	void setUserType(const int userTp);
+	void reInitUI();
 private:
 	Ui::QCanSettingClass ui;
 	void InitUi();
