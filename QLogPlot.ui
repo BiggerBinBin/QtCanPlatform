@@ -163,6 +163,13 @@ margin-bottom:4px;
         </spacer>
        </item>
        <item>
+        <widget class="QPushButton" name="pbExportSignal">
+         <property name="text">
+          <string>导出所选信号</string>
+         </property>
+        </widget>
+       </item>
+       <item>
         <widget class="QPushButton" name="pbPlay">
          <property name="text">
           <string>开始回放</string>

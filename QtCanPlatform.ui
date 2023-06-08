@@ -24,6 +24,9 @@
     </rect>
    </property>
    <widget class="QMenu" name="menu">
+    <property name="tearOffEnabled">
+     <bool>true</bool>
+    </property>
     <property name="title">
      <string>帮助</string>
     </property>
@@ -34,6 +37,9 @@
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
   <action name="action_History">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
    <property name="text">
     <string>历史版本(History)</string>
    </property>
@@ -42,6 +48,9 @@
    </property>
   </action>
   <action name="action_About">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
    <property name="text">
     <string>关于(About)</string>
    </property>

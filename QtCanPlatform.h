@@ -171,6 +171,7 @@ private:
     float getPowerResponed(QString str);
     QString parserMESStr(QString str);
     bool upMesOutData();
+    void runOutMonitor();
 
 private:
     std::vector<canIdData>recCanData;
@@ -218,8 +219,11 @@ private:
     QTimer* sendTimer = nullptr;
     //通信丢失定时器
     QTimer* lostQTimer = nullptr;
+
     //多路的通信丢失定时器
     QTimer* lostQTimerArr[4] = { nullptr };
+
+    QPushButton* LogPb;
     //CAN打开状态变量
     bool pcanIsOpen = false;
     //日志条数
@@ -283,6 +287,7 @@ private:
     bool isRecordError = false;
     int _period_ = 1000;
     QStringList testItemList;
+    QCheckBox* m_cbOutTempMonitor;
     QPushButton* pbStartAutoTest;
     QPushButton* pbDevicesManage;
     QPushButton* pbGeneralParameter;
@@ -348,6 +353,8 @@ private:
     //每次保存的数据条数
     //自动保存的数据条数，即达到这个数量就会自动保存
     int saveListNum = 600;
+    int m_iSaveDataGrap = 1;
+    QTimer m_tSaveDataGrapTime;
 
     QLineEdit* m_iTimeStopLineEdit = nullptr;
     QPushButton* m_pbStartRad = nullptr;
@@ -359,8 +366,13 @@ private:
     uint timeStmp_send = 0;
     //登录界面
     Login* canSeting;
-    //多个发送周期标识，>1即为多个发送周期
+    //多个发送周期标识，>1即为多个发送周期,适配如果科技发送两个ID请求时
+    //不同的ID的发送周期不同
     int multiCircle;
+    QCheckBox* m_cbSavePeriod;
+    QLineEdit* m_lePeroid;
+    uint m_iSavePeroidNum;
+    uint countPeroid;
 
 private slots:
       void on_CapturePower();
@@ -439,11 +451,15 @@ private slots:
     void on_SendMesState(int n, QString str);
 
     void on_sigFromPowerNewData(QString data);
+    //Mes回报的槽函数
     void on_sigFroMesNewData(QString data);
-
+    //电源返回槽函数
     void on_sigFromThisPowerSet(QString data);
-
-   
+    //数据保存周期开关
+    void on_savePeriodCheck_Changed(int n);
+    //出口温度监控monitor
+    void on_outTempMonitor_Changed(int n);
+    void on_plotWindowCLose();
 
 signals:
     void sigNewRoll();

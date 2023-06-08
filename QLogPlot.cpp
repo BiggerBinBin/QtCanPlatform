@@ -7,6 +7,8 @@
 #include <QTime>
 #include <QtGlobal>
 #include "QsLog.h"
+#include "./unit/MsgParser.h"
+
 # pragma execution_character_set("utf-8")
 QLogPlot::QLogPlot(int index,QWidget *parent)
 	: m_iModel(index), QWidget(parent)
@@ -16,6 +18,8 @@ QLogPlot::QLogPlot(int index,QWidget *parent)
 	this->ui.pbPlay->setEnabled(false);
 	this->ui.pbPause->setEnabled(false);
 	this->ui.pbStop->setEnabled(false);
+	m_dataSave.reset(new DataSave(this));
+	//this->setWindowFlags(this->windowFlags());
 	InitGraphUI();
 	
 }
@@ -34,11 +38,7 @@ QLogPlot::~QLogPlot()
 		signalMan = nullptr;
 
 	}
-	if (BLfLog)
-	{
-		delete BLfLog;
-		BLfLog = nullptr;
-	}
+	
 	if (plot)
 	{
 		removeRect();
@@ -50,15 +50,28 @@ void QLogPlot::resizeEvent(QResizeEvent* event)
 {
 	plot->setFixedSize(ui.lable_show->size());
 }
+void QLogPlot::closeEvent(QCloseEvent* event)
+{
+	event->accept();
+	emit sigCloseWindow();
+}
 void QLogPlot::on_pbOpenFile_clicked()
 {
-	QString filepath = QFileDialog::getOpenFileName(NULL, "打开日志文件", QApplication::applicationDirPath(), QString("blf(*.blf)"));
+	QString filepath = QFileDialog::getOpenFileName(NULL, "打开日志文件", QApplication::applicationDirPath(), QString("log文件(*.blf *.trc)"));
 	if (filepath.isEmpty()) return;
-	if (!BLfLog)
+	QFileInfo info(filepath);
+
+	//判断文件类型，根据后缀名来调用不同的解析派生类
+	if (info.suffix().toLower() == "blf")
 	{
-		BLfLog = new QBLFManage(this);
-		connect(BLfLog, &QBLFManage::sigStatus, this, &QLogPlot::on_GetBLFStaus);
+		m_pLogSource.reset(new QBLFManage()); 
 	}
+	else if (info.suffix().toLower() == "trc")
+	{
+		m_pLogSource.reset(new LogTrc());
+		
+	}
+	connect(m_pLogSource.data(), &LogMessage::LogBase::sigLoadState, this, &QLogPlot::on_GetBLFStaus);
 	qGboleData* qGb = qGboleData::getInstance();
 	if (!qGb)
 	{
@@ -73,7 +86,11 @@ void QLogPlot::on_pbOpenFile_clicked()
 		fifter << qGb->pGboleData.at(m_iModel).cItem.at(n).strCanId;
 	}
 	if (!LogData) LogData = new messageMange();
-	BLfLog->getBLFLog(filepath, fifter, LogData);
+	LogData->vData.clear();
+	LogData->iLen = 0;
+	LogData->iIndex = 0;
+	//BLfLog->getBLFLog(filepath, fifter, LogData);
+	m_pLogSource->loadLogFile(filepath, fifter, LogData);
 }
 void QLogPlot::on_pbSignal_clicked()
 {
@@ -112,6 +129,8 @@ void QLogPlot::on_pbStop_clicked()
 {
 	if (this->ui.pbPause->isChecked())
 		this->ui.pbPause->setChecked(false);
+	if (!LogData)
+		return;
 	m_bRunSend = 0;
 	LogData->iIndex = 0;
 	this->ui.pbPlay->setEnabled(true);
@@ -129,6 +148,10 @@ void QLogPlot::on_GetBLFStaus(int n)
 		QMessageBox::information(this, QString("读取完成"), QString("读取日志文件完成"));
 	}
 	else if (n == -1)
+	{
+		QMessageBox::information(this, QString("读取失败"), QString("读取日志文件失败"));
+	}
+	else
 	{
 		QMessageBox::information(this, QString("读取失败"), QString("读取日志文件失败"));
 	}
@@ -189,13 +212,23 @@ void QLogPlot::on_AddData(ushort index, double x, double y)
 		QLOG_WARN() << "if (!grap)";
 		return;
 	}
-	//x = (double)(QDateTime::currentMSecsSinceEpoch()) / 1000.0;//当前时间
+	x = (double)(QDateTime::currentMSecsSinceEpoch()) / 1000.0;//当前时间
 	grap->addData(x, y);
-	rect->axis(QCPAxis::atBottom)->rescale();
-	grap->rescaleValueAxis(false, true);
-	rect->axis(QCPAxis::atBottom)->setRange(rect->axis(QCPAxis::atBottom)->range().upper, 1800, Qt::AlignRight);
-	grap->data()->removeBefore(x - 2000);
 
+	if (rect->axis(QCPAxis::atLeft)->range().minRange == y)
+	{
+		QCPRange ran(y - 5, rect->axis(QCPAxis::atLeft)->range().maxRange);
+		rect->axis(QCPAxis::atLeft)->setRange(ran);
+
+	}
+	rect->axis(QCPAxis::atLeft)->rescale();
+	rect->axis(QCPAxis::atBottom)->rescale();
+	
+	grap->rescaleValueAxis(false, true);
+	rect->axis(QCPAxis::atBottom)->setRange(rect->axis(QCPAxis::atBottom)->range().upper, 100, Qt::AlignRight);
+	
+	
+	
 	plot->replot(QCustomPlot::rpQueuedReplot);
 }
 void QLogPlot::proLogData(uint id, QByteArray data,const int &x)
@@ -327,21 +360,29 @@ void QLogPlot::plotItem()
 			{//No show signal
 				continue;
 			}
+			QSharedPointer<QCPAxisTickerDateTime>timer(new QCPAxisTickerDateTime);
+			timer->setDateTimeFormat("h:m:s.z");
+			timer->setTickCount(10);
 			//添加一个坐标轴外框架
 			QCPAxisRect* cpa = new QCPAxisRect(plot, true);
 			//添加标签名
+			cpa->axis(QCPAxis::atBottom)->setTicker(timer);
+			cpa->axis(QCPAxis::atBottom)->setTickLabelRotation(-15);
 			cpa->axis(QCPAxis::atLeft)->setLabel(QString(pModelMes.cItem.at(i).pItem.at(j).bitName));
+			cpa->axis(QCPAxis::atBottom)->setBasePen(QPen(QColor(0, 0, 0, 60)));
 			QColor cc = QColor(qAbs(qrand() % 255), qAbs(qrand() % 255), qAbs(qrand() % 255));
 			LableLineColor.append(cc);
 			//设置字体颜色和字体
 			cpa->axis(QCPAxis::atLeft)->setLabelColor(cc);
 			cpa->axis(QCPAxis::atLeft)->setLabelFont(QFont("Yahei"));
+			cpa->axis(QCPAxis::atLeft)->rescale();
 			//添加到布局里面
 			plot->plotLayout()->addElement(plot->axisRectCount(), 0, cpa);
 			//用一个List管理坐标轴外框
 			aixsRect.append(cpa);
 		}
 	}
+	plot->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom);
 	plot->replot();
 }
 
@@ -579,7 +620,7 @@ float QLogPlot::parseMesItem_moto_msb(const protoItem& pItem, const QByteArray& 
 			//跨三个字节的，应该没有
 		}
 	}
-	return 0.0f;
+	return temp;
 }
 
 QStringList QLogPlot::QByteToBinary(const QByteArray& data)
@@ -594,7 +635,107 @@ QStringList QLogPlot::QByteToBinary(const QByteArray& data)
 	}
 	return binaryStr;
 }
+void QLogPlot::runExportMsg(QString filepath)
+{
+	
+	if (!LogData || LogData->vData.size() <= 0)
+	{
+		return;
+	}
+	QString excelTitle="序号,offset-time,";
+	for (int i = 0; i < pModelMes.cItem.size(); i++)
+	{
+		for (int j = 0; j < pModelMes.cItem.at(i).pItem.size(); j++)
+		{
+			if (!pModelMes.cItem.at(i).pItem.at(j).isRoll)
+			{//No show signal
+				continue;
+			}
+			excelTitle += pModelMes.cItem.at(i).pItem.at(j).bitName + ",";
+		}
+	}
+	excelTitle.remove(excelTitle.size() - 1,1);
+	ushort protol = pModelMes.agreement;
+	QStringList strData;
+	QString strtemp;
+	int count = 0;
+	for (int m = 0; m < LogData->vData.size(); m++)
+	{
+		uint id = LogData->vData[m].Id;
+		uchar dTemp[8];
+		double timestemp = LogData->vData[m].TimeStemp;
+		memcpy(dTemp, LogData->vData[m].Data, 8);
+		QByteArray data;
+		for (int k = 0; k < 8; k++)
+		{
+			data.append(dTemp[k]);
+		}
+		
+		for (int i = 0; i < pModelMes.cItem.size(); i++)
+		{
+			for (int j = 0; j < pModelMes.cItem.at(i).pItem.size(); j++)
+			{
+				if (!pModelMes.cItem.at(i).pItem.at(j).isRoll)
+				{//No show signal
+					continue;
+				}
+				if (id != pModelMes.cItem.at(i).strCanId.toInt(nullptr, 16))
+				{
+					continue;
+				}
+				float value = 0;
+				if (0 == protol)
+				{
+					
+					value = MsgParser::intel_Parser(pModelMes.cItem.at(i).pItem.at(j), data, pModelMes.cItem.at(i).isSend);
+					
+				}
+				else if (1 == protol)
+				{
+					value = MsgParser::moto_Msb_Parser(pModelMes.cItem.at(i).pItem.at(j), data, pModelMes.cItem.at(i).isSend);
+				}
+				else if (2 == protol)
+				{
+					//value = MsgParser::moto_Lsb_Parser(pModelMes.cItem.at(i).pItem.at(j), data, pModelMes.cItem.at(i).isSend);
+				}
+				
+				strtemp+=QString::number(value)+",";
+			}
+		}
+		if (m < LogData->vData.size() - 2 && LogData->vData[m+1].TimeStemp < 50)
+		{
+			continue;
+		}
+		if (strtemp.isEmpty())
+			continue;
+		strtemp.remove(strtemp.size() - 1, 1);
+		QString a = QString::number(count++) + "," + QString::number(timestemp) + "," + strtemp;
+		strData.append(a);
+		strtemp = "";
+		strtemp.clear();
+	}
+	
+	m_dataSave->setTitle(excelTitle);
+	m_dataSave->SaveData(strData, strData.size(), filepath);
+
+}
 void QLogPlot::on_setSlider(int value)
 {
 	ui.horizontalSlider->setValue(value);
+}
+
+void QLogPlot::on_pbExportSignal_clicked()
+{
+	if (!LogData || LogData->vData.size()<=0)
+	{
+		return;
+	}
+	QString filename = QFileDialog::getSaveFileName(this, "导出excel文件", "./", "csv(*.csv *.xls *.xlsx)");
+	if (filename.isEmpty())
+	{
+		QMessageBox::warning(this, "文件名为空", "文件名不能为空");
+		return;
+	}
+	QtConcurrent::run(this, &QLogPlot::runExportMsg, filename);
+
 }

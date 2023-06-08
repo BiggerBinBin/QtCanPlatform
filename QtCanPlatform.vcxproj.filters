@@ -115,6 +115,18 @@
     <ClCompile Include="Abstract\LogAbstract.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="unit\msgSaveInf.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="LogTrc.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="unit\MsgParser.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="AbstractPower.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="QCanSetting.h">
@@ -177,6 +189,18 @@
     <QtMoc Include="CoolantAbstract.h">
       <Filter>Header Files</Filter>
     </QtMoc>
+    <QtMoc Include="Abstract\LogAbstract.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="LogTrc.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="unit\MsgParser.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="AbstractPower.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
   </ItemGroup>
   <ItemGroup>
     <QtUic Include="QCanSetting.ui">
@@ -226,7 +250,7 @@
     <ClInclude Include="dbcparser.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Abstract\LogAbstract.h">
+    <ClInclude Include="unit\msgSaveInf.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

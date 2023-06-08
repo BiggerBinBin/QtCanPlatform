@@ -1155,7 +1155,7 @@ void QCanSetting::on_modelView_Clicked(int row, int col)
 	int mc = paramView->rowCount();
 	for (int p = 0; p < paramView->rowCount(); p++)
 		paramView->removeRow(mc - p - 1);
-	paramView->setRowCount(23);
+	paramView->setRowCount(25);
 	paramView->setItem(0, 0, new QTableWidgetItem(QString("使能所在行")));
 	paramView->setItem(0, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_iEnableInLine)));
 	paramView->setItem(1, 0, new QTableWidgetItem(QString("使能操作")));
@@ -1212,6 +1212,11 @@ void QCanSetting::on_modelView_Clicked(int row, int col)
 
 	paramView->setItem(22, 0, new QTableWidgetItem(QString("测过温关流量？")));
 	paramView->setItem(22, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_bTurnOffFlow)));
+	paramView->setItem(23, 0, new QTableWidgetItem(QString("测功率关制冷？")));
+	paramView->setItem(23, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_bTurnOffCool)));
+
+	paramView->setItem(24, 0, new QTableWidgetItem(QString("出口停止使能温度")));
+	paramView->setItem(24, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_iOutTempStop)));
 
 }
 
@@ -1684,10 +1689,14 @@ void QCanSetting::on_paramView_doubleCLicked(int, int)
 {
 	connect(paramView, SIGNAL(cellChanged(int, int)), this, SLOT(on_paramView_cellChanged(int, int)));
 }
-
+/*
+* @brief: Slot function。responed by autotest paramter changed
+* @paramter1:int row cell row
+* @paramter2:int col cell column
+*/
 void QCanSetting::on_paramView_cellChanged(int row, int col)
 {
-	if (row > 23 || col > 1 || row < 0 || col < 0)
+	if ( col > 1 || row < 0 || col < 0)
 	{
 		disconnect(paramView, SIGNAL(cellChanged(int, int)), this, SLOT(on_paramView_cellChanged(int, int)));
 		return;
@@ -1778,7 +1787,13 @@ void QCanSetting::on_paramView_cellChanged(int row, int col)
 		qGb->pGboleData.at(n).ats.m_usCoolTemp = paramView->item(row, col)->text().toShort();
 		break;
 	case 22:
-		qGb->pGboleData.at(n).ats.m_bTurnOffFlow = paramView->item(row, col)->text().toUShort();
+		qGb->pGboleData.at(n).ats.m_bTurnOffFlow = paramView->item(row, col)->text().toShort();
+		break;
+	case 23:
+		qGb->pGboleData.at(n).ats.m_bTurnOffCool = paramView->item(row, col)->text().toShort();
+		break;
+	case 24:
+		qGb->pGboleData.at(n).ats.m_iOutTempStop = paramView->item(row, col)->text().toInt();
 		break;
 	default:
 		break;

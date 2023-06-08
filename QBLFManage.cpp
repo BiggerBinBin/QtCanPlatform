@@ -9,8 +9,8 @@
 # pragma execution_character_set("utf-8")
 QStringList Mon = { "Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sept","Oct","Nov","Dec" };
 QStringList Week = { "Mon","Tue","Wed","Thur","Fri","Sat","Sun" };
-QBLFManage::QBLFManage(QObject *parent)
-	: QObject(parent)
+QBLFManage::QBLFManage(LogBase* parent)
+	: LogBase(parent)
 {
 
 }
@@ -20,35 +20,35 @@ QBLFManage::~QBLFManage()
 
 }
 
-void QBLFManage::getBLFLog(const QString& file, const QStringList& fifter2, messageMange* LogData)
+bool QBLFManage::loadLogFile(const QString& file, const QStringList& fifter2, messageMange* LogData)
 {
     m_sBlfName = file;
     fifter = fifter2;
     RunState = true;
     QtConcurrent::run(this, &QBLFManage::readBLF, LogData);
     isReadFile = true;
-
+    return true;
 }
-void QBLFManage::stopGetMes()
-{
-    if (m_tSendMes)
-    {
-        m_tSendMes->stop();
-    }
-    RunState = false;
-}
-void QBLFManage::startGetMes(const int circle, const QStringList idList)
-{
-    if (idList.size() <= 0)
-        return;
-    fifter = idList;
-    if (!m_tSendMes)
-    {
-        m_tSendMes = new QTimer();
-        connect(m_tSendMes, &QTimer::timeout, this, &QBLFManage::sendMessage);
-    }
-    m_tSendMes->start(circle);
-}
+//void QBLFManage::stopGetMes()
+//{
+//    if (m_tSendMes)
+//    {
+//        m_tSendMes->stop();
+//    }
+//    RunState = false;
+//}
+//void QBLFManage::startGetMes(const int circle, const QStringList idList)
+//{
+//    if (idList.size() <= 0)
+//        return;
+//    fifter = idList;
+//    if (!m_tSendMes)
+//    {
+//        m_tSendMes = new QTimer();
+//        connect(m_tSendMes, &QTimer::timeout, this, &QBLFManage::sendMessage);
+//    }
+//    m_tSendMes->start(circle);
+//}
 
 void QBLFManage::readBLF(messageMange* LogData)
 {
@@ -76,7 +76,7 @@ void QBLFManage::readBLF(messageMange* LogData)
 
         if (INVALID_HANDLE_VALUE == hFile)
         {
-            emit sigStatus(-1);
+            emit sigLoadState(-1);
             return;
         }
 
@@ -129,11 +129,11 @@ void QBLFManage::readBLF(messageMange* LogData)
         if (!BLCloseHandle(hFile))
         {
             isReadFile = false;
-            emit sigStatus(0);
+            emit sigLoadState(0);
             return;
         }
         isReadFile = false;
-        emit sigStatus(0);
+        emit sigLoadState(0);
         
     }
 }

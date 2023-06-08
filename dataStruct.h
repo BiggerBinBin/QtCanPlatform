@@ -29,6 +29,8 @@ struct AutoTestStruct
 	int m_usHeatTemp;			//20 加热起始温度
 	int m_usCoolTemp;			//21 制冷温度
 	int m_bTurnOffFlow;			//22 测试过温保护时是否关闭流量
+	int m_bTurnOffCool;			//22 测试过温保护时是否关闭制冷
+	int m_iOutTempStop;			//23 出水口过温温度，到达就停止使能
 	//bool isIndepandSend;
 
 };
@@ -71,7 +73,8 @@ struct cellProperty
 struct protoItem {
 	bool octhex;								//16进制否
 	bool isRoll;								//是否把数据显示在另外一个表格
-	int send;									//发送的数据
+	//int send;									//发送的数据
+	float send;									//发送的数据
 	int startByte;								//起止字节
 	int startBit;								//起止位
 	int bitLeng;								//长度

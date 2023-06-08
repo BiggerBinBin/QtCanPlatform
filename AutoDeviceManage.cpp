@@ -371,10 +371,10 @@ bool AutoDeviceManage::setCoolantTemp(int temp2, int flow2,bool cooling, bool ou
 	//外循环开关在第6个字节的第1位（从0开始）
 	
 	//第6个字节，第0位+第1位
-	uchar bOnorOff;
-	if (cooling && out) bOnorOff = 3;
-	else if (cooling) bOnorOff = 1;
-	else bOnorOff = 2;
+	uchar bOnorOff=0x00;
+	uchar b = out;
+	bOnorOff |= uchar(cooling);
+	bOnorOff |= b << 1;
 	data[6] = bOnorOff;
 	int temp = temp2;
 	int var = 0;
@@ -559,7 +559,7 @@ void AutoDeviceManage::on_pbBlowWater_clicked(bool isCheck)
 	}
 	else
 		data[6] = 0x1;
-	m_pWaterCAN.data()->sendData(0x01, data);
+	m_pWaterCAN.data()->sendData(0x01, data,false);
 }
 void AutoDeviceManage::on_pbGrasp_clicked(bool isClicked)
 {

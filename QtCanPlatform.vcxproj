@@ -97,7 +97,7 @@
     <OutDir>$(SolutionDir)\X32\$(Configuration)</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
-    <OutDir>F:\Lyb-file\Code\Release\通用上位机\64位通用上位机\PHU-CAN-UNIVSER</OutDir>
+    <OutDir>F:\Lyb-file\Code\Release\通用上位机\64位通用上位机\PHU-CAN-UNIVSER-Experiment</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>$(SolutionDir)\X32\$(Configuration)\</OutDir>
@@ -193,6 +193,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="AbstractPower.cpp" />
+    <ClCompile Include="LogTrc.cpp" />
+    <ClCompile Include="unit\MsgParser.cpp" />
+    <ClCompile Include="unit\msgSaveInf.cpp" />
     <QtRcc Include="QtCanPlatform.qrc" />
     <QtUic Include="AutoDeviceManage.ui" />
     <QtUic Include="Login.ui" />
@@ -237,8 +241,12 @@
     <QtMoc Include="QCanSetting.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Abstract\LogAbstract.h" />
+    <QtMoc Include="Abstract\LogAbstract.h" />
+    <QtMoc Include="AbstractPower.h" />
     <ClInclude Include="AlgorithmSet.h" />
+    <QtMoc Include="LogTrc.h" />
+    <QtMoc Include="unit\MsgParser.h" />
+    <ClInclude Include="unit\msgSaveInf.h" />
     <QtMoc Include="canthread.h" />
     <QtMoc Include="AutoDeviceManage.h" />
     <ClInclude Include="chex.h" />
