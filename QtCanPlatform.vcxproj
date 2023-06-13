@@ -50,7 +50,7 @@
     <Import Project="$(QtMsBuild)\qt_defaults.props" />
   </ImportGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'" Label="QtSettings">
-    <QtInstall>msvc2017_64</QtInstall>
+    <QtInstall>msvc2019_64</QtInstall>
     <QtModules>core;network;gui;axcontainer;widgets;serialport;printsupport;concurrent;serialbus</QtModules>
     <QtBuildConfig>debug</QtBuildConfig>
   </PropertyGroup>
@@ -60,7 +60,7 @@
     <QtBuildConfig>debug</QtBuildConfig>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'" Label="QtSettings">
-    <QtInstall>msvc2017_64</QtInstall>
+    <QtInstall>msvc2019_64</QtInstall>
     <QtModules>core;xml;network;gui;axcontainer;widgets;serialport;printsupport;concurrent;serialbus</QtModules>
     <QtBuildConfig>release</QtBuildConfig>
   </PropertyGroup>
@@ -97,7 +97,7 @@
     <OutDir>$(SolutionDir)\X32\$(Configuration)</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
-<OutDir>F:\Lyb-file\code\Release\通用上位机\64位通用上位机\PHU-CAN-UNIVSER-Experiment</OutDir>
+    <OutDir>F:\Lyb-file\code\Release\通用上位机\64位通用上位机\PHU-CAN-UNIVSER-Experiment</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>$(SolutionDir)\X32\$(Configuration)\</OutDir>
@@ -193,8 +193,9 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="AbstractPower.cpp" />
+    <ClCompile Include="Abstract\AbstractPower.cpp" />
     <ClCompile Include="LogTrc.cpp" />
+    <ClCompile Include="unit\ImplementPower.cpp" />
     <ClCompile Include="unit\MsgParser.cpp" />
     <ClCompile Include="unit\msgSaveInf.cpp" />
     <QtRcc Include="QtCanPlatform.qrc" />
@@ -242,10 +243,11 @@
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="Abstract\LogAbstract.h" />
-    <QtMoc Include="AbstractPower.h" />
+    <QtMoc Include="Abstract\AbstractPower.h" />
     <ClInclude Include="AlgorithmSet.h" />
     <QtMoc Include="LogTrc.h" />
     <QtMoc Include="unit\MsgParser.h" />
+    <QtMoc Include="unit\ImplementPower.h" />
     <ClInclude Include="unit\msgSaveInf.h" />
     <QtMoc Include="canthread.h" />
     <QtMoc Include="AutoDeviceManage.h" />

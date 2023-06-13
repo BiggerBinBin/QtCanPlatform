@@ -2,9 +2,11 @@
 
 #include <QObject>
 #include <QString>
+#include  <QVariant>
 struct ParamMsg {
 
 };
+Q_DECLARE_METATYPE(ParamMsg)
 class AbstractPower  : public QObject
 {
 	Q_OBJECT
@@ -23,4 +25,6 @@ public:
 	};
 private:
 	PState state;
+Q_SIGNALS:
+	void stateChanged(PState state);
 };

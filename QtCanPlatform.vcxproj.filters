@@ -124,7 +124,10 @@
     <ClCompile Include="unit\MsgParser.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="AbstractPower.cpp">
+    <ClCompile Include="Abstract\AbstractPower.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="unit\ImplementPower.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -198,7 +201,10 @@
     <QtMoc Include="unit\MsgParser.h">
       <Filter>Header Files</Filter>
     </QtMoc>
-    <QtMoc Include="AbstractPower.h">
+    <QtMoc Include="Abstract\AbstractPower.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="unit\ImplementPower.h">
       <Filter>Header Files</Filter>
     </QtMoc>
   </ItemGroup>
