@@ -19,6 +19,7 @@
 #include <qfiledialog.h>
 #include "dbcparser.h"
 #include <qlabel.h>
+#include "CustomTableWidgetDelegate.h"
 QCanSetting::QCanSetting(QWidget *parent)
 	: QWidget(parent)
 {
@@ -218,7 +219,9 @@ void QCanSetting::InitUi()
 	tableView->setColumnCount(10);
 	tableView->setHorizontalHeaderLabels(listname);
 	tableView->setSelectionBehavior(QAbstractItemView::SelectRows);
-	connect(tableView, SIGNAL(cellDoubleClicked(int, int)), this, SLOT(on_tableView_doubleCLicked(int, int)));
+	//tableView->setItemDelegateForColumn(1, new CustomTableWidgetDelegate(0, 7, tableView));
+	//connect(tableView, SIGNAL(cellDoubleClicked(int, int)), this, SLOT(on_tableView_doubleCLicked(int, int)));
+	connect(tableView, SIGNAL(cellChanged(int, int)), this, SLOT(on_tableView_cellChanged(int, int)));
 	tableView->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 	QVBoxLayout* vLayout = new QVBoxLayout();
 	
@@ -291,7 +294,7 @@ void QCanSetting::on_pbAddModel_clicked()
 	
 	if (!modelView)
 		return;
-	disconnect(modelView, SIGNAL(itemChanged(cellChanged(int, int))), this, SLOT(on_modelView_cellChangedV2(int, int)));
+	disconnect(modelView, SIGNAL(cellChanged(int, int)), this, SLOT(on_modelView_cellChangedV2(int, int)));
 	short int row = modelView->rowCount();
 	modelView->setRowCount(row + 1);
 	QComboBox* proto = new QComboBox();
@@ -750,16 +753,19 @@ void QCanSetting::on_pbAddIteam_clicked()
 		return;
 	if (canIdView->rowCount() < 1)
 		return;
+	tableView->blockSignals(true);
 	short int curSelectRow = modelView->currentRow();
 	if (curSelectRow<0 || curSelectRow>qGb->pGboleData.size() - 1)
 	{
 		QMessageBox::warning(this, tr("warning"), tr("未选中型号，不能添加，要先选中型号，然后再选中CanID，再添加"));
+		tableView->blockSignals(false);
 		return;
 	}
 	short int curSelectCanRow = canIdView->currentRow();
 	if (curSelectCanRow<0 || curSelectCanRow>qGb->pGboleData.at(curSelectRow).cItem.size() - 1)
 	{
 		QMessageBox::warning(this, tr("warning"), tr("未选中CanId，不能添加，要先选中型号，然后再选中CanID，再添加"));
+		tableView->blockSignals(false);
 		return;
 	}
 	short int row = tableView->rowCount();
@@ -804,7 +810,7 @@ void QCanSetting::on_pbAddIteam_clicked()
 	catch(...) {
 		QMessageBox::warning(this, tr("warning"),("Look this:"+QString::number(curSelectRow) + " and " + QString::number(curSelectCanRow)));
 	}
-	
+	tableView->blockSignals(false);
 }
 
 void QCanSetting::on_pbMoveUpIteam_clicked()
@@ -823,7 +829,8 @@ void QCanSetting::on_pbMoveUpIteam_clicked()
 		return;
 	}
 	//关闭信号槽，因为下面的setItem会触发cellCHanged这个信号
-	disconnect(tableView, SIGNAL(cellChanged(int, int)), this, SLOT(on_tableView_cellChanged(int, int)));
+	//disconnect(tableView, SIGNAL(cellChanged(int, int)), this, SLOT(on_tableView_cellChanged(int, int)));
+	tableView->blockSignals(true);
 	//在它上面先插入一行
 	tableView->insertRow(curRow - 1);
 	//把这行的所有列数据取出来
@@ -855,20 +862,24 @@ void QCanSetting::on_pbMoveUpIteam_clicked()
 	if (modelCurRow > qGb->pGboleData.size() - 1)
 	{
 		QMessageBox::warning(NULL, "warnning", QString("超出范围，不能上下移动"));
+		tableView->blockSignals(false);
 		return;
 	}
 	if (canidCurRow > qGb->pGboleData.at(modelCurRow).cItem.size() - 1)
 	{
 		QMessageBox::warning(NULL, "warnning", tr("超出范围，不能上下移动"));
+		tableView->blockSignals(false);
 		return;
 	}
 	if (curRow > qGb->pGboleData.at(modelCurRow).cItem.at(canidCurRow).pItem.size() - 1)
 	{
 		QMessageBox::warning(NULL, "warnning", tr("超出范围，不能上下移动"));
+		tableView->blockSignals(false);
 		return;
 	}
 	//交换两行的数据
 	std::swap(qGb->pGboleData.at(modelCurRow).cItem.at(canidCurRow).pItem[curRow], qGb->pGboleData.at(modelCurRow).cItem.at(canidCurRow).pItem[curRow - 1]);
+	tableView->blockSignals(false);
 }
 
 void QCanSetting::on_pbMoveDownIteam_clicked()
@@ -1444,6 +1455,7 @@ void QCanSetting::on_tableView_doubleCLicked(int row , int col)
 
 void QCanSetting::on_tableView_cellChanged(int row, int col)
 {
+	
 	qGboleData* qGb = qGboleData::getInstance();
 	if (!qGb)return;
 	if (!tableView)
@@ -1507,7 +1519,7 @@ void QCanSetting::on_tableView_cellChanged(int row, int col)
 		//return;
 	}
 	//后面要把这个关掉，不然用户在添加的项时候，会触发这个槽函数
-	disconnect(tableView, SIGNAL(cellChanged(int, int)), this, SLOT(on_tableView_cellChanged(int, int)));
+	//disconnect(tableView, SIGNAL(cellChanged(int, int)), this, SLOT(on_tableView_cellChanged(int, int)));
 }
 
 void QCanSetting::on_property_clicked()

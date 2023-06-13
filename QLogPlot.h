@@ -40,8 +40,8 @@ private:
 	void plotItem();
 	void InitGraphUI();
 	void removeRect();
-	float parseMesItem_intel(const protoItem& pItem,const QByteArray &data,int index,bool isSend);
-	float parseMesItem_moto_msb(const protoItem& pItem,const QByteArray &data,int index,bool isSend);
+	/*float parseMesItem_intel(const protoItem& pItem,const QByteArray &data,int index,bool isSend);
+	float parseMesItem_moto_msb(const protoItem& pItem,const QByteArray &data,int index,bool isSend);*/
 	QStringList QByteToBinary(const QByteArray& data);
 	void runExportMsg(QString filepath);
 Q_SIGNALS:

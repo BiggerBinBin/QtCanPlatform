@@ -250,30 +250,42 @@ void QLogPlot::proLogData(uint id, QByteArray data,const int &x)
 				}
 				float value = 0;
 				//intel 协议
+				//if (0 == protol)
+				//{
+				//	if (pModelMes.cItem.at(i).isSend)
+				//	{
+				//		value = parseMesItem_intel(pModelMes.cItem.at(i).pItem.at(j), data, j, true);
+				//	}
+				//	else
+				//	{
+				//		value = parseMesItem_intel(pModelMes.cItem.at(i).pItem.at(j), data, j, false);
+				//	}
+
+				//}
+				////motorola MSB 协议
+				//else if(1==protol)
+				//{
+				//	if (pModelMes.cItem.at(i).isSend)
+				//	{
+				//		value = parseMesItem_moto_msb(pModelMes.cItem.at(i).pItem.at(j), data, j, true);
+				//	}
+				//	else
+				//	{
+				//		value = parseMesItem_moto_msb(pModelMes.cItem.at(i).pItem.at(j), data, j, false);
+				//	}
+				//}
 				if (0 == protol)
 				{
-					if (pModelMes.cItem.at(i).isSend)
-					{
-						value = parseMesItem_intel(pModelMes.cItem.at(i).pItem.at(j), data, j, true);
-					}
-					else
-					{
-						value = parseMesItem_intel(pModelMes.cItem.at(i).pItem.at(j), data, j, false);
-					}
+					value = MsgParser::intel_Parser(pModelMes.cItem.at(i).pItem.at(j), data, pModelMes.cItem.at(i).isSend);
 				}
-				//motorola MSB 协议
-				else if(1==protol)
+				else if (1 == protol)
 				{
-					if (pModelMes.cItem.at(i).isSend)
-					{
-						value = parseMesItem_moto_msb(pModelMes.cItem.at(i).pItem.at(j), data, j, true);
-					}
-					else
-					{
-						value = parseMesItem_moto_msb(pModelMes.cItem.at(i).pItem.at(j), data, j, false);
-					}
+					value = MsgParser::moto_Msb_Parser(pModelMes.cItem.at(i).pItem.at(j), data, pModelMes.cItem.at(i).isSend);
 				}
-				
+				else if (2 == protol)
+				{
+					value = MsgParser::moto_Lsb_Parser(pModelMes.cItem.at(i).pItem.at(j), data, pModelMes.cItem.at(i).isSend);
+				}
 				on_AddData(index, d_x, value);
 				index++;
 			}
@@ -424,204 +436,204 @@ void QLogPlot::removeRect()
 /*
 * @brief：Messages item parse for intel protol
 * @
-*/
-float QLogPlot::parseMesItem_intel(const protoItem& pItem, const QByteArray& data, int index,bool isSend)
-{
-	//防止越界
-	if (pItem.startByte > 7)
-		return 0.0;
-	QStringList binaryStr = QByteToBinary(data);
-
-	int startByte = pItem.startByte;
-	int startBit = pItem.startBit;
-	int startLenght = pItem.bitLeng;
-	float precision = pItem.precision;
-	int offset = pItem.offset;
-	bool octHex = pItem.octhex;
-	parseData pd;
-	float temp = 0;
-	QString datafrom = pItem.dataFrom;
-
-
-	//这个字段的数据来源其它字段的乘或除
-	if (datafrom.contains("*") || datafrom.contains("/"))
-	{
-		/*QStringList splt = datafrom.split("*");
-		if (splt.size() > 1)
-		{
-			dFromStru ddf;
-			ddf.index = m;
-			ddf.f1 = splt.at(0).toInt();
-			ddf.f2 = splt.at(1).toInt();
-			ddf.showCount = -1;
-			ddFF.push_back(ddf);
-		}*/
-	}
-	//CRC校验的异或
-	else if (datafrom.contains("XOR"))
-	{
-		/*(uint8_t)data[m];
-		uchar cData[8];
-		for (int d = 0; d < 8; d++)
-		{
-			cData[d] = (uchar)data[d];
-		}
-		uchar res = checksumXOR(cData);
-		uchar csum = data[m];
-		if (res == csum)
-		{
-			temp = 0;
-		}
-		else
-		{
-			temp = 1;
-		}*/
-	}
-	else
-	{
-		//判断是否跨字节，起止位模8，得出是当前字节的起止位，再加个长度
-		int len = startBit % 8 + startLenght;
-		if (len <= 8)
-		{   //不跨字节，这个就比较简单了
-			//15 14 13 12 11 10 9 8   7 6 5 4 3 2 1 0
-			//^高位在前，低位在后
-			if (octHex)
-			{
-				int nn = binaryStr[startByte].mid(8 - (startLenght + (startBit % 8)), startLenght).toInt(NULL, 2);
-				QString ss = QString("%1").arg(nn, 0, 16, QLatin1Char('0'));
-				if(isSend)
-					temp = ss.toInt() / precision - offset;
-				else
-					temp = ss.toInt() * precision + offset;
-			}
-			else
-			{
-				if (isSend)
-					temp = binaryStr[startByte].mid(8 - (startLenght + (startBit % 8)), startLenght).toInt(NULL, 2) / precision - offset;
-				else
-					temp = binaryStr[startByte].mid(8 - (startLenght + (startBit % 8)), startLenght).toInt(NULL, 2) * precision + offset;
-			}
-
-		}
-		else if (len <= 16)
-		{
-			if (isSend)
-				temp = (binaryStr[startByte + 1].mid(8 - (startLenght - (8 - startBit % 8)), startLenght - (8 - startBit % 8)) + binaryStr[startByte].mid(0, 8 - (startBit % 8))).toInt(NULL, 2) / precision - offset;
-			else
-				temp = (binaryStr[startByte + 1].mid(8 - (startLenght - (8 - startBit % 8)), startLenght - (8 - startBit % 8)) + binaryStr[startByte].mid(0, 8 - (startBit % 8))).toInt(NULL, 2) * precision + offset;
-		}
-		{
-			//跨三个字节的，应该没有
-		}
-	}
-
-
-	return temp;
-}
-
-float QLogPlot::parseMesItem_moto_msb(const protoItem& pItem, const QByteArray& data, int index, bool isSend)
-{
-	//防止越界
-	if (pItem.startByte > 7)
-		return 0.0;
-	QStringList binaryStr = QByteToBinary(data);
-
-	int startByte = pItem.startByte;
-	int startBit = pItem.startBit;
-	int startLenght = pItem.bitLeng;
-	float precision = pItem.precision;
-	int offset = pItem.offset;
-	bool octHex = pItem.octhex;
-	parseData pd;
-	float temp = 0;
-	QString datafrom = pItem.dataFrom;
-
-
-	//这个字段的数据来源其它字段的乘或除
-	if (datafrom.contains("*") || datafrom.contains("/"))
-	{
-		QStringList splt = datafrom.split("*");
-		if (splt.size() > 1)
-		{
-			/*dFromStru ddf;
-			ddf.index = m;
-			ddf.f1 = splt.at(0).toInt();
-			ddf.f2 = splt.at(1).toInt();
-			ddFF.push_back(ddf);*/
-		}
-	}
-	else if (datafrom.contains("XOR"))
-	{
-		/*(uint8_t)data[m];
-		uchar cData[8];
-		for (int d = 0; d < 8; d++)
-		{
-			cData[d] = (uchar)data[d];
-		}
-		uchar res = checksumXOR(cData);
-		uchar csum = data[m];
-		if (res == csum)
-		{
-			temp = 0;
-		}
-		else
-		{
-			temp = 1;
-		}*/
-	}
-	else
-	{
-		int len = startBit % 8 + startLenght;
-		if (len <= 8)
-		{   //不跨字节，这个就比较简单了
-			//15 14 13 12 11 10 9 8   7 6 5 4 3 2 1 0
-			//^高位在前，低位在后
-
-			if (octHex)
-			{
-				int nn = binaryStr[startByte].mid(8 - (startLenght + (startBit % 8)), startLenght).toInt(NULL, 2);
-				QString ss = QString("%1").arg(nn, 0, 16, QLatin1Char('0'));
-				if(isSend)
-					temp = ss.toInt() / precision - offset;
-				else
-					temp = ss.toInt() * precision + offset;
-			}
-			else
-			{
-				if (isSend)
-					temp = binaryStr[startByte].mid(startBit % 8, startLenght).toInt(NULL, 2) / precision - offset;
-				else
-					temp = binaryStr[startByte].mid(startBit % 8, startLenght).toInt(NULL, 2) * precision + offset;
-			}
-
-		}
-		else if (len <= 16)
-		{
-
-			if (octHex)
-			{
-				int nn = (binaryStr[startByte].mid(0, 8 - (startBit % 8)) + binaryStr[startByte + 1].mid(startBit % 8, startLenght - (8 - startBit % 8))).toInt(NULL, 2);
-				QString ss = QString("%1").arg(nn, 0, 16, QLatin1Char('0'));
-				if (isSend)
-					temp = ss.toInt() / precision - offset;
-				else
-					temp = ss.toInt() * precision + offset;
-			}
-			else
-			{
-				if (isSend)
-					temp = (binaryStr[startByte].mid(0, 8 - (startBit % 8)) + binaryStr[startByte + 1].mid(startBit % 8, startLenght - (8 - startBit % 8))).toInt(NULL, 2) / precision - offset;
-				else
-					temp = (binaryStr[startByte].mid(0, 8 - (startBit % 8)) + binaryStr[startByte + 1].mid(startBit % 8, startLenght - (8 - startBit % 8))).toInt(NULL, 2) * precision + offset;
-			}
-
-		}
-		{
-			//跨三个字节的，应该没有
-		}
-	}
-	return temp;
-}
+//*/
+//float QLogPlot::parseMesItem_intel(const protoItem& pItem, const QByteArray& data, int index,bool isSend)
+//{
+//	//防止越界
+//	if (pItem.startByte > 7)
+//		return 0.0;
+//	QStringList binaryStr = QByteToBinary(data);
+//
+//	int startByte = pItem.startByte;
+//	int startBit = pItem.startBit;
+//	int startLenght = pItem.bitLeng;
+//	float precision = pItem.precision;
+//	int offset = pItem.offset;
+//	bool octHex = pItem.octhex;
+//	parseData pd;
+//	float temp = 0;
+//	QString datafrom = pItem.dataFrom;
+//
+//
+//	//这个字段的数据来源其它字段的乘或除
+//	if (datafrom.contains("*") || datafrom.contains("/"))
+//	{
+//		/*QStringList splt = datafrom.split("*");
+//		if (splt.size() > 1)
+//		{
+//			dFromStru ddf;
+//			ddf.index = m;
+//			ddf.f1 = splt.at(0).toInt();
+//			ddf.f2 = splt.at(1).toInt();
+//			ddf.showCount = -1;
+//			ddFF.push_back(ddf);
+//		}*/
+//	}
+//	//CRC校验的异或
+//	else if (datafrom.contains("XOR"))
+//	{
+//		/*(uint8_t)data[m];
+//		uchar cData[8];
+//		for (int d = 0; d < 8; d++)
+//		{
+//			cData[d] = (uchar)data[d];
+//		}
+//		uchar res = checksumXOR(cData);
+//		uchar csum = data[m];
+//		if (res == csum)
+//		{
+//			temp = 0;
+//		}
+//		else
+//		{
+//			temp = 1;
+//		}*/
+//	}
+//	else
+//	{
+//		//判断是否跨字节，起止位模8，得出是当前字节的起止位，再加个长度
+//		int len = startBit % 8 + startLenght;
+//		if (len <= 8)
+//		{   //不跨字节，这个就比较简单了
+//			//15 14 13 12 11 10 9 8   7 6 5 4 3 2 1 0
+//			//^高位在前，低位在后
+//			if (octHex)
+//			{
+//				int nn = binaryStr[startByte].mid(8 - (startLenght + (startBit % 8)), startLenght).toInt(NULL, 2);
+//				QString ss = QString("%1").arg(nn, 0, 16, QLatin1Char('0'));
+//				if(isSend)
+//					temp = ss.toInt() / precision - offset;
+//				else
+//					temp = ss.toInt() * precision + offset;
+//			}
+//			else
+//			{
+//				if (isSend)
+//					temp = binaryStr[startByte].mid(8 - (startLenght + (startBit % 8)), startLenght).toInt(NULL, 2) / precision - offset;
+//				else
+//					temp = binaryStr[startByte].mid(8 - (startLenght + (startBit % 8)), startLenght).toInt(NULL, 2) * precision + offset;
+//			}
+//
+//		}
+//		else if (len <= 16)
+//		{
+//			if (isSend)
+//				temp = (binaryStr[startByte + 1].mid(8 - (startLenght - (8 - startBit % 8)), startLenght - (8 - startBit % 8)) + binaryStr[startByte].mid(0, 8 - (startBit % 8))).toInt(NULL, 2) / precision - offset;
+//			else
+//				temp = (binaryStr[startByte + 1].mid(8 - (startLenght - (8 - startBit % 8)), startLenght - (8 - startBit % 8)) + binaryStr[startByte].mid(0, 8 - (startBit % 8))).toInt(NULL, 2) * precision + offset;
+//		}
+//		{
+//			//跨三个字节的，应该没有
+//		}
+//	}
+//
+//
+//	return temp;
+//}
+//
+//float QLogPlot::parseMesItem_moto_msb(const protoItem& pItem, const QByteArray& data, int index, bool isSend)
+//{
+//	//防止越界
+//	if (pItem.startByte > 7)
+//		return 0.0;
+//	QStringList binaryStr = QByteToBinary(data);
+//
+//	int startByte = pItem.startByte;
+//	int startBit = pItem.startBit;
+//	int startLenght = pItem.bitLeng;
+//	float precision = pItem.precision;
+//	int offset = pItem.offset;
+//	bool octHex = pItem.octhex;
+//	parseData pd;
+//	float temp = 0;
+//	QString datafrom = pItem.dataFrom;
+//
+//
+//	//这个字段的数据来源其它字段的乘或除
+//	if (datafrom.contains("*") || datafrom.contains("/"))
+//	{
+//		QStringList splt = datafrom.split("*");
+//		if (splt.size() > 1)
+//		{
+//			/*dFromStru ddf;
+//			ddf.index = m;
+//			ddf.f1 = splt.at(0).toInt();
+//			ddf.f2 = splt.at(1).toInt();
+//			ddFF.push_back(ddf);*/
+//		}
+//	}
+//	else if (datafrom.contains("XOR"))
+//	{
+//		/*(uint8_t)data[m];
+//		uchar cData[8];
+//		for (int d = 0; d < 8; d++)
+//		{
+//			cData[d] = (uchar)data[d];
+//		}
+//		uchar res = checksumXOR(cData);
+//		uchar csum = data[m];
+//		if (res == csum)
+//		{
+//			temp = 0;
+//		}
+//		else
+//		{
+//			temp = 1;
+//		}*/
+//	}
+//	else
+//	{
+//		int len = startBit % 8 + startLenght;
+//		if (len <= 8)
+//		{   //不跨字节，这个就比较简单了
+//			//15 14 13 12 11 10 9 8   7 6 5 4 3 2 1 0
+//			//^高位在前，低位在后
+//
+//			if (octHex)
+//			{
+//				int nn = binaryStr[startByte].mid(8 - (startLenght + (startBit % 8)), startLenght).toInt(NULL, 2);
+//				QString ss = QString("%1").arg(nn, 0, 16, QLatin1Char('0'));
+//				if(isSend)
+//					temp = ss.toInt() / precision - offset;
+//				else
+//					temp = ss.toInt() * precision + offset;
+//			}
+//			else
+//			{
+//				if (isSend)
+//					temp = binaryStr[startByte].mid(startBit % 8, startLenght).toInt(NULL, 2) / precision - offset;
+//				else
+//					temp = binaryStr[startByte].mid(startBit % 8, startLenght).toInt(NULL, 2) * precision + offset;
+//			}
+//
+//		}
+//		else if (len <= 16)
+//		{
+//
+//			if (octHex)
+//			{
+//				int nn = (binaryStr[startByte].mid(0, 8 - (startBit % 8)) + binaryStr[startByte + 1].mid(startBit % 8, startLenght - (8 - startBit % 8))).toInt(NULL, 2);
+//				QString ss = QString("%1").arg(nn, 0, 16, QLatin1Char('0'));
+//				if (isSend)
+//					temp = ss.toInt() / precision - offset;
+//				else
+//					temp = ss.toInt() * precision + offset;
+//			}
+//			else
+//			{
+//				if (isSend)
+//					temp = (binaryStr[startByte].mid(0, 8 - (startBit % 8)) + binaryStr[startByte + 1].mid(startBit % 8, startLenght - (8 - startBit % 8))).toInt(NULL, 2) / precision - offset;
+//				else
+//					temp = (binaryStr[startByte].mid(0, 8 - (startBit % 8)) + binaryStr[startByte + 1].mid(startBit % 8, startLenght - (8 - startBit % 8))).toInt(NULL, 2) * precision + offset;
+//			}
+//
+//		}
+//		{
+//			//跨三个字节的，应该没有
+//		}
+//	}
+//	return temp;
+//}
 
 QStringList QLogPlot::QByteToBinary(const QByteArray& data)
 {
@@ -696,7 +708,7 @@ void QLogPlot::runExportMsg(QString filepath)
 				}
 				else if (2 == protol)
 				{
-					//value = MsgParser::moto_Lsb_Parser(pModelMes.cItem.at(i).pItem.at(j), data, pModelMes.cItem.at(i).isSend);
+					value = MsgParser::moto_Lsb_Parser(pModelMes.cItem.at(i).pItem.at(j), data, pModelMes.cItem.at(i).isSend);
 				}
 				
 				strtemp+=QString::number(value)+",";

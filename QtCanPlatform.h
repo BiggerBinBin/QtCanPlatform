@@ -366,6 +366,8 @@ private:
     uint timeStmp_send = 0;
     //登录界面
     Login* canSeting;
+    bool isLogin;
+    int loginType = 0;
     //多个发送周期标识，>1即为多个发送周期,适配如果科技发送两个ID请求时
     //不同的ID的发送周期不同
     int multiCircle;

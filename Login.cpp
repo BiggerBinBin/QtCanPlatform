@@ -16,7 +16,7 @@ Login::~Login()
 }
 void Login::showEvent(QShowEvent* event)
 {
-	ui.label_3->clear();
+	//ui.label_3->clear();
 }
 bool Login::getInitPW(QString path)
 {
@@ -41,7 +41,7 @@ void Login::on_pbLogin_clicked()
 		if (pw == technologyPW)
 		{
 			emit sigLogin(0);
-			ui.lineEdit->clear();
+			//ui.lineEdit->clear();
 			this->close();
 		}
 		else
@@ -54,7 +54,7 @@ void Login::on_pbLogin_clicked()
 		if (pw == adminPW)
 		{
 			emit sigLogin(1);
-			ui.lineEdit->clear();
+			//ui.lineEdit->clear();
 			this->close();
 		}
 		else

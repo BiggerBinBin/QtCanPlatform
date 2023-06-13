@@ -67,6 +67,7 @@ QtCanPlatform::QtCanPlatform(QWidget *parent)
     countPeroid = 0;
     m_iSavePeroidNum = 1;
     ui.menu->setEnabled(true);
+    isLogin = false;
 }
 
 QtCanPlatform::~QtCanPlatform()
@@ -3976,6 +3977,11 @@ void QtCanPlatform::logSlot(const QString& message, int level)
 */
 void QtCanPlatform::qCanSettingShow()
 {
+   /* if (isLogin)
+    {
+        on_canSettingShowFromLogin(this->loginType);
+        return;
+    }*/
     if (!canSeting)
     {
         canSeting = new Login(this);
@@ -3987,6 +3993,8 @@ void QtCanPlatform::qCanSettingShow()
 }
 void QtCanPlatform::on_canSettingShowFromLogin(int n)
 {
+   /* this->isLogin = true;
+    this->loginType = n;*/
     if (!canSetting) {
         canSetting = new QCanSetting();
         connect(canSetting, &QCanSetting::settingWidowsClose, this, &QtCanPlatform::on_SettingWidowsClose);
