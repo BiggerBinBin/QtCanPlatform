@@ -22,7 +22,7 @@
 #include <QSplitter>
 #include <qsettings.h>
 #include <WinBase.h>
-
+#include "./unit/MsgParser.h"
 using namespace QsLogging;
 
 QString qmyss = "QComboBox{height:25px;border: 1px solid gray;border-radius: 5px;padding:1px 2px 1px 2px;}\
@@ -1238,31 +1238,8 @@ void QtCanPlatform::recAnalyseIntel(unsigned int fream_id,QByteArray data)
             }
             else
             {
-                //判断是否跨字节，起止位模8，得出是当前字节的起止位，再加个长度
-                int len = startBit % 8 + startLenght;
-                if (len <= 8)
-                {   //不跨字节，这个就比较简单了
-                    //15 14 13 12 11 10 9 8   7 6 5 4 3 2 1 0
-                    //^高位在前，低位在后
-                    if (octHex)
-                    {
-                        int nn = binaryStr[startByte].mid(8 - (startLenght + (startBit % 8)), startLenght).toInt(NULL, 2);
-                        QString ss = QString("%1").arg(nn, 0, 16, QLatin1Char('0'));
-                        temp = ss .toInt() * precision + offset;
-                    }
-                    else
-                    {
-                        temp = binaryStr[startByte].mid(8 - (startLenght + (startBit % 8)), startLenght).toInt(NULL, 2) * precision + offset;
-                    }
-                    
-                }
-                else if (len <= 16)
-                {
-                    temp = (binaryStr[startByte + 1].mid(8 - (startLenght - (8 - startBit % 8)), startLenght - (8 - startBit % 8)) + binaryStr[startByte].mid(0, 8 - (startBit % 8))).toInt(NULL, 2) * precision + offset;
-                }
-                {
-                    //跨三个字节的，应该没有
-                }
+                temp = MsgParser::intel_Parser(recCanData.at(i).pItem.at(m), data, false);
+                
             }
             
             pd.name = recCanData.at(i).pItem.at(m).bitName;
@@ -1617,42 +1594,7 @@ void QtCanPlatform::recAnalyseMoto(unsigned int fream_id, QByteArray data)
             }
             else
             {
-                int len = startBit % 8 + startLenght;
-                if (len <= 8)
-                {   //不跨字节，这个就比较简单了
-                    //15 14 13 12 11 10 9 8   7 6 5 4 3 2 1 0
-                    //^高位在前，低位在后
-
-                    if (octHex)
-                    {
-                        int nn = binaryStr[startByte].mid(8 - (startLenght + (startBit % 8)), startLenght).toInt(NULL, 2);
-                        QString ss = QString("%1").arg(nn, 0, 16, QLatin1Char('0'));
-                        temp = ss.toInt() * precision + offset;
-                    }
-                    else
-                    {
-                        temp = binaryStr[startByte].mid(startBit % 8, startLenght).toInt(NULL, 2) * precision + offset;
-                    }
-                    
-                }
-                else if (len <= 16)
-                {
-
-                    if (octHex)
-                    {
-                        int nn = (binaryStr[startByte].mid(0, 8 - (startBit % 8)) + binaryStr[startByte + 1].mid(startBit % 8, startLenght - (8 - startBit % 8))).toInt(NULL, 2);
-                        QString ss = QString("%1").arg(nn, 0, 16, QLatin1Char('0'));
-                        temp = ss.toInt() * precision + offset;
-                    }
-                    else
-                    {
-                        temp = (binaryStr[startByte].mid(0, 8 - (startBit % 8)) + binaryStr[startByte + 1].mid(startBit % 8, startLenght - (8 - startBit % 8))).toInt(NULL, 2) * precision + offset;
-                    }
-                   
-                }
-                {
-                    //跨三个字节的，应该没有
-                }
+                temp = MsgParser::moto_Msb_Parser(recCanData.at(i).pItem.at(m), data, false);
             }
             
             pd.name = recCanData.at(i).pItem.at(m).bitName;
@@ -1705,18 +1647,7 @@ void QtCanPlatform::recAnalyseMoto(unsigned int fream_id, QByteArray data)
                 }
                 iB++;
             }
-           /* for (int i = 0; i < ss.size(); i++)
-            {
-                if (ss.at(i).value.toInt() == temp)
-                {
-                    pd.color.r = ss.at(i).r;
-                    pd.color.g = ss.at(i).g;
-                    pd.color.b = ss.at(i).b;
-                    pd.toWord = ss.at(i).toWord;
-                    break;
-                }
-
-            }*/
+         
             int stdddd = 0;
             for (int i = 0; i < ss.size(); i++)
             {
@@ -1979,43 +1910,8 @@ void QtCanPlatform::recAnalyseIntel(int ch,unsigned int fream_id, QByteArray dat
             }
             else
             {
-                //判断是否跨字节，起止位模8，得出是当前字节的起止位，再加个长度
-                int len = startBit % 8 + startLenght;
-                if (len <= 8)
-                {   //不跨字节，这个就比较简单了
-                    //15 14 13 12 11 10 9 8   7 6 5 4 3 2 1 0
-                    //^高位在前，低位在后
-
-                    if (octHex)
-                    {
-                        int nn = binaryStr[startByte].mid(8 - (startLenght + (startBit % 8)), startLenght).toInt(NULL, 2);
-                        QString ss  = QString("%1").arg(nn, 0, 16, QLatin1Char('0'));
-                        temp = ss.toInt() * precision + offset;
-                    }
-                    else
-                    {
-                        temp = binaryStr[startByte].mid(8 - (startLenght + (startBit % 8)), startLenght).toInt(NULL, 2) * precision + offset;
-                    }
-                    
+                temp = MsgParser::intel_Parser(recCanData.at(i).pItem.at(m), data, false);
                 
-                }
-                else if (len <= 16)
-                {
-                    if (octHex)
-                    {
-                        int nn = (binaryStr[startByte + 1].mid(8 - (startLenght - (8 - startBit % 8)), startLenght - (8 - startBit % 8)) + binaryStr[startByte].mid(0, 8 - (startBit % 8))).toInt(NULL, 2);
-                        QString ss = QString("%1").arg(nn, 0, 16, QLatin1Char('0'));
-                        temp = ss.toInt() * precision + offset;
-                    }
-                    else
-                    {
-                        temp = (binaryStr[startByte + 1].mid(8 - (startLenght - (8 - startBit % 8)), startLenght - (8 - startBit % 8)) + binaryStr[startByte].mid(0, 8 - (startBit % 8))).toInt(NULL, 2) * precision + offset;;
-                    }
-                    
-                }
-                {
-                    //跨三个字节的，应该没有
-                }
             }
             
             pd.name = recCanData.at(i).pItem.at(m).bitName;
@@ -2340,42 +2236,8 @@ void QtCanPlatform::recAnalyseMoto(int ch,unsigned int fream_id, QByteArray data
             }
             else
             {
-                int len = startBit % 8 + startLenght;
-                if (len <= 8)
-                {   //不跨字节，这个就比较简单了
-                    //15 14 13 12 11 10 9 8   7 6 5 4 3 2 1 0
-                    //^高位在前，低位在后
-
-                    if (octHex)
-                    {
-                        int nn = binaryStr[startByte].mid(startBit % 8, startLenght).toInt(NULL, 2);
-                        QString ss = QString("%1").arg(nn, 0, 16, QLatin1Char('0'));
-                        temp = ss.toInt() * precision + offset;
-                        //temp = binaryStr[startByte].mid(startBit % 8, startLenght).toInt(NULL, 2) * precision + offset;
-                    }
-                    else
-                    {
-                        temp = binaryStr[startByte].mid(startBit % 8, startLenght).toInt(NULL, 2) * precision + offset;
-                    }
-                    
-                }
-                else if (len <= 16)
-                {
-                    if (octHex)
-                    {
-                        int nn = (binaryStr[startByte].mid(0, 8 - (startBit % 8)) + binaryStr[startByte + 1].mid(startBit % 8, startLenght - (8 - startBit % 8))).toInt(NULL, 2);
-                        QString ss = QString("%1").arg(nn, 0, 16, QLatin1Char('0'));
-                        temp = ss.toInt() * precision + offset;
-                    }
-                    else
-                    {
-                        temp = (binaryStr[startByte].mid(0, 8 - (startBit % 8)) + binaryStr[startByte + 1].mid(startBit % 8, startLenght - (8 - startBit % 8))).toInt(NULL, 2) * precision + offset;
-                    }
-                   
-                }
-                {
-                    //跨三个字节的，应该没有
-                }
+                temp = MsgParser::moto_Msb_Parser(recCanData.at(i).pItem.at(m), data, false);
+                
             }
 
             pd.name = recCanData.at(i).pItem.at(m).bitName;
