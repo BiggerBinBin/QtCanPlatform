@@ -25,7 +25,7 @@
    </property>
    <widget class="QMenu" name="menu">
     <property name="tearOffEnabled">
-     <bool>true</bool>
+     <bool>false</bool>
     </property>
     <property name="title">
      <string>帮助</string>

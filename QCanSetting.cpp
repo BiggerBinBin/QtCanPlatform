@@ -1166,7 +1166,7 @@ void QCanSetting::on_modelView_Clicked(int row, int col)
 	int mc = paramView->rowCount();
 	for (int p = 0; p < paramView->rowCount(); p++)
 		paramView->removeRow(mc - p - 1);
-	paramView->setRowCount(25);
+	paramView->setRowCount(26);
 	paramView->setItem(0, 0, new QTableWidgetItem(QString("使能所在行")));
 	paramView->setItem(0, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_iEnableInLine)));
 	paramView->setItem(1, 0, new QTableWidgetItem(QString("使能操作")));
@@ -1228,6 +1228,8 @@ void QCanSetting::on_modelView_Clicked(int row, int col)
 
 	paramView->setItem(24, 0, new QTableWidgetItem(QString("出口停止使能温度")));
 	paramView->setItem(24, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_iOutTempStop)));
+	paramView->setItem(25, 0, new QTableWidgetItem(QString("参考入(0)出(1)水口温度")));
+	paramView->setItem(25, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_usOutOrInTemp)));
 
 }
 
@@ -1806,6 +1808,9 @@ void QCanSetting::on_paramView_cellChanged(int row, int col)
 		break;
 	case 24:
 		qGb->pGboleData.at(n).ats.m_iOutTempStop = paramView->item(row, col)->text().toInt();
+		break;
+	case 25:
+		qGb->pGboleData.at(n).ats.m_usOutOrInTemp = paramView->item(row, col)->text().toInt();
 		break;
 	default:
 		break;

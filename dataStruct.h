@@ -31,6 +31,7 @@ struct AutoTestStruct
 	int m_bTurnOffFlow;			//22 测试过温保护时是否关闭流量
 	int m_bTurnOffCool;			//22 测试过温保护时是否关闭制冷
 	int m_iOutTempStop;			//23 出水口过温温度，到达就停止使能
+	ushort m_usOutOrInTemp;		//24 使用出水口温度还是入水口温度（0出，1入）
 	//bool isIndepandSend;
 
 };

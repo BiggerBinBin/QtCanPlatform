@@ -75,6 +75,7 @@ void qGboleData::save()
 		mItem.insert("m_bTurnOffFlow", pGboleData.at(i).ats.m_bTurnOffFlow);
 		mItem.insert("m_bTurnOffCool", pGboleData.at(i).ats.m_bTurnOffCool);
 		mItem.insert("m_iOutTempStop", pGboleData.at(i).ats.m_iOutTempStop);
+		mItem.insert("m_usOutOrInTemp", pGboleData.at(i).ats.m_usOutOrInTemp);
 
 
 
@@ -230,6 +231,7 @@ void qGboleData::read()
 		ptem.ats.m_bTurnOffFlow = rootSecond["m_bTurnOffFlow"].toInt(1);
 		ptem.ats.m_bTurnOffCool = rootSecond["m_bTurnOffCool"].toInt(0);
 		ptem.ats.m_iOutTempStop = rootSecond["m_iOutTempStop"].toInt(50);
+		ptem.ats.m_usOutOrInTemp = (ushort)rootSecond["m_usOutOrInTemp"].toInt(0);
 
 
 		//如果还有嵌套对象

@@ -55,7 +55,7 @@ QtCanPlatform::QtCanPlatform(QWidget *parent)
     this->showMaximized();
     //connect(this, &QtCanPlatform::sigEndRunWork, this, &QtCanPlatform::on_recSigEndRunWork);
     
-    connect(this, &QtCanPlatform::sigSendHttp, this, &QtCanPlatform::on_commitData);
+    //connect(this, &QtCanPlatform::sigSendHttp, this, &QtCanPlatform::on_commitData);
     connect(this, &QtCanPlatform::sigSendPutMesData, this, &QtCanPlatform::on_TCPDataSend_MES);
     connect(this, &QtCanPlatform::sigSendPutPowData, this, &QtCanPlatform::on_sigFromThisPowerSet);
     //博世的获取版本定时器
@@ -515,14 +515,14 @@ void QtCanPlatform::initUi()
     clay->addWidget(m_lePeroid);
     //clay->addSpacerItem(new QSpacerItem(20, 10));
     //topRightUI->addLayout(clay);
-    QWidget* ctx = new QWidget(this);
+    QWidget *ctx = new QWidget(this);
     ctx->setLayout(clay);
     pbClearText->setText(tr("清除日志"));
     pbClearText->setFixedWidth(80);
 
-    QGroupBox* gp = new QGroupBox(this);
+    gp = new QGroupBox(this);
     gp->setLayout(topRightUI);
-
+    
     //定时界面
     m_tCaptureTimer = new QTimer(this);
     m_iTimeStopLineEdit = new QLineEdit(this);
@@ -557,15 +557,21 @@ void QtCanPlatform::initUi()
         wg->setLayout(layCap);
         bootomright->addWidget(wg);
     }
-    
+    QPushButton* pbHidenAutoWidget = new QPushButton(this);
+    connect(pbHidenAutoWidget, &QPushButton::clicked, this, &QtCanPlatform::on_pbHidenAutoWidget_clicked);
+    pbHidenAutoWidget->setFixedHeight(25);
+    pbHidenAutoWidget->setText("隐藏/展开");
+    pbHidenAutoWidget->setCheckable(true);
    // bootomright->addWidget(ctx);
+    bootomright->addWidget(pbHidenAutoWidget);
     bootomright->addWidget(gp);
     bootomright->addWidget(ctx);
     
     bootomright->addWidget(textBrowser);
-    bootomright->setStretchFactor(0, 8);
-    bootomright->setStretchFactor(1, 1);
-    bootomright->setStretchFactor(2, 6);
+    bootomright->setStretchFactor(0, 1);
+    bootomright->setStretchFactor(1, 8);
+    bootomright->setStretchFactor(2, 1);
+    bootomright->setStretchFactor(3, 6);
     
     mainBottom->setStretchFactor(0, 11);
     mainBottom->setStretchFactor(1, 3);
@@ -1648,6 +1654,7 @@ void QtCanPlatform::recAnalyseMoto(unsigned int fream_id, QByteArray data)
                 iB++;
             }
          
+            //解析要显示到单元格的颜色
             int stdddd = 0;
             for (int i = 0; i < ss.size(); i++)
             {
@@ -1695,7 +1702,6 @@ void QtCanPlatform::recAnalyseMoto(unsigned int fream_id, QByteArray data)
     int rcount = tableArray[0]->rowCount();
     for (int m = 0; m < rcount; m++)
         tableArray[0]->removeRow(rcount - m - 1);
-    //=================10.10===============
     //=================10.10===============
     QString dTime = QDateTime::currentDateTime().toString("yyyy-MM-dd-hh-mm-ss-zzz");
     QDateTime dd = QDateTime::currentDateTime();
@@ -2486,6 +2492,10 @@ void QtCanPlatform::getByteInfo(const std::vector<parseData>& parseArr,int ch)
         {
             realWTemp[ch] = x.value;
         }
+        else if (x.name == "入口温度°C" || x.name == "入水口温度°C" || x.name == "入口温度(°C)" || x.name == "入水口温度(°C)")
+        {
+            realINTemp[ch] = x.value;
+        }
         else if (x.name == "高压异常故障" || x.name=="高压指示"|| x.name == "高压异常")
         {
             realHVErr[ch] = x.toWord;
@@ -2685,27 +2695,27 @@ void QtCanPlatform::on_cbCanType_currentIndexChanged(int index)
     cbPcan->clear();
     on_pbRefreshDevice_clicked();
 }
-void QtCanPlatform::on_commitData(const QByteArray& byte, int id)
-{
-    qGboleData* gb = qGboleData::getInstance();
-    if (!gb)
-        return;
-    struct autoTestData at = gb->getATData();
-    mHttp mp(this);
-    QString status = mp.sendHttpSys(byte, at.m_sOutWebAddr);
-    if (status.isEmpty() || status.at(0) != "Y")
-    {
-        QMessageBox::warning(this, tr("警告"), tr("上传失败，没有找到相关设备所在工位信息"));
-        QLOG_INFO() << "工位-" << id << ":上传数据失败";
-        //ui.dCbProcess3->setChecked(false);
-    }
-    else if (status.at(0) == "Y")
-    {
-        //QMessageBox::about(this, tr("提示"), tr("出站成功"));
-        //ui.dCbProcess3->setChecked(true);
-        QLOG_INFO() << "工位-"<<id<<":上传数据成功";
-    }
-}
+//void QtCanPlatform::on_commitData(const QByteArray& byte, int id)
+//{
+//    qGboleData* gb = qGboleData::getInstance();
+//    if (!gb)
+//        return;
+//    struct autoTestData at = gb->getATData();
+//    mHttp mp(this);
+//    QString status = mp.sendHttpSys(byte, at.m_sOutWebAddr);
+//    if (status.isEmpty() || status.at(0) != "Y")
+//    {
+//        QMessageBox::warning(this, tr("警告"), tr("上传失败，没有找到相关设备所在工位信息"));
+//        QLOG_INFO() << "工位-" << id << ":上传数据失败";
+//        //ui.dCbProcess3->setChecked(false);
+//    }
+//    else if (status.at(0) == "Y")
+//    {
+//        //QMessageBox::about(this, tr("提示"), tr("出站成功"));
+//        //ui.dCbProcess3->setChecked(true);
+//        QLOG_INFO() << "工位-"<<id<<":上传数据成功";
+//    }
+//}
 void QtCanPlatform::on_pbSend_clicked(bool clicked)
 {
 
@@ -4100,27 +4110,56 @@ void QtCanPlatform::getAveragePW(const AutoTestStruct& at)
     PowerArr[0].clear();
     int tempture = currentTestModel.ats.m_usRatedPWTemp;
     QLOG_INFO() << "tempture:" << tempture;
-    while (runStep != -1)
+    ushort outOrin= currentTestModel.ats.m_usOutOrInTemp;
+    if (outOrin)
     {
-        if (realWTemp[0] == tempture)
+        while (runStep != -1)
         {
-            while (realWTemp[0] == tempture)
+            if (realINTemp[0] == tempture)
             {
-                PowerArr[0].push_back(realPower[0]);
-                if (PowerArr[0].size() >= agvPowerFream)
-                    break;
-                QThread::msleep(_period_ + 50);
+                while (realINTemp[0] == tempture)
+                {
+                    PowerArr[0].push_back(realPower[0]);
+                    if (PowerArr[0].size() >= agvPowerFream)
+                        break;
+                    QThread::msleep(_period_ + 50);
+                }
             }
-        }
-        if (realWTemp[0] > tempture)
-        {
-            lestCount++;
-            if (lestCount > 3)
+            if (realINTemp[0] > tempture)
+            {
+                lestCount++;
+                if (lestCount > 3)
+                    break;
+            }
+            if (PowerArr[0].size() >= agvPowerFream)
                 break;
         }
-        if (PowerArr[0].size() >= agvPowerFream)
-            break;
     }
+    else
+    {
+        while (runStep != -1)
+        {
+            if (realWTemp[0] == tempture)
+            {
+                while (realWTemp[0] == tempture)
+                {
+                    PowerArr[0].push_back(realPower[0]);
+                    if (PowerArr[0].size() >= agvPowerFream)
+                        break;
+                    QThread::msleep(_period_ + 50);
+                }
+            }
+            if (realWTemp[0] > tempture)
+            {
+                lestCount++;
+                if (lestCount > 3)
+                    break;
+            }
+            if (PowerArr[0].size() >= agvPowerFream)
+                break;
+        }
+    }
+    
     float sum=0;
     for (int i = 0; i < PowerArr[0].size(); i++)
         sum += PowerArr[0].at(i);
@@ -4255,6 +4294,11 @@ void QtCanPlatform::on_plotWindowCLose()
 {
     if (LogPb)
         LogPb->setEnabled(true);
+}
+void QtCanPlatform::on_pbHidenAutoWidget_clicked(bool b)
+{
+    if (!gp)return;
+    gp->setHidden(b);
 }
 void QtCanPlatform::on_TCPDataSend_MES(QByteArray data)
 {
@@ -5052,14 +5096,30 @@ void QtCanPlatform::workAutoTest()
             int tempture = currentTestModel.ats.m_usHeatTemp;
             //Step4
             //检测水温，准备功率测试
-            while (runStep != -1)
+            ushort outOrIn = currentTestModel.ats.m_usOutOrInTemp;
+            if (outOrIn)
             {
-                if (realWTemp[0] <= tempture)
+                while (runStep != -1)
                 {
-                    break;
+                    if (realINTemp[0] <= tempture)
+                    {
+                        break;
+                    }
+                    QThread::msleep(500);
                 }
-                QThread::msleep(500);
             }
+            else
+            {
+                while (runStep != -1)
+                {
+                    if (realWTemp[0] <= tempture)
+                    {
+                        break;
+                    }
+                    QThread::msleep(500);
+                }
+            }
+           
             //检测退出
             if (runStep == -1) { emit sigAutoTestSend(-99, "人工退出测试"); upMesOutData();  QLOG_INFO() << "退出测试"; return; }
             //Step5

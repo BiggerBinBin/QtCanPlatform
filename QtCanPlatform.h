@@ -274,6 +274,7 @@ private:
     float realPower[4] = { 0 };
     float realVolt[4] = { 0 };
     float realWTemp[4] = { 0 };
+    float realINTemp[4] = { 0 };
     QString realHVErr[4] = { ""};
     QString realHvLv[4] = { ""};
     QString realOTPro[4] = { ""};
@@ -375,6 +376,7 @@ private:
     QLineEdit* m_lePeroid;
     uint m_iSavePeroidNum;
     uint countPeroid;
+    QGroupBox* gp;
 
 private slots:
       void on_CapturePower();
@@ -432,7 +434,7 @@ private slots:
     void on_pbClearLogShow_clicked();
     //CAN盒子的类型
     void on_cbCanType_currentIndexChanged(int index);
-    void on_commitData(const QByteArray& byte, int id);
+    //void on_commitData(const QByteArray& byte, int id);
 
     void on_action_About_triggered();
     void on_action_History_triggered();
@@ -462,6 +464,7 @@ private slots:
     //出口温度监控monitor
     void on_outTempMonitor_Changed(int n);
     void on_plotWindowCLose();
+    void on_pbHidenAutoWidget_clicked(bool b);
 
 signals:
     void sigNewRoll();

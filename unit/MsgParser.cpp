@@ -1,5 +1,5 @@
 #include "MsgParser.h"
-
+#include "QsLog.h"
 MsgParser::MsgParser(QObject *parent)
 	: QObject(parent)
 {}
@@ -19,6 +19,11 @@ float MsgParser::intel_Parser(const protoItem& pItem, const QByteArray& data, bo
         bool octHex = pItem.octhex;
         parseData pd;
         float temp = 0;
+        if (startByte > binaryStr.size() - 1)
+        {
+            QLOG_WARN() << "错误，字节超出范围";
+            return temp;
+        }
         QString datafrom = pItem.dataFrom;
         //判断是否跨字节，起止位模8，得出是当前字节的起止位，再加个长度
         if (datafrom != "-1")
@@ -80,6 +85,11 @@ float MsgParser::moto_Msb_Parser(const protoItem& pItem, const QByteArray& data,
     bool octHex = pItem.octhex;
     parseData pd;
     float temp = 0;
+    if (startByte > binaryStr.size() - 1)
+    {
+        QLOG_WARN() << "错误，字节超出范围";
+        return temp;
+    }
     //判断是否跨字节，起止位模8，得出是当前字节的起止位，再加个长度
     //if (datafrom != "-1")
     if (datafrom.contains("*") || datafrom.contains("/"))
@@ -145,6 +155,11 @@ float MsgParser::moto_Lsb_Parser(const protoItem& pItem, const QByteArray& data,
     bool octHex = pItem.octhex;
     parseData pd;
     float temp = 0;
+    if (startByte > binaryStr.size() - 1)
+    {
+        QLOG_WARN() << "错误，字节超出范围";
+        return temp;
+    }
     QString datafrom = pItem.dataFrom;
     //判断是否跨字节，起止位模8，得出是当前字节的起止位，再加个长度
     if (datafrom != "-1")
