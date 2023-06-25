@@ -133,6 +133,9 @@
     <ClCompile Include="CustomTableWidgetDelegate.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="LogAsc.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="QCanSetting.h">
@@ -211,6 +214,9 @@
       <Filter>Header Files</Filter>
     </QtMoc>
     <QtMoc Include="CustomTableWidgetDelegate.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="LogAsc.h">
       <Filter>Header Files</Filter>
     </QtMoc>
   </ItemGroup>

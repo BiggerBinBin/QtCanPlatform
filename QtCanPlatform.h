@@ -357,11 +357,20 @@ private:
     int m_iSaveDataGrap = 1;
     QTimer m_tSaveDataGrapTime;
 
+    //风暧显示时间
     QLineEdit* m_iTimeStopLineEdit = nullptr;
     QPushButton* m_pbStartRad = nullptr;
     QLabel* m_labShowTime = nullptr;
     QTimer* m_tCaptureTimer = nullptr;
     int runTimed = 0;
+    //*************记录使能的时间******************
+    QLabel* curruntime;
+    QLabel* totaltime;
+    QPushButton* clearCountTime;
+    uint m_uiElspseTotalTime = 0;
+    uint m_uiElspseTime = 0;
+    QTimer* m_tRecord;
+    //运行时间
     int countRunTime = 0;
     uint timeStmp = 0;
     uint timeStmp_send = 0;
@@ -377,9 +386,11 @@ private:
     uint m_iSavePeroidNum;
     uint countPeroid;
     QGroupBox* gp;
+    bool m_bShowAutoTest;
 
 private slots:
       void on_CapturePower();
+      void on_CaptureElapseTime();
       void on_canSettingShowFromLogin(int n);
 private slots:
     //CAN协议设置

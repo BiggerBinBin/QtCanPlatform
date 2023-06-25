@@ -8,7 +8,7 @@
 #include <QtGlobal>
 #include "QsLog.h"
 #include "./unit/MsgParser.h"
-
+#include "LogAsc.h"
 # pragma execution_character_set("utf-8")
 QLogPlot::QLogPlot(int index,QWidget *parent)
 	: m_iModel(index), QWidget(parent)
@@ -57,7 +57,7 @@ void QLogPlot::closeEvent(QCloseEvent* event)
 }
 void QLogPlot::on_pbOpenFile_clicked()
 {
-	QString filepath = QFileDialog::getOpenFileName(NULL, "打开日志文件", QApplication::applicationDirPath(), QString("log文件(*.blf *.trc)"));
+	QString filepath = QFileDialog::getOpenFileName(NULL, "打开日志文件", QApplication::applicationDirPath(), QString("log文件(*.blf *.trc *.asc)"));
 	if (filepath.isEmpty()) return;
 	QFileInfo info(filepath);
 
@@ -70,6 +70,10 @@ void QLogPlot::on_pbOpenFile_clicked()
 	{
 		m_pLogSource.reset(new LogTrc());
 		
+	}
+	else if (info.suffix().toLower() == "asc")
+	{
+		m_pLogSource.reset(new LogAsc());
 	}
 	connect(m_pLogSource.data(), &LogMessage::LogBase::sigLoadState, this, &QLogPlot::on_GetBLFStaus);
 	qGboleData* qGb = qGboleData::getInstance();
@@ -685,16 +689,17 @@ void QLogPlot::runExportMsg(QString filepath)
 		
 		for (int i = 0; i < pModelMes.cItem.size(); i++)
 		{
+			if (id != pModelMes.cItem.at(i).strCanId.toInt(nullptr, 16))
+			{
+				continue;
+			}
 			for (int j = 0; j < pModelMes.cItem.at(i).pItem.size(); j++)
 			{
 				if (!pModelMes.cItem.at(i).pItem.at(j).isRoll)
 				{//No show signal
 					continue;
 				}
-				if (id != pModelMes.cItem.at(i).strCanId.toInt(nullptr, 16))
-				{
-					continue;
-				}
+				
 				float value = 0;
 				if (0 == protol)
 				{

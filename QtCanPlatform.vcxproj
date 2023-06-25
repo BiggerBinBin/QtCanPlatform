@@ -195,6 +195,7 @@
   <ItemGroup>
     <ClCompile Include="Abstract\AbstractPower.cpp" />
     <ClCompile Include="CustomTableWidgetDelegate.cpp" />
+    <ClCompile Include="LogAsc.cpp" />
     <ClCompile Include="LogTrc.cpp" />
     <ClCompile Include="unit\ImplementPower.cpp" />
     <ClCompile Include="unit\MsgParser.cpp" />
@@ -250,6 +251,7 @@
     <QtMoc Include="unit\MsgParser.h" />
     <QtMoc Include="unit\ImplementPower.h" />
     <QtMoc Include="CustomTableWidgetDelegate.h" />
+    <QtMoc Include="LogAsc.h" />
     <ClInclude Include="unit\msgSaveInf.h" />
     <QtMoc Include="canthread.h" />
     <QtMoc Include="AutoDeviceManage.h" />

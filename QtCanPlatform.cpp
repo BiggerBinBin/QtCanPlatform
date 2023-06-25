@@ -522,7 +522,19 @@ void QtCanPlatform::initUi()
 
     gp = new QGroupBox(this);
     gp->setLayout(topRightUI);
-    
+    curruntime = new QLabel(this);
+    totaltime = new QLabel(this);
+    curruntime->setText("T：0H 0M 0S"); 
+    totaltime->setText("Total：0H 0M 0S");
+    clearCountTime = new QPushButton(this);
+    clearCountTime->setText("重置");
+    connect(clearCountTime, &QPushButton::clicked, [this](bool b) { m_uiElspseTime = 0; m_uiElspseTotalTime = 0; curruntime->setText("T：0H 0M 0S"); totaltime->setText("  Total：0H 0M 0S"); });
+    m_tRecord = new QTimer(this);
+    connect(m_tRecord, &QTimer::timeout, this, &QtCanPlatform::on_CaptureElapseTime);
+    QHBoxLayout* recordElapseTime = new QHBoxLayout(this);
+    recordElapseTime->addWidget(curruntime);
+    recordElapseTime->addWidget(totaltime);
+    recordElapseTime->addWidget(clearCountTime);
     //定时界面
     m_tCaptureTimer = new QTimer(this);
     m_iTimeStopLineEdit = new QLineEdit(this);
@@ -566,12 +578,16 @@ void QtCanPlatform::initUi()
     bootomright->addWidget(pbHidenAutoWidget);
     bootomright->addWidget(gp);
     bootomright->addWidget(ctx);
+    QWidget* elapseWidget = new QWidget(this);
+    elapseWidget->setLayout(recordElapseTime);
     
+    bootomright->addWidget(elapseWidget);
     bootomright->addWidget(textBrowser);
     bootomright->setStretchFactor(0, 1);
     bootomright->setStretchFactor(1, 8);
     bootomright->setStretchFactor(2, 1);
-    bootomright->setStretchFactor(3, 6);
+    bootomright->setStretchFactor(3, 1);
+    bootomright->setStretchFactor(4, 8);
     
     mainBottom->setStretchFactor(0, 11);
     mainBottom->setStretchFactor(1, 3);
@@ -584,6 +600,7 @@ void QtCanPlatform::initUi()
     //增加about，历史版本，关于
     initAutoResTableWidget();
     canSeting = nullptr;
+    this->on_pbHidenAutoWidget_clicked(m_bShowAutoTest);
 
 }
 void QtCanPlatform::initAutoResTableWidget()
@@ -1288,16 +1305,25 @@ void QtCanPlatform::recAnalyseIntel(unsigned int fream_id,QByteArray data)
                 int max = iB->f1 > iB->f2 ? iB->f1 : iB->f2;
                 if (m - 1 > max - 1)
                 {
-                    //本数据是由其它数据生成，这里只做了由其它数据相乘
-                    parseArr.at(iB->index).value = parseArr.at(iB->f1 - 1).value * parseArr.at(iB->f2 - 1).value;
-                    parseArr.at(iB->index).toWord = QString::number(parseArr.at(iB->index).value);
-                    //更新RollShowData里面的数据，因为是有序的，之前push进去的数据为空的
-                    if (RollShowData.size() - 1 >= iB->showCount)
+                    if (iB->index >= parseArr.size())
                     {
-                        RollShowData.at(iB->showCount).value = parseArr.at(iB->index).value;
+                        QLOG_WARN() << "字段生成数据超出范围，请检测";
+
                     }
-                    ddFF.erase(iB);
-                    break;
+                    else
+                    {
+                        //本数据是由其它数据生成，这里只做了由其它数据相乘
+                        parseArr.at(iB->index).value = parseArr.at(iB->f1 - 1).value * parseArr.at(iB->f2 - 1).value;
+                        parseArr.at(iB->index).toWord = QString::number(parseArr.at(iB->index).value);
+                        //更新RollShowData里面的数据，因为是有序的，之前push进去的数据为空的
+                        if (RollShowData.size() - 1 >= iB->showCount)
+                        {
+                            RollShowData.at(iB->showCount).value = parseArr.at(iB->index).value;
+                        }
+                        ddFF.erase(iB);
+                        break;
+                    }
+                    
                 }
                 iB++;
             }
@@ -3465,7 +3491,21 @@ void QtCanPlatform::on_cbSelectSendItemChanged(int index)
     int cbRow = cbIndex.row();
     int cbCol = cbIndex.column();
     unsigned int cbInId = tableView->item(cbRow, 4)->text().toUInt(NULL, 16);
-    
+    if(cbRow==currentTestModel.ats.m_iEnableInLine)
+    {
+        if (cb->currentText() == "PTC使能" || cb->currentText() == "使能" || cb->currentText() == "使能开" || cb->currentText() == "挡位控制")
+        {
+            QLOG_INFO() << "计时开始";
+            if (!m_tRecord->isActive())
+                m_tRecord->start(1000);
+            this->m_uiElspseTime = 0;
+        }
+        else
+        {
+            QLOG_INFO() << "计时停止";
+            m_tRecord->stop();
+        }
+    }
     for (int k = 0; k < sendCanData.size(); k++)
     {
         if (sendCanData.at(k).strCanId.toUInt(NULL,16) != cbInId)
@@ -3863,6 +3903,15 @@ void QtCanPlatform::qCanSettingShow()
     canSeting->setModal(true);
     
 }
+void QtCanPlatform::on_CaptureElapseTime()
+{
+    m_uiElspseTotalTime++;
+    m_uiElspseTime++;
+    QString tot = " Total：" + QString::number(m_uiElspseTotalTime / 3600) + "H " + QString::number(m_uiElspseTotalTime % 3600 / 60) + "M " + QString::number(m_uiElspseTotalTime % 60) + "S";
+    QString cut = "T：" + QString::number(m_uiElspseTime / 3600) + "H " + QString::number(m_uiElspseTime % 3600 / 60) + "M " + QString::number(m_uiElspseTime % 60) + "S";
+    curruntime->setText(cut);
+    totaltime->setText(tot);
+}
 void QtCanPlatform::on_canSettingShowFromLogin(int n)
 {
    /* this->isLogin = true;
@@ -3895,6 +3944,8 @@ void QtCanPlatform::readSetFile()
     m_iShowType = at.m_iShowType;
     m_iRecOnNoSend = at.m_iRecOnNoSend;
     saveListNum = at.m_iSaveListNum;
+    m_bShowAutoTest = at.m_bShowAutoTest;
+
     if (saveListNum < 600)
         saveListNum = 600;
 
@@ -3998,15 +4049,21 @@ void QtCanPlatform::getVerAuto(const AutoTestStruct& at)
                 QString toVer = QString::number(ver1)+"."+ QString::number(ver2);
                 up_mes_var.m_strVer = toVer;
                 if (toVer == std_ver)
+                {
                     emit sigAutoTestSend(2, toVer);
+                }
                 else
+                {
                     emit sigAutoTestSend(3, toVer);
+                    up_mes_var.m_strTestResult = "N";
+                }
                 break;
             }
             else
             {
                 QString toVer = "0.0";
                 up_mes_var.m_strVer = toVer;
+                up_mes_var.m_strTestResult = "N";
                 emit sigAutoTestSend(3, toVer);
                 break;
             }
@@ -4024,9 +4081,14 @@ void QtCanPlatform::getVerAuto(const AutoTestStruct& at)
                     QString verser = "M:" + QString::number(ver1) + "." + QString::number(ver2) + "-S:" + QString::number(ver3) + "." + QString::number(ver4);
                     up_mes_var.m_strVer = verser;
                     if(verser==std_ver)
+                    {
                         emit sigAutoTestSend(2, verser);
+                    }
                     else
+                    {
                         emit sigAutoTestSend(3, verser);
+                        up_mes_var.m_strTestResult = "N";
+                    }
                     break;
                 }
             }
@@ -4034,6 +4096,7 @@ void QtCanPlatform::getVerAuto(const AutoTestStruct& at)
             {
                 QString verser = "M:0.0-S:0.0";
                 up_mes_var.m_strVer = verser;
+                up_mes_var.m_strTestResult = "N";
                 emit sigAutoTestSend(3, verser);
                 break;
             }
@@ -4183,7 +4246,7 @@ void QtCanPlatform::getAveragePW(const AutoTestStruct& at)
         {
             emit sigAutoTestSend(21, QString::number(sum));
            // showAutoTestStep(5, QString::number(sum), "NG");
-            up_mes_var.m_strTestResult = "9";
+            up_mes_var.m_strTestResult = "N";
         }
     }
     else
@@ -4197,7 +4260,7 @@ void QtCanPlatform::getAveragePW(const AutoTestStruct& at)
         {
             emit sigAutoTestSend(21, QString::number(sum));
             //showAutoTestStep(5, QString::number(sum), "NG");
-            up_mes_var.m_strTestResult = "9";
+            up_mes_var.m_strTestResult = "N";
         }
     }
     up_mes_var.m_strRatedPW = QString::number(sum);
@@ -4359,7 +4422,7 @@ float QtCanPlatform::getPowerResponed(QString str)
 bool QtCanPlatform::getMesResponed(QString str)
 {
     QByteArray sendData;
-    sendData.append(str);
+    sendData.append(str.toUtf8());
     _bIsRec_Mes = false;
     emit sigSendPutMesData(sendData);
     QLOG_INFO() << str;
@@ -4543,6 +4606,7 @@ void QtCanPlatform::on_pbStartAutoTest_clicked(bool b)
 void QtCanPlatform::runOutMonitor()
 {
     int outTempture = currentTestModel.ats.m_iOutTempStop;
+    QLOG_INFO() << "出口监控温度为：" << outTempture << "°C";
     while (runStep != -1)
     {
         if (realWTemp[0] >= outTempture && (realWTemp[0] != 205 && realWTemp[0] != 215 && realWTemp[0] != 255))
@@ -4764,7 +4828,7 @@ void QtCanPlatform::on_processAutoTestSignal(int n, QString str)
 }
 bool QtCanPlatform::upMesOutData()
 {
-    QString res_mes = "#A102;" + m_strPHUCode + "|PHU7KW-007|";
+    
     QString t_data = up_mes_var.m_strRatedTemp + "," +
         up_mes_var.m_strRatedVoltage + "," +
         up_mes_var.m_strRatedFlow + "," +
@@ -4778,9 +4842,10 @@ bool QtCanPlatform::upMesOutData()
         up_mes_var.m_strRatedPW + "," +
         up_mes_var.m_strOverTempProtected + "," +
         up_mes_var.m_strOverTempProtectedRe + "," +
-        up_mes_var.m_strOtherFault + "," +
-        up_mes_var.m_strTestResult + "$";
-    bool b4 = getMesResponed(res_mes + t_data);
+        up_mes_var.m_strOtherFault + ","+
+        (up_mes_var.m_strTestResult=="Y"?"1":"9") + "$";
+    QString res_mes = "#A102;" + m_strPHUCode + ";D_PHU01_006;" + up_mes_var.m_strTestResult+";"+QString::number(t_data.split(",").size()) + ";" + t_data;
+    bool b4 = getMesResponed(res_mes);
     if (!b4)
     {
         emit sigAutoTestSend(33, "出站失败");
@@ -4809,7 +4874,7 @@ void clear_up_mes_var(struct UpMesData* up_mes_var)
     up_mes_var->m_strOverTempProtected = "-1";
     up_mes_var->m_strOverTempProtectedRe = "-1";
     up_mes_var->m_strOtherFault = "-1";
-    up_mes_var->m_strTestResult = "9";
+    up_mes_var->m_strTestResult = "N";
 }
 void QtCanPlatform::workAutoTest()
 {
@@ -4833,7 +4898,7 @@ void QtCanPlatform::workAutoTest()
                     QThread::msleep(100);
                     continue;
                 }
-                QString sendstr = "#A101;" + m_strPHUCode + "|PHU7KW-007|N$";
+                QString sendstr = "#A101;" + m_strPHUCode + ";D_PHU01_006$";
                 bool b4 = getMesResponed(sendstr);
                 emit sigAutoTestSend(-3, "清除结果");
                 CodeOk = false;
@@ -4868,9 +4933,9 @@ void QtCanPlatform::workAutoTest()
             up_mes_var.m_strRatedVoltage = QString::number(currentTestModel.ats.m_iRatedVolt);
             up_mes_var.m_strRatedTemp = QString::number(currentTestModel.ats.m_usRatedPWTemp);
             up_mes_var.m_strRatedFlow = QString::number(currentTestModel.ats.m_usRatedPWFlow);
-            up_mes_var.m_strTestResult = "1";
+            up_mes_var.m_strTestResult = "Y";
             //检测退出
-            if (runStep == -1) { upMesOutData(); emit sigAutoTestSend(-99, "人工退出测试"); QLOG_INFO() << "退出测试"; return; }
+            if (runStep == -1) { up_mes_var.m_strTestResult = "N"; upMesOutData(); emit sigAutoTestSend(-99, "人工退出测试"); QLOG_INFO() << "退出测试"; return; }
 
             //   
            
@@ -4878,7 +4943,7 @@ void QtCanPlatform::workAutoTest()
             QThread::msleep(10);
             emit sigAutoTestSend(-1, "冷水机开");
             //检测退出
-            if (runStep == -1) { emit sigAutoTestSend(-99, "人工退出测试"); upMesOutData();  QLOG_INFO() << "退出测试"; return; }
+            if (runStep == -1) { up_mes_var.m_strTestResult = "N"; emit sigAutoTestSend(-99, "人工退出测试"); upMesOutData();  QLOG_INFO() << "退出测试"; return; }
             //    //Step1
                 //检测通信是否OK
             m_bCommunication = 0;
@@ -4889,14 +4954,14 @@ void QtCanPlatform::workAutoTest()
                 QThread::msleep(10);
                 if (runStep == -1)
                 {
-                    up_mes_var.m_strTestResult = "9";
+                    up_mes_var.m_strTestResult = "N";
                     emit sigAutoTestSend(-99, "通信出错"); upMesOutData();  QLOG_INFO() << "退出测试"; return;
                     return;
                 }
                 if (QTime::currentTime() > overTimeM)
                 {
                     emit sigAutoTestSend(1, "通信异常");
-                    up_mes_var.m_strTestResult = "9";
+                    up_mes_var.m_strTestResult = "N";
                     up_mes_var.m_strOtherFault = "*通讯异常";
                     emit sigAutoTestSend(18, up_mes_var.m_strTestResult); upMesOutData();  QLOG_INFO() << "退出测试";;
                     break;
@@ -4907,13 +4972,13 @@ void QtCanPlatform::workAutoTest()
                 break;
             }
             //检测退出
-            if (runStep == -1) { emit sigAutoTestSend(-99, "人工退出测试"); upMesOutData();  QLOG_INFO() << "退出测试"; return; }
+            if (runStep == -1) { up_mes_var.m_strTestResult = "N"; emit sigAutoTestSend(-99, "人工退出测试"); upMesOutData();  QLOG_INFO() << "退出测试"; return; }
             emit sigAutoTestSend(1, "通信正常");
 
             emit sigAutoTestSend(2, "获取版本号中");
             getVerAuto(currentTestModel.ats);
             //检测退出
-            if (runStep == -1) { emit sigAutoTestSend(-99, "人工退出测试"); upMesOutData();  QLOG_INFO() << "退出测试"; return; }
+            if (runStep == -1) { up_mes_var.m_strTestResult = "N"; emit sigAutoTestSend(-99, "人工退出测试"); upMesOutData();  QLOG_INFO() << "退出测试"; return; }
             //Step2
             //测试低压欠压
             Error[0].clear();
@@ -4925,7 +4990,7 @@ void QtCanPlatform::workAutoTest()
             {
                 emit sigAutoTestSend(11, "电源电压异常");
                 up_mes_var.m_strOtherFault += "电源输出电压与设置不一致";
-                up_mes_var.m_strTestResult = "9";
+                up_mes_var.m_strTestResult = "N";
                 emit sigAutoTestSend(-99, "退出测试"); upMesOutData();  QLOG_INFO() << "退出测试"; return;
             }
             QTime ovTimeVolt = QTime::currentTime().addMSecs(5000);
@@ -4940,13 +5005,13 @@ void QtCanPlatform::workAutoTest()
                     up_mes_var.m_strLowProtected = QString::number(currentTestModel.ats.m_iLowVoltage);
                     up_mes_var.m_strOtherFault = "*欠压保护不合格";
                     eachResult = false;
-                    up_mes_var.m_strTestResult = "9";
+                    up_mes_var.m_strTestResult = "N";
                     break;
                 }
             }
             up_mes_var.m_strLowProtected = QString::number(currentTestModel.ats.m_iLowVoltage);
             //检测退出
-            if (runStep == -1) { emit sigAutoTestSend(-99, "人工退出测试"); upMesOutData();  QLOG_INFO() << "退出测试"; return; }
+            if (runStep == -1) { up_mes_var.m_strTestResult = "N"; emit sigAutoTestSend(-99, "人工退出测试"); upMesOutData();  QLOG_INFO() << "退出测试"; return; }
             //m_bResetfault = true;
             //检查结果
             if (eachResult)
@@ -4955,6 +5020,7 @@ void QtCanPlatform::workAutoTest()
             }
             else
             {
+                up_mes_var.m_strTestResult = "N";
                 emit sigAutoTestSend(5, "欠压保护NG");
                 upMesOutData();  QLOG_INFO() << "本次测试结束";
                 emit sigAutoTestSend(18, up_mes_var.m_strTestResult);
@@ -4966,7 +5032,7 @@ void QtCanPlatform::workAutoTest()
             {
                 emit sigAutoTestSend(11, "电源电压异常");
                 up_mes_var.m_strOtherFault += "*电源输出电压与设置不一致";
-                up_mes_var.m_strTestResult = "9";
+                up_mes_var.m_strTestResult = "N";
                 emit sigAutoTestSend(-99, "退出测试"); upMesOutData();  QLOG_INFO() << "退出测试"; return;
             }
             ovTimeVolt = QTime::currentTime().addMSecs(5000);
@@ -4982,13 +5048,13 @@ void QtCanPlatform::workAutoTest()
                     up_mes_var.m_strLowProtectedRe = QString::number(currentTestModel.ats.m_iLowVoltageRe);
                     up_mes_var.m_strOtherFault = "*欠压恢复不合格";
                     eachResult = false;
-                    up_mes_var.m_strTestResult = "9";
+                    up_mes_var.m_strTestResult = "N";
                     break;
                 }
             }
             up_mes_var.m_strLowProtectedRe = QString::number(currentTestModel.ats.m_iLowVoltageRe);
             //检测退出
-            if (runStep == -1) { emit sigAutoTestSend(-99, "人工退出测试"); upMesOutData();  QLOG_INFO() << "退出测试"; return; }
+            if (runStep == -1) { up_mes_var.m_strTestResult = "N"; emit sigAutoTestSend(-99, "人工退出测试"); upMesOutData();  QLOG_INFO() << "退出测试"; return; }
             if (eachResult)
                 emit sigAutoTestSend(6, "欠压保护OK");
             else
@@ -5013,7 +5079,7 @@ void QtCanPlatform::workAutoTest()
             {
                 emit sigAutoTestSend(11, "电源电压异常");
                 up_mes_var.m_strOtherFault += "电源输出电压与设置不一致";
-                up_mes_var.m_strTestResult = "9";
+                up_mes_var.m_strTestResult = "N";
                 emit sigAutoTestSend(-99, "退出测试"); upMesOutData();  QLOG_INFO() << "退出测试"; break;
             }
             ovTimeVolt = QTime::currentTime().addMSecs(5000);
@@ -5029,13 +5095,13 @@ void QtCanPlatform::workAutoTest()
                     up_mes_var.m_strHighProtected = QString::number(currentTestModel.ats.m_iOverVoltage);
                     up_mes_var.m_strOtherFault = "*过压保护不合格";
                     eachResult = false;
-                    up_mes_var.m_strTestResult = "9";
+                    up_mes_var.m_strTestResult = "N";
                     break;
                 }
             }
             up_mes_var.m_strHighProtected = QString::number(currentTestModel.ats.m_iOverVoltage);
             //检测退出
-            if (runStep == -1) { emit sigAutoTestSend(-99, "人工退出测试"); upMesOutData();  QLOG_INFO() << "退出测试"; return; }
+            if (runStep == -1) { up_mes_var.m_strTestResult = "N"; emit sigAutoTestSend(-99, "人工退出测试"); upMesOutData();  QLOG_INFO() << "退出测试"; return; }
             m_bResetfault = true;
             if(eachResult)
             {
@@ -5043,6 +5109,7 @@ void QtCanPlatform::workAutoTest()
             }
             else
             {
+                up_mes_var.m_strTestResult = "N";
                 emit sigAutoTestSend(9, "过压保护NG");
                 upMesOutData();  QLOG_INFO() << "本次测试结束";
                 emit sigAutoTestSend(18, up_mes_var.m_strTestResult);
@@ -5055,7 +5122,7 @@ void QtCanPlatform::workAutoTest()
             {
                 emit sigAutoTestSend(11, "电源电压异常");
                 up_mes_var.m_strOtherFault = "*电源输出电压与设置不一致";
-                up_mes_var.m_strTestResult = "9";
+                up_mes_var.m_strTestResult = "N";
                 emit sigAutoTestSend(-99, "退出测试"); upMesOutData();  QLOG_INFO() << "退出测试";  break;;
             }
             ovTimeVolt = QTime::currentTime().addMSecs(5000);
@@ -5070,7 +5137,7 @@ void QtCanPlatform::workAutoTest()
                     up_mes_var.m_strHighProtected = QString::number(currentTestModel.ats.m_iOverVoltage);
                     up_mes_var.m_strOtherFault = "*过压恢复不合格";
                     eachResult = false;
-                    up_mes_var.m_strTestResult = "9";
+                    up_mes_var.m_strTestResult = "N";
                     break;
                 }
             }
@@ -5083,6 +5150,7 @@ void QtCanPlatform::workAutoTest()
             }
             else
             {
+                up_mes_var.m_strTestResult = "N";
                 emit sigAutoTestSend(9, "过压保护NG");
                 upMesOutData();  QLOG_INFO() << "本次测试结束";
                 emit sigAutoTestSend(18, up_mes_var.m_strTestResult);
@@ -5121,7 +5189,7 @@ void QtCanPlatform::workAutoTest()
             }
            
             //检测退出
-            if (runStep == -1) { emit sigAutoTestSend(-99, "人工退出测试"); upMesOutData();  QLOG_INFO() << "退出测试"; return; }
+            if (runStep == -1) { up_mes_var.m_strTestResult = "N"; emit sigAutoTestSend(-99, "人工退出测试"); upMesOutData();  QLOG_INFO() << "退出测试"; return; }
             //Step5
             //开启加热,同时检测水温到0度，检测有无故障
             emit sigAutoTestSend(10, "加热");
@@ -5135,14 +5203,14 @@ void QtCanPlatform::workAutoTest()
             {
                 emit sigAutoTestSend(11, "电源电压异常");
                 up_mes_var.m_strOtherFault = "*电源输出电压与设置不一致";
-                up_mes_var.m_strTestResult = "9";
+                up_mes_var.m_strTestResult = "N";
                 emit sigAutoTestSend(-99, "退出测试"); upMesOutData();  QLOG_INFO() << "退出测试"; return;
             }
             //Step6
             //等待到达0度，读取功率
             getAveragePW(currentTestModel.ats);
             //检测退出
-            if (runStep == -1) { emit sigAutoTestSend(-99, "人工退出测试"); upMesOutData();  QLOG_INFO() << "退出测试"; return; }
+            if (runStep == -1) { up_mes_var.m_strTestResult = "N"; emit sigAutoTestSend(-99, "人工退出测试"); upMesOutData();  QLOG_INFO() << "退出测试"; return; }
             if (Error[0].size() != 0)
             {
                 QList<QString> strlist = Error[0].toList();
@@ -5151,10 +5219,10 @@ void QtCanPlatform::workAutoTest()
                     all += "*" + strlist.at(g);
                 emit sigAutoTestSend(11, all);
                 up_mes_var.m_strOtherFault = all;
-                up_mes_var.m_strTestResult = "9";
+                up_mes_var.m_strTestResult = "N";
             }
             //检测退出
-            if (runStep == -1) { emit sigAutoTestSend(-99, "人工退出测试"); upMesOutData();  QLOG_INFO() << "退出测试"; return; }
+            if (runStep == -1) { up_mes_var.m_strTestResult = "N"; emit sigAutoTestSend(-99, "人工退出测试"); upMesOutData();  QLOG_INFO() << "退出测试"; return; }
             //Step7
             //关闭冷水机循环，测试过温保护
             emit sigAutoTestSend(12, "过温保护测试中");
@@ -5180,7 +5248,7 @@ void QtCanPlatform::workAutoTest()
                     emit sigAutoTestSend(13, QString::number(outTemp) + "过温无保护NG");
                     up_mes_var.m_strOtherFault = "*过温无保护NG";
                     up_mes_var.m_strOverTempProtected = QString::number(outTemp);
-                    up_mes_var.m_strTestResult = "9";
+                    up_mes_var.m_strTestResult = "N";
                     break;
                 }
                 QThread::msleep(500);
@@ -5192,7 +5260,7 @@ void QtCanPlatform::workAutoTest()
                 emit sigAutoTestSend(13, up_mes_var.m_strOverTempProtected);
             }
             //检测退出
-            if (runStep == -1) { emit sigAutoTestSend(-99, "人工退出测试"); upMesOutData();  QLOG_INFO() << "退出测试"; return; }
+            if (runStep == -1) { up_mes_var.m_strTestResult = "N"; emit sigAutoTestSend(-99, "人工退出测试"); upMesOutData();  QLOG_INFO() << "退出测试"; return; }
             //判断 runStep == -1 ?
 
             //Step8
@@ -5203,7 +5271,7 @@ void QtCanPlatform::workAutoTest()
             emit sigAutoTestSend(14, "过温恢复测试中");
 
             //检测退出
-            if (runStep == -1) { emit sigAutoTestSend(-99, "人工退出测试"); upMesOutData();  QLOG_INFO() << "退出测试"; return; }
+            if (runStep == -1) { up_mes_var.m_strTestResult = "N"; emit sigAutoTestSend(-99, "人工退出测试"); upMesOutData();  QLOG_INFO() << "退出测试"; return; }
             QThread::msleep(2500);
             //过温恢复
             while (runStep != -1)
@@ -5230,7 +5298,7 @@ void QtCanPlatform::workAutoTest()
             if (abs(currentTestModel.ats.m_iOverTempRe - realWTemp[0]) > currentTestModel.ats.m_iOverTempTolerance)
             {
                 emit sigAutoTestSend(15, up_mes_var.m_strOverTempProtectedRe + "NG");
-                up_mes_var.m_strTestResult = "9";
+                up_mes_var.m_strTestResult = "N";
             }
             else
             {
@@ -5238,7 +5306,7 @@ void QtCanPlatform::workAutoTest()
             }
 
             //检测退出
-            if (runStep == -1) { emit sigAutoTestSend(-99, "人工退出测试"); upMesOutData();  QLOG_INFO() << "退出测试"; return; }
+            if (runStep == -1) { up_mes_var.m_strTestResult = "N"; emit sigAutoTestSend(-99, "人工退出测试"); upMesOutData();  QLOG_INFO() << "退出测试"; return; }
             //Step9
             //关闭使能，查看有无功率
             emit sigAutoTestSend(23, "关闭使能");
@@ -5247,7 +5315,7 @@ void QtCanPlatform::workAutoTest()
             {
                 emit sigAutoTestSend(11, "IGBT短路");
                 up_mes_var.m_strOtherFault += "*IGBT短路";
-                up_mes_var.m_strTestResult = "9";
+                up_mes_var.m_strTestResult = "N";
             }
 
 

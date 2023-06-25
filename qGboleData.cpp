@@ -339,6 +339,8 @@ void qGboleData::save_ini()
 	setf->setValue("m_iOverTime", aTdata.m_iOverTime);
 	setf->setValue("m_sInWebAddr", aTdata.m_sInWebAddr);
 	setf->setValue("m_sOutWebAddr", aTdata.m_sOutWebAddr);
+	setf->setValue("m_iSaveListNum", aTdata.m_iSaveListNum);
+	setf->setValue("m_bShowAutoTest", aTdata.m_bShowAutoTest);
 	
 
 }
@@ -372,6 +374,7 @@ void qGboleData::read_ini()
 	aTdata.m_iRecOnNoSend = setf->value("m_iRecOnNoSend").toInt();
 	aTdata.m_iShowType = setf->value("m_iShowType").toInt();
 	aTdata.m_iSaveListNum = setf->value("m_iSaveListNum").toInt();
+	aTdata.m_bShowAutoTest = setf->value("m_bShowAutoTest").toBool();
 }
 qGboleData::~qGboleData()
 {

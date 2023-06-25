@@ -1228,7 +1228,7 @@ void QCanSetting::on_modelView_Clicked(int row, int col)
 
 	paramView->setItem(24, 0, new QTableWidgetItem(QString("出口停止使能温度")));
 	paramView->setItem(24, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_iOutTempStop)));
-	paramView->setItem(25, 0, new QTableWidgetItem(QString("参考入(0)出(1)水口温度")));
+	paramView->setItem(25, 0, new QTableWidgetItem(QString("参考出(0)入(1)水口温度")));
 	paramView->setItem(25, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_usOutOrInTemp)));
 
 }
