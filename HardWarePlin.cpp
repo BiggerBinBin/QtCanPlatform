@@ -147,7 +147,7 @@ QStringList HardWarePlin::GetHardWare()
 	QStringList devList;
 	if (lLINErr != errOK)
 	{
-		QStringList();
+		return QStringList();
 	}
 	if(lwCount==0)
 		return QStringList();

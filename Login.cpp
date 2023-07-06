@@ -1,6 +1,7 @@
 #include "Login.h"
 #include <qsettings.h>
 #include <qfile.h>
+#pragma execution_character_set("utf-8")
 Login::Login(QWidget *parent)
 	: QDialog(parent)
 {
@@ -42,7 +43,9 @@ void Login::on_pbLogin_clicked()
 		{
 			emit sigLogin(0);
 			//ui.lineEdit->clear();
+			ui.label_3->clear();
 			this->close();
+			
 		}
 		else
 		{
@@ -55,6 +58,7 @@ void Login::on_pbLogin_clicked()
 		{
 			emit sigLogin(1);
 			//ui.lineEdit->clear();
+			ui.label_3->clear();
 			this->close();
 		}
 		else

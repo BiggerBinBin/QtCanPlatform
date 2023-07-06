@@ -9,7 +9,7 @@
 #include "QsLog.h"
 #include "./unit/MsgParser.h"
 #include "LogAsc.h"
-# pragma execution_character_set("utf-8")
+#pragma execution_character_set("utf-8")
 QLogPlot::QLogPlot(int index,QWidget *parent)
 	: m_iModel(index), QWidget(parent)
 {

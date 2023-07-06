@@ -28,6 +28,7 @@ public:
 	bool isMesInit() { return m_bMesMacInit; }
 	bool isAvailableMes() { return m_bIsRecMES; }
 	QString isReadMes() { return m_strMesData; }
+	float getFlow() { return m_realflow; }
 private:
 	Ui::AutoDeviceManageClass ui;
 protected:
@@ -43,6 +44,7 @@ protected:
 	int inCircle = 1;
 	int outCircle = 1;
 	int blowState = 0;
+	float m_realflow;
 	QScopedPointer<QTcpSocket> m_pPowerTCP;
 	QScopedPointer<QTcpSocket> m_pMesUpTCP;
 	QScopedPointer<QTcpSocket> m_pPLCCtrTCP;
@@ -99,6 +101,7 @@ protected:
 signals:
 	void sigMesNewData(QString str);
 	void sigPowerNewData(QString str);
+	void sigFlowCool(float flow);
 private slots:
 	void on_pbConnectPower_clicked(bool b);
 	void on_pbConnectMes_clicked(bool b);

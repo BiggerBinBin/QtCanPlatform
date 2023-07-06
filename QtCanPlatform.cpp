@@ -130,6 +130,7 @@ QtCanPlatform::~QtCanPlatform()
 
 void QtCanPlatform::closeEvent(QCloseEvent* event)
 {
+    saveSetFile();
     if (pcan)
     {
         pcan->CloseCan();
@@ -325,6 +326,7 @@ void QtCanPlatform::initUi()
     cbPlatform->addItem("19kW");
     cbPlatform->addItem("CAT-MID");
     cbPlatform->addItem("8kW");
+    cbPlatform->addItem("2.0");
     QLabel* mLabel = new QLabel();
     mLabel->setText(tr("当前型号"));
     mLabel->setStyleSheet("font:normal bold 18px SimHei");
@@ -466,7 +468,18 @@ void QtCanPlatform::initUi()
     codename->addWidget(lineEditCodeIn);
     codename->addWidget(pbSummitCode);
 
-    
+    mBlowAirLineedit = new QLineEdit(this);
+    mBlowAirLineedit->setText("120");
+    mBlowAirPb = new QPushButton(this);
+    mBlowAirPb->setCheckable(true);
+    mBlowAirPb->setText("吹水");
+    connect(mBlowAirPb, SIGNAL(clicked(bool)), this, SLOT(on_pbBlowAir_clicked(bool)));
+    QLabel* blowLable = new QLabel(this);
+    blowLable->setText("吹水时间s:");
+    QHBoxLayout* blow = new QHBoxLayout(this);
+    blow->addWidget(blowLable);
+    blow->addWidget(mBlowAirLineedit);
+    blow->addWidget(mBlowAirPb);
 
     /*QLabel* ipLabelMes = new QLabel();
     ipLabelMes->setText("Mes-IP地址");
@@ -498,6 +511,7 @@ void QtCanPlatform::initUi()
     //右侧UI部分
     QVBoxLayout* topRightUI = new QVBoxLayout(this);
     //topRightUI->addLayout(ipBoxLayout_Mes);
+    topRightUI->addLayout(blow);
     topRightUI->addLayout(bHBoxLayout);
     topRightUI->addLayout(codename);
     topRightUI->addWidget(tableAutoResults);
@@ -525,16 +539,22 @@ void QtCanPlatform::initUi()
     curruntime = new QLabel(this);
     totaltime = new QLabel(this);
     curruntime->setText("T：0H 0M 0S"); 
-    totaltime->setText("Total：0H 0M 0S");
+    
+    QString tot = " Total：" + QString::number(m_uiElspseTotalTime / 3600) + "H " + QString::number(m_uiElspseTotalTime % 3600 / 60) + "M " + QString::number(m_uiElspseTotalTime % 60) + "S";
+    totaltime->setText(tot);
     clearCountTime = new QPushButton(this);
     clearCountTime->setText("重置");
-    connect(clearCountTime, &QPushButton::clicked, [this](bool b) { m_uiElspseTime = 0; m_uiElspseTotalTime = 0; curruntime->setText("T：0H 0M 0S"); totaltime->setText("  Total：0H 0M 0S"); });
+    isEnableCountTime = new QCheckBox(this);
+    isEnableCountTime->setText("启用");
+    //clearCountTime->setFixedWidth(60);
+    connect(clearCountTime, &QPushButton::clicked, [this](bool b) { m_uiElspseTime = 0; m_uiElspseTotalTime = 0; curruntime->setText("T：0H 0M 0S"); totaltime->setText("  Total：0H 0M 0S"); saveSetFile(); });
     m_tRecord = new QTimer(this);
     connect(m_tRecord, &QTimer::timeout, this, &QtCanPlatform::on_CaptureElapseTime);
     QHBoxLayout* recordElapseTime = new QHBoxLayout(this);
     recordElapseTime->addWidget(curruntime);
     recordElapseTime->addWidget(totaltime);
     recordElapseTime->addWidget(clearCountTime);
+    recordElapseTime->addWidget(isEnableCountTime);
     //定时界面
     m_tCaptureTimer = new QTimer(this);
     m_iTimeStopLineEdit = new QLineEdit(this);
@@ -785,7 +805,124 @@ bool QtCanPlatform::sendDataIntoTab()
    }
     return true;
 }
+bool QtCanPlatform::sendDataIntoTab_up()
+{
 
+    sendCanData.clear();
+    if (!tableView)
+        return false;
+    int rcount = tableView->rowCount();
+    /*for (int m = 0; m < rcount; m++)
+        tableView->removeRow(rcount - m - 1);*/
+    qGboleData* qGb = qGboleData::getInstance();
+    if (!qGb)return false;
+    if (currentModel > qGb->pGboleData.size() - 1 || currentModel < 0)
+    {
+        QMessageBox::warning(this, tr("warning"), tr("数据出错，当前型号不存在"));
+        return false;
+    }
+
+    const protoData pTemp = qGb->pGboleData.at(currentModel);
+    currentTestModel = qGb->pGboleData.at(currentModel);
+    bStandard = pTemp.bStandardId;
+    //canIdData cTemp;
+    /*cbBitRate->setCurrentIndex(pTemp.bundRate);
+    cycle->setText(QString::number(pTemp.circle));*/
+    for (int i = 0; i < pTemp.cItem.size(); i++)
+    {
+        //取出操作为发送的信号
+        if (1 == pTemp.cItem.at(i).opt)
+        {
+            sendCanData.push_back(pTemp.cItem.at(i));
+            sendCanData.at(sendCanData.size() - 1).timeAdd = pTemp.cItem.at(i).timeAdd;
+            // break;
+        }
+    }
+    if (sendCanData.size() <= 0)
+    {
+        QMessageBox::warning(this, tr("warning"), tr("该型号没有发送信号，请添加再操作"));
+        return false;
+    }
+
+    //for (int i = 0; i < sendCanData.size(); i++)
+    //{
+    //    int num = sendCanData.at(i).pItem.size();
+
+    //    for (int j = 0; j < num; j++)
+    //    {
+    //        int cr = tableView->rowCount();
+    //        tableView->setRowCount(cr + 1);
+    //        QCheckBox* cbSend = new QCheckBox();
+    //        cbSend->setBaseSize(15, 15);
+    //        if (sendCanData.at(i).isSend)
+    //        {
+    //            cbSend->setChecked(true);
+    //        }
+    //        //控件居中，就是让各方边距为相等
+    //        QWidget* widget = new QWidget;
+    //        QHBoxLayout* layout = new QHBoxLayout;
+    //        layout->setSpacing(0);
+    //        layout->setMargin(0);
+    //        layout->setAlignment(Qt::AlignCenter);
+    //        layout->addWidget(cbSend);
+    //        widget->setLayout(layout);
+    //        connect(cbSend, &QCheckBox::stateChanged, this, &QtCanPlatform::on_checkSendChanged);
+    //        tableView->setCellWidget(cr, 0, cbSend);
+
+    //        //发送操作的下拉框
+    //        QComboBox* cb = new QComboBox();
+    //        for (int k = 0; k < sendCanData.at(i).pItem.at(j).stl_itemProperty.size(); ++k)
+    //        {
+    //            QString name = sendCanData.at(i).pItem.at(j).stl_itemProperty.at(k).toWord;
+    //            QColor bc = QColor(sendCanData.at(i).pItem.at(j).stl_itemProperty.at(k).r, sendCanData.at(i).pItem.at(j).stl_itemProperty.at(k).g, sendCanData.at(i).pItem.at(j).stl_itemProperty.at(k).b);
+    //            cb->addItem(name);
+    //            //设置Item的数据，使用Qt::BackgroundColorRole声明
+    //            cb->setItemData(cb->count() - 1, bc, Qt::BackgroundColorRole);
+    //        }
+    //        int sendValue = 0;
+    //        if (cb->count() > 0)
+    //        {
+    //            int k = cb->currentIndex();
+    //            QColor bc = QColor(sendCanData.at(i).pItem.at(j).stl_itemProperty.at(k).r, sendCanData.at(i).pItem.at(j).stl_itemProperty.at(k).g, sendCanData.at(i).pItem.at(j).stl_itemProperty.at(k).b);
+    //            sendValue = sendCanData.at(i).pItem.at(j).stl_itemProperty.at(k).value.toInt();
+    //            QString backcolor = "background-color:#" + QString("%1").arg(bc.red(), 2, 16, QLatin1Char('0')) +
+    //                QString("%1").arg(bc.green(), 2, 16, QLatin1Char('0')) +
+    //                QString("%1").arg(bc.blue(), 2, 16, QLatin1Char('0'));
+    //            cb->setStyleSheet(backcolor);
+    //        }
+    //        else
+    //        {
+    //            cb->setStyleSheet("background-color:#CCCCCC");
+    //        }
+    //        connect(cb, SIGNAL(currentIndexChanged(int)), this, SLOT(on_cbSelectSendItemChanged(int)));
+
+
+    //        tableView->setCellWidget(cr, 1, cb);
+    //        //QString mt = "0x"+QString("%1").arg(sendCanData.at(i).CanId, QString::number(sendCanData.at(i).CanId).length(), 16).toUpper().trimmed();
+    //        QString mt = sendCanData.at(i).strCanId;
+    //        QTableWidgetItem* it1 = new QTableWidgetItem(QString::number(sendValue));
+    //        it1->setTextAlignment(Qt::AlignVCenter | Qt::AlignHCenter);
+    //        tableView->setItem(cr, 2, it1);
+    //        QTableWidgetItem* it3 = new QTableWidgetItem(mt);
+    //        it3->setTextAlignment(Qt::AlignVCenter | Qt::AlignHCenter);
+    //        tableView->setItem(cr, 4, it3);
+    //        QTableWidgetItem* it2 = new QTableWidgetItem(sendCanData.at(i).pItem.at(j).bitName);
+    //        it2->setTextAlignment(Qt::AlignVCenter | Qt::AlignHCenter);
+    //        tableView->setItem(cr, 3, it2);
+    //        QTableWidgetItem* it4 = new QTableWidgetItem(QString::number(sendCanData.at(i).pItem.at(j).startByte));
+    //        it4->setTextAlignment(Qt::AlignVCenter | Qt::AlignHCenter);
+    //        tableView->setItem(cr, 5, it4);
+    //        QTableWidgetItem* it5 = new QTableWidgetItem(QString::number(sendCanData.at(i).pItem.at(j).startBit));
+    //        it5->setTextAlignment(Qt::AlignVCenter | Qt::AlignHCenter);
+    //        tableView->setItem(cr, 6, it5);
+    //        QTableWidgetItem* it6 = new QTableWidgetItem(QString::number(sendCanData.at(i).pItem.at(j).bitLeng));
+    //        it6->setTextAlignment(Qt::AlignVCenter | Qt::AlignHCenter);
+    //        tableView->setItem(cr, 7, it6);
+
+    //    }
+    //}
+    return true;
+}
 bool QtCanPlatform::recDataIntoTab()
 {
    
@@ -2705,6 +2842,16 @@ void QtCanPlatform::on_CurrentPlatformChanged(int index)
                             break;
                         }
                     break;
+                case 10:
+                    ls = qGb->pGboleData.at(i).sPlatform.split(",");
+                    for (int k = 0; k < ls.size(); k++)
+                        if (ls.at(k) == "2.0")
+                        {
+                            HashArr.push_back(i);
+                            cbSelectModel->addItem(qGb->pGboleData.at(i).modelName);
+                            break;
+                        }
+                    break;
             default:
                 HashArr.push_back(i);
                 cbSelectModel->addItem(qGb->pGboleData.at(i).modelName);
@@ -2810,7 +2957,8 @@ void QtCanPlatform::on_pbSend_clicked(bool clicked)
         {
             pcan->setProperty("isExtend", false);
         }
-        sendDataIntoTab();
+        //sendDataIntoTab();
+        sendDataIntoTab_up();
         if (m_cbOutTempMonitor && m_cbOutTempMonitor->isChecked())
         {
             this->on_pbStartAutoTest_clicked(true);
@@ -2832,7 +2980,11 @@ void QtCanPlatform::on_pbSend_clicked(bool clicked)
                 if (qGb->pGboleData.at(real).cItem.at(k).isSend && qGb->pGboleData.at(real).cItem.at(k).circle != -1)
                 {
                     if(qGb->pGboleData.at(real).cItem.at(k).timeAdd)
+                    {
                         qGb->pGboleData.at(real).cItem.at(k).timeAdd->stop();
+                        delete qGb->pGboleData.at(real).cItem.at(k).timeAdd;
+                        qGb->pGboleData.at(real).cItem.at(k).timeAdd = nullptr;
+                    }
                 }
         }
         sendTimer->stop();
@@ -3491,7 +3643,7 @@ void QtCanPlatform::on_cbSelectSendItemChanged(int index)
     int cbRow = cbIndex.row();
     int cbCol = cbIndex.column();
     unsigned int cbInId = tableView->item(cbRow, 4)->text().toUInt(NULL, 16);
-    if(cbRow==currentTestModel.ats.m_iEnableInLine)
+    if(cbRow==currentTestModel.ats.m_iEnableInLine && isEnableCountTime && isEnableCountTime->isChecked())
     {
         if (cb->currentText() == "PTC使能" || cb->currentText() == "使能" || cb->currentText() == "使能开" || cb->currentText() == "挡位控制")
         {
@@ -3555,6 +3707,7 @@ void QtCanPlatform::on_checkSendChanged(int check)
         if (sendCanData.at(k).strCanId.toUInt(NULL, 16) != cbInId)
             continue;
         sendCanData.at(k).isSend = b;
+        QLOG_INFO() << "b:" << sendCanData.at(k).isSend;
         break;
     }
     int tbRowCount = tableView->rowCount();
@@ -3945,10 +4098,24 @@ void QtCanPlatform::readSetFile()
     m_iRecOnNoSend = at.m_iRecOnNoSend;
     saveListNum = at.m_iSaveListNum;
     m_bShowAutoTest = at.m_bShowAutoTest;
+    m_uiElspseTotalTime = at.m_iEnableCount;
 
     if (saveListNum < 600)
         saveListNum = 600;
 
+}
+void QtCanPlatform::saveSetFile()
+{
+    qGboleData* gb = qGboleData::getInstance();
+    if (!gb)
+        return;
+    
+    gb->read_ini();
+    struct autoTestData at = gb->getATData();
+    at.m_iEnableCount = m_uiElspseTotalTime;
+    at.m_bShowAutoTest = m_bShowAutoTest;
+    gb->setATData(at);
+    gb->save_ini();
 }
 /******************************************************
 * @brief: (丢弃了)创建ini文件,当readSetFile()函数检测到ini文件不存在时，就调用这个函数创建
@@ -3980,6 +4147,7 @@ void QtCanPlatform::on_pbDevicesManage_clicked()
         
         connect(autoDevMan, &AutoDeviceManage::sigMesNewData, this, &QtCanPlatform::on_sigFroMesNewData);
         connect(autoDevMan, &AutoDeviceManage::sigPowerNewData, this, &QtCanPlatform::on_sigFromPowerNewData);
+        connect(autoDevMan, &AutoDeviceManage::sigFlowCool, this, &QtCanPlatform::on_RecFlowCool);
     }
     autoDevMan->show();
 }
@@ -4358,10 +4526,43 @@ void QtCanPlatform::on_plotWindowCLose()
     if (LogPb)
         LogPb->setEnabled(true);
 }
+void QtCanPlatform::on_pbBlowAir_clicked(bool b)
+{
+    QLOG_INFO() << "start";
+    if (!autoDevMan)return;
+    if (b)
+    {
+        autoDevMan->on_pbBlowWater_2_clicked(true);
+        if (!mBlowAirTimer)
+        {
+            mBlowAirTimer = new QTimer(this);
+            connect(mBlowAirTimer, &QTimer::timeout, this, &QtCanPlatform::on_BlowAir_Stop);
+       }
+        int timee = mBlowAirLineedit->text().toInt()*1000;
+        mBlowAirTimer->start(timee);
+        
+        
+    }
+    else
+    {
+        autoDevMan->on_pbBlowWater_2_clicked(false);
+        mBlowAirTimer->stop();
+
+    }
+}
+void QtCanPlatform::on_BlowAir_Stop()
+{
+    QLOG_INFO() << "stop";
+    if(mBlowAirTimer)
+        mBlowAirTimer->stop();
+    if (!autoDevMan)return;
+    autoDevMan->on_pbBlowWater_2_clicked(false);
+}
 void QtCanPlatform::on_pbHidenAutoWidget_clicked(bool b)
 {
     if (!gp)return;
     gp->setHidden(b);
+    m_bShowAutoTest = b;
 }
 void QtCanPlatform::on_TCPDataSend_MES(QByteArray data)
 {
@@ -4396,8 +4597,9 @@ float QtCanPlatform::getPowerResponed(QString str)
     QByteArray sendData;
     sendData.append(str);
     _bIsRec_Pow = false;
+    //发送设置电压指令，注意不要这个线程收发，因为在不同的线程收发会有问题
     emit sigSendPutPowData(sendData);
-    QLOG_INFO() << str;
+    //QLOG_INFO() << str;
     QTime tt = QTime::currentTime().addMSecs(10000);
     while (QTime::currentTime() < tt)
     {
@@ -4478,6 +4680,10 @@ void QtCanPlatform::on_SendMesState(int n, QString)
         QMessageBox::information(this, "Tips", "出站失败,请检查条码或者MES连接");
     }
     lineEditCodeIn->setEnabled(true);
+}
+void  QtCanPlatform::on_RecFlowCool(float flow)
+{
+    this->m_fFlowCool = flow;
 }
 void QtCanPlatform::runPostMes(QString text)
 {
@@ -4743,7 +4949,7 @@ void QtCanPlatform::on_processAutoTestSignal(int n, QString str)
         break;
     case 18:
         setPowerSupply(currentTestModel.ats, -99);
-        if(str!="1")
+        if(str!="Y")
             showAutoTestStep(9, str, "NG");
         else
             showAutoTestStep(9, str, "OK");
@@ -5190,6 +5396,18 @@ void QtCanPlatform::workAutoTest()
            
             //检测退出
             if (runStep == -1) { up_mes_var.m_strTestResult = "N"; emit sigAutoTestSend(-99, "人工退出测试"); upMesOutData();  QLOG_INFO() << "退出测试"; return; }
+            
+            //检测流量
+            float f_Flow = currentTestModel.ats.m_usRatedPWFlow;
+            while (runStep != -1)
+            {
+                QThread::msleep(100);
+                if (fabs(m_fFlowCool - f_Flow) > 0.5)
+                {
+                    continue;
+                }
+                break;
+            }
             //Step5
             //开启加热,同时检测水温到0度，检测有无故障
             emit sigAutoTestSend(10, "加热");

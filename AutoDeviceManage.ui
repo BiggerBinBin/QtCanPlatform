@@ -403,7 +403,7 @@
                 </widget>
                </item>
                <item>
-                <widget class="QPushButton" name="pbBlowWater_2">
+                <widget class="QPushButton" name="pbBlowWater_1">
                  <property name="text">
                   <string>吹水阀1</string>
                  </property>
@@ -475,7 +475,7 @@
                 </widget>
                </item>
                <item>
-                <widget class="QPushButton" name="pbBlowWater_3">
+                <widget class="QPushButton" name="pbBlowWater_2">
                  <property name="text">
                   <string>吹水阀2</string>
                  </property>
@@ -551,7 +551,7 @@
                 </widget>
                </item>
                <item>
-                <widget class="QPushButton" name="pbBlowWater_4">
+                <widget class="QPushButton" name="pbBlowWater_3">
                  <property name="text">
                   <string>吹水阀3</string>
                  </property>

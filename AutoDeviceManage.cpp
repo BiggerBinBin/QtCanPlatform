@@ -4,7 +4,7 @@
 #include <qdatetime.h>
 #include <QTime>
 #include <qeventloop.h>
-
+#pragma execution_character_set("utf-8")  
 AutoDeviceManage::AutoDeviceManage(QWidget *parent)
 	: QWidget(parent)
 {
@@ -447,6 +447,7 @@ void AutoDeviceManage::onReceiveData(int ch , quint32 fream_id, QByteArray data)
 	{
 		float temp_o = ((float)(data[0]) * 16.0 * 16.0 + (float)(data[1])) / 10.0;		//冷水机流量,拼接高字节与低字节
 		ui.label_dFollow->setText(QString::number(temp_o, (char)103, 2) + " L/min");
+		emit sigFlowCool(temp_o);
 	}
 	else if (7 == fream_id)
 	{

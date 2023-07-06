@@ -118,6 +118,7 @@ private:
     void initData();
     void initAutoResTableWidget();
     bool sendDataIntoTab();
+    bool sendDataIntoTab_up();
     bool recDataIntoTab();
     void sendData();
     //数据解析
@@ -148,6 +149,7 @@ private:
 
     //读取配置文件 
     void readSetFile();
+    void saveSetFile();
     //配置
     void configSetFile();
     //自动测试工作流程函数
@@ -293,11 +295,23 @@ private:
     QPushButton* pbDevicesManage;
     QPushButton* pbGeneralParameter;
     QLineEdit* lineEditCodeIn;
+    //提交入站申请
     QPushButton* pbSummitCode;
+    //自动测试显示表格
     QTableWidget* tableAutoResults;
+    //设备管理类
     AutoDeviceManage* autoDevMan;
+
+    //QLine
+    QLineEdit* mBlowAirLineedit;
+    QPushButton* mBlowAirPb;
+    QTimer *mBlowAirTimer=nullptr;
+
     int m_bCommunication = 0;
+    //当前测试型号的参数
     struct protoData currentTestModel;
+    float m_fFlowCool=0;
+    //获取版本号开关
     bool m_bGetVer;
     bool m_bParseVer;
     uchar m_arrVerCanMessage[8];
@@ -367,6 +381,7 @@ private:
     QLabel* curruntime;
     QLabel* totaltime;
     QPushButton* clearCountTime;
+    QCheckBox* isEnableCountTime;
     uint m_uiElspseTotalTime = 0;
     uint m_uiElspseTime = 0;
     QTimer* m_tRecord;
@@ -386,7 +401,10 @@ private:
     uint m_iSavePeroidNum;
     uint countPeroid;
     QGroupBox* gp;
+    //是否显示自动测试界面
     bool m_bShowAutoTest;
+    //使能时间
+    //uint m_iEnableCount;
 
 private slots:
       void on_CapturePower();
@@ -464,6 +482,7 @@ private slots:
     void on_lineEditCodeIn_editingFinished();
     void on_pbSummitCode_clicked();
     void on_SendMesState(int n, QString str);
+    void on_RecFlowCool(float flow);
 
     void on_sigFromPowerNewData(QString data);
     //Mes回报的槽函数
@@ -476,6 +495,9 @@ private slots:
     void on_outTempMonitor_Changed(int n);
     void on_plotWindowCLose();
     void on_pbHidenAutoWidget_clicked(bool b);
+
+    void on_pbBlowAir_clicked(bool);
+    void on_BlowAir_Stop();
 
 signals:
     void sigNewRoll();

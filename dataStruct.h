@@ -121,7 +121,8 @@ struct autoTestData {
 	int m_iShowType;			//右上角显示的方式。0：显示风暧操作，1：显示自动化测试操作
 	int m_iRecOnNoSend;			//是否打开设备就接收数据？
 	int m_iSaveListNum;			//多少条数据保存一次？
-	bool m_bShowAutoTest;
+	bool m_bShowAutoTest;		//界面右侧是否隐藏自动测试
+	uint m_iEnableCount;		//使能总时间
 };
 struct messageData
 {
