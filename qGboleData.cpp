@@ -48,8 +48,8 @@ void qGboleData::save()
 		mItem.insert("bundRate", pGboleData.at(i).bundRate);
 		mItem.insert("circle", pGboleData.at(i).circle);
 		mItem.insert("bStandardId", pGboleData.at(i).bStandardId);
-		//mItem.insert("iPlatform", pGboleData.at(i).iPlatform);
 		mItem.insert("sPlatform", pGboleData.at(i).sPlatform);
+		//下面是自动化测试用的参数
 		mItem.insert("m_iEnableInLine", pGboleData.at(i).ats.m_iEnableInLine);
 		mItem.insert("m_iEnOp", pGboleData.at(i).ats.m_iEnOp);
 		mItem.insert("m_iPowerInLine", pGboleData.at(i).ats.m_iPowerInLine);
@@ -66,6 +66,7 @@ void qGboleData::save()
 		mItem.insert("m_strTolerance", pGboleData.at(i).ats.m_strTolerance);
 		mItem.insert("m_strVer", pGboleData.at(i).ats.m_strVer);
 		mItem.insert("m_strVerRecID", pGboleData.at(i).ats.m_strVerRecID);
+		mItem.insert("m_strVerSendID", pGboleData.at(i).ats.m_strVerSendID);
 		mItem.insert("m_usIDBytelen", pGboleData.at(i).ats.m_usIDBytelen);
 		mItem.insert("m_usIDByteStartbit", pGboleData.at(i).ats.m_usIDByteStartbit);
 		mItem.insert("m_usRatedPWTemp", pGboleData.at(i).ats.m_usRatedPWTemp);
@@ -76,6 +77,9 @@ void qGboleData::save()
 		mItem.insert("m_bTurnOffCool", pGboleData.at(i).ats.m_bTurnOffCool);
 		mItem.insert("m_iOutTempStop", pGboleData.at(i).ats.m_iOutTempStop);
 		mItem.insert("m_usOutOrInTemp", pGboleData.at(i).ats.m_usOutOrInTemp);
+		mItem.insert("m_bNeedTempture", pGboleData.at(i).ats.m_bNeedTempture);
+		mItem.insert("m_iTemptureProtect", pGboleData.at(i).ats.m_iTemptureProtect);
+		mItem.insert("m_iTemptureInLine", pGboleData.at(i).ats.m_iTemptureInLine);
 
 
 
@@ -222,6 +226,7 @@ void qGboleData::read()
 		ptem.ats.m_strTolerance = rootSecond["m_strTolerance"].toString("+10;-5");
 		ptem.ats.m_strVer = rootSecond["m_strVer"].toString("Non");
 		ptem.ats.m_strVerRecID = rootSecond["m_strVerRecID"].toString("18AD8DE4");
+		ptem.ats.m_strVerSendID = rootSecond["m_strVerSendID"].toString("0x20");
 		ptem.ats.m_usIDBytelen = rootSecond["m_usIDBytelen"].toInt(4);
 		ptem.ats.m_usIDByteStartbit = rootSecond["m_usIDByteStartbit"].toInt(8);
 		ptem.ats.m_usRatedPWTemp = rootSecond["m_usRatedPWTemp"].toInt(0);
@@ -232,6 +237,9 @@ void qGboleData::read()
 		ptem.ats.m_bTurnOffCool = rootSecond["m_bTurnOffCool"].toInt(0);
 		ptem.ats.m_iOutTempStop = rootSecond["m_iOutTempStop"].toInt(50);
 		ptem.ats.m_usOutOrInTemp = (ushort)rootSecond["m_usOutOrInTemp"].toInt(0);
+		ptem.ats.m_bNeedTempture = rootSecond["m_bNeedTempture"].toBool(false);
+		ptem.ats.m_iTemptureProtect = rootSecond["m_iTemptureProtect"].toInt(95);
+		ptem.ats.m_iTemptureInLine = rootSecond["m_iTemptureInLine"].toInt(1);
 
 
 		//如果还有嵌套对象

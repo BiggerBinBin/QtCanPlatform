@@ -1166,70 +1166,83 @@ void QCanSetting::on_modelView_Clicked(int row, int col)
 	int mc = paramView->rowCount();
 	for (int p = 0; p < paramView->rowCount(); p++)
 		paramView->removeRow(mc - p - 1);
-	paramView->setRowCount(26);
+	paramView->setRowCount(30);
 	paramView->setItem(0, 0, new QTableWidgetItem(QString("使能所在行")));
 	paramView->setItem(0, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_iEnableInLine)));
 	paramView->setItem(1, 0, new QTableWidgetItem(QString("使能操作")));
 	paramView->setItem(1, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_iEnOp)));
 	paramView->setItem(2, 0, new QTableWidgetItem(QString("功率所在行")));
 	paramView->setItem(2, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_iPowerInLine)));
-	paramView->setItem(3, 0, new QTableWidgetItem(QString("欠压阈值V")));
-	paramView->setItem(3, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_iLowVoltage)));
-	paramView->setItem(4, 0, new QTableWidgetItem(QString("欠压恢复V")));
-	paramView->setItem(4, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_iLowVoltageRe)));
+
+	paramView->setItem(3, 0, new QTableWidgetItem(QString("需要保护温度?")));
+	paramView->setItem(3, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_bNeedTempture)));
+
+	paramView->setItem(4, 0, new QTableWidgetItem(QString("保护温度")));
+	paramView->setItem(4, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_iTemptureProtect)));
+
+	paramView->setItem(5, 0, new QTableWidgetItem(QString("设置温度所在行")));
+	paramView->setItem(5, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_iTemptureInLine)));
+
+	paramView->setItem(6, 0, new QTableWidgetItem(QString("欠压阈值V")));
+	paramView->setItem(6, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_iLowVoltage)));
+	paramView->setItem(7, 0, new QTableWidgetItem(QString("欠压恢复V")));
+	paramView->setItem(7, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_iLowVoltageRe)));
 
 
-	paramView->setItem(5, 0, new QTableWidgetItem(QString("过压阈值V")));
-	paramView->setItem(5, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_iOverVoltage)));
-	paramView->setItem(6, 0, new QTableWidgetItem(QString("过压恢复V")));
-	paramView->setItem(6, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_iOverVoltageRe)));
+	paramView->setItem(8, 0, new QTableWidgetItem(QString("过压阈值V")));
+	paramView->setItem(8, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_iOverVoltage)));
+	paramView->setItem(9, 0, new QTableWidgetItem(QString("过压恢复V")));
+	paramView->setItem(9, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_iOverVoltageRe)));
 
-	paramView->setItem(7, 0, new QTableWidgetItem(QString("过温保护°C")));
-	paramView->setItem(7, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_iOverTemperature)));
-	paramView->setItem(8, 0, new QTableWidgetItem(QString("过温恢复°C")));
-	paramView->setItem(8, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_iOverTempRe)));
-	paramView->setItem(9, 0, new QTableWidgetItem(QString("过温OK/NG误差°C")));
-	paramView->setItem(9, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_iOverTempTolerance)));
+	paramView->setItem(10, 0, new QTableWidgetItem(QString("过温保护°C")));
+	paramView->setItem(10, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_iOverTemperature)));
+	paramView->setItem(11, 0, new QTableWidgetItem(QString("过温恢复°C")));
+	paramView->setItem(11, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_iOverTempRe)));
+	paramView->setItem(12, 0, new QTableWidgetItem(QString("过温OK/NG误差°C")));
+	paramView->setItem(12, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_iOverTempTolerance)));
 
 
-	paramView->setItem(10, 0, new QTableWidgetItem(QString("额定电压V")));
-	paramView->setItem(10, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_iRatedVolt)));
+	paramView->setItem(13, 0, new QTableWidgetItem(QString("额定电压V")));
+	paramView->setItem(13, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_iRatedVolt)));
 
-	paramView->setItem(11, 0, new QTableWidgetItem(QString("功率请求大小")));
-	paramView->setItem(11, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_fRequirePW)));
-	paramView->setItem(12, 0, new QTableWidgetItem(QString("额定功率")));
-	paramView->setItem(12, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_fRatedPW)));
-	paramView->setItem(13, 0, new QTableWidgetItem(QString("额定功率误差")));
-	paramView->setItem(13, 1, new QTableWidgetItem(qGb->pGboleData.at(row).ats.m_strTolerance));
+	paramView->setItem(14, 0, new QTableWidgetItem(QString("功率请求大小")));
+	paramView->setItem(14, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_fRequirePW)));
+	paramView->setItem(15, 0, new QTableWidgetItem(QString("额定功率")));
+	paramView->setItem(15, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_fRatedPW)));
+	paramView->setItem(16, 0, new QTableWidgetItem(QString("额定功率误差")));
+	paramView->setItem(16, 1, new QTableWidgetItem(qGb->pGboleData.at(row).ats.m_strTolerance));
 	
 
-	paramView->setItem(14, 0, new QTableWidgetItem(QString("软件版本")));
-	paramView->setItem(14, 1, new QTableWidgetItem(qGb->pGboleData.at(row).ats.m_strVer));
-	paramView->setItem(15, 0, new QTableWidgetItem(QString("版本接收ID")));
-	paramView->setItem(15, 1, new QTableWidgetItem(qGb->pGboleData.at(row).ats.m_strVerRecID));
-	paramView->setItem(16, 0, new QTableWidgetItem(QString("版本号个数")));
-	paramView->setItem(16, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_usIDBytelen)));
-	paramView->setItem(17, 0, new QTableWidgetItem(QString("Ver起止位")));
-	paramView->setItem(17, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_usIDByteStartbit)));
+	paramView->setItem(17, 0, new QTableWidgetItem(QString("软件版本")));
+	paramView->setItem(17, 1, new QTableWidgetItem(qGb->pGboleData.at(row).ats.m_strVer));
+	paramView->setItem(18, 0, new QTableWidgetItem(QString("版本接收ID")));
+	paramView->setItem(18, 1, new QTableWidgetItem(qGb->pGboleData.at(row).ats.m_strVerRecID));
+	paramView->setItem(19, 0, new QTableWidgetItem(QString("版本发送ID")));
+	paramView->setItem(19, 1, new QTableWidgetItem(qGb->pGboleData.at(row).ats.m_strVerSendID));
 
-	paramView->setItem(18, 0, new QTableWidgetItem(QString("测额定功率温度°C")));
-	paramView->setItem(18, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_usRatedPWTemp)));
-	paramView->setItem(19, 0, new QTableWidgetItem(QString("测额定功率流量L")));
-	paramView->setItem(19, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_usRatedPWFlow)));
-	paramView->setItem(20, 0, new QTableWidgetItem(QString("加热起始温度°C")));
-	paramView->setItem(20, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_usHeatTemp)));
-	paramView->setItem(21, 0, new QTableWidgetItem(QString("制冷温度°C")));
-	paramView->setItem(21, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_usCoolTemp)));
+	paramView->setItem(20, 0, new QTableWidgetItem(QString("版本号个数")));
+	paramView->setItem(20, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_usIDBytelen)));
+	paramView->setItem(21, 0, new QTableWidgetItem(QString("Ver起止位")));
+	paramView->setItem(21, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_usIDByteStartbit)));
 
-	paramView->setItem(22, 0, new QTableWidgetItem(QString("测过温关流量？")));
-	paramView->setItem(22, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_bTurnOffFlow)));
-	paramView->setItem(23, 0, new QTableWidgetItem(QString("测功率关制冷？")));
-	paramView->setItem(23, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_bTurnOffCool)));
+	paramView->setItem(22, 0, new QTableWidgetItem(QString("测额定功率温度°C")));
+	paramView->setItem(22, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_usRatedPWTemp)));
+	paramView->setItem(23, 0, new QTableWidgetItem(QString("测额定功率流量L")));
+	paramView->setItem(23, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_usRatedPWFlow)));
+	paramView->setItem(24, 0, new QTableWidgetItem(QString("加热起始温度°C")));
+	paramView->setItem(24, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_usHeatTemp)));
+	paramView->setItem(25, 0, new QTableWidgetItem(QString("制冷温度°C")));
+	paramView->setItem(25, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_usCoolTemp)));
 
-	paramView->setItem(24, 0, new QTableWidgetItem(QString("出口停止使能温度")));
-	paramView->setItem(24, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_iOutTempStop)));
-	paramView->setItem(25, 0, new QTableWidgetItem(QString("参考出(0)入(1)水口温度")));
-	paramView->setItem(25, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_usOutOrInTemp)));
+	paramView->setItem(26, 0, new QTableWidgetItem(QString("测过温关流量？")));
+	paramView->setItem(26, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_bTurnOffFlow)));
+	paramView->setItem(27, 0, new QTableWidgetItem(QString("测功率关制冷？")));
+	paramView->setItem(27, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_bTurnOffCool)));
+
+	paramView->setItem(28, 0, new QTableWidgetItem(QString("出口停止使能温度")));
+	paramView->setItem(28, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_iOutTempStop)));
+	paramView->setItem(29, 0, new QTableWidgetItem(QString("参考出(0)入(1)水口温度")));
+	paramView->setItem(29, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_usOutOrInTemp)));
 
 }
 
@@ -1744,72 +1757,85 @@ void QCanSetting::on_paramView_cellChanged(int row, int col)
 		qGb->pGboleData.at(n).ats.m_iPowerInLine = paramView->item(row, col)->text().toInt();
 		break;
 	case 3:
-		qGb->pGboleData.at(n).ats.m_iLowVoltage = paramView->item(row, col)->text().toInt();
+		qGb->pGboleData.at(n).ats.m_bNeedTempture = paramView->item(row, col)->text().toInt();
 		break;
 	case 4:
-		qGb->pGboleData.at(n).ats.m_iLowVoltageRe = paramView->item(row, col)->text().toInt();
+		qGb->pGboleData.at(n).ats.m_iTemptureProtect = paramView->item(row, col)->text().toInt();
 		break;
 	case 5:
-		qGb->pGboleData.at(n).ats.m_iOverVoltage = paramView->item(row, col)->text().toInt();
+		qGb->pGboleData.at(n).ats.m_iTemptureInLine = paramView->item(row, col)->text().toInt();
 		break;
+
 	case 6:
-		qGb->pGboleData.at(n).ats.m_iOverVoltageRe = paramView->item(row, col)->text().toInt();
+		qGb->pGboleData.at(n).ats.m_iLowVoltage = paramView->item(row, col)->text().toInt();
 		break;
 	case 7:
-		qGb->pGboleData.at(n).ats.m_iOverTemperature = paramView->item(row, col)->text().toInt();
+		qGb->pGboleData.at(n).ats.m_iLowVoltageRe = paramView->item(row, col)->text().toInt();
 		break;
 	case 8:
-		qGb->pGboleData.at(n).ats.m_iOverTempRe = paramView->item(row, col)->text().toInt();
+		qGb->pGboleData.at(n).ats.m_iOverVoltage = paramView->item(row, col)->text().toInt();
 		break;
 	case 9:
-		qGb->pGboleData.at(n).ats.m_iOverTempTolerance = paramView->item(row, col)->text().toInt();
+		qGb->pGboleData.at(n).ats.m_iOverVoltageRe = paramView->item(row, col)->text().toInt();
 		break;
 	case 10:
-		qGb->pGboleData.at(n).ats.m_iRatedVolt = paramView->item(row, col)->text().toInt();
+		qGb->pGboleData.at(n).ats.m_iOverTemperature = paramView->item(row, col)->text().toInt();
 		break;
 	case 11:
-		qGb->pGboleData.at(n).ats.m_fRequirePW = paramView->item(row, col)->text().toInt();
+		qGb->pGboleData.at(n).ats.m_iOverTempRe = paramView->item(row, col)->text().toInt();
 		break;
 	case 12:
-		qGb->pGboleData.at(n).ats.m_fRatedPW = paramView->item(row, col)->text().toInt();
+		qGb->pGboleData.at(n).ats.m_iOverTempTolerance = paramView->item(row, col)->text().toInt();
 		break;
 	case 13:
-		qGb->pGboleData.at(n).ats.m_strTolerance = paramView->item(row, col)->text();
+		qGb->pGboleData.at(n).ats.m_iRatedVolt = paramView->item(row, col)->text().toInt();
 		break;
 	case 14:
-		qGb->pGboleData.at(n).ats.m_strVer = paramView->item(row, col)->text();
+		qGb->pGboleData.at(n).ats.m_fRequirePW = paramView->item(row, col)->text().toInt();
 		break;
 	case 15:
-		qGb->pGboleData.at(n).ats.m_strVerRecID = paramView->item(row, col)->text();
+		qGb->pGboleData.at(n).ats.m_fRatedPW = paramView->item(row, col)->text().toInt();
 		break;
 	case 16:
-		qGb->pGboleData.at(n).ats.m_usIDBytelen = paramView->item(row, col)->text().toUShort();
+		qGb->pGboleData.at(n).ats.m_strTolerance = paramView->item(row, col)->text();
 		break;
 	case 17:
-		qGb->pGboleData.at(n).ats.m_usIDByteStartbit = paramView->item(row, col)->text().toUShort();
+		qGb->pGboleData.at(n).ats.m_strVer = paramView->item(row, col)->text();
 		break;
 	case 18:
-		qGb->pGboleData.at(n).ats.m_usRatedPWTemp = paramView->item(row, col)->text().toShort();
+		qGb->pGboleData.at(n).ats.m_strVerRecID = paramView->item(row, col)->text();
 		break;
 	case 19:
-		qGb->pGboleData.at(n).ats.m_usRatedPWFlow = paramView->item(row, col)->text().toUShort();
+		qGb->pGboleData.at(n).ats.m_strVerSendID = paramView->item(row, col)->text();
 		break;
 	case 20:
-		qGb->pGboleData.at(n).ats.m_usHeatTemp = paramView->item(row, col)->text().toShort();
+		qGb->pGboleData.at(n).ats.m_usIDBytelen = paramView->item(row, col)->text().toUShort();
 		break;
 	case 21:
-		qGb->pGboleData.at(n).ats.m_usCoolTemp = paramView->item(row, col)->text().toShort();
+		qGb->pGboleData.at(n).ats.m_usIDByteStartbit = paramView->item(row, col)->text().toUShort();
 		break;
 	case 22:
-		qGb->pGboleData.at(n).ats.m_bTurnOffFlow = paramView->item(row, col)->text().toShort();
+		qGb->pGboleData.at(n).ats.m_usRatedPWTemp = paramView->item(row, col)->text().toShort();
 		break;
 	case 23:
-		qGb->pGboleData.at(n).ats.m_bTurnOffCool = paramView->item(row, col)->text().toShort();
+		qGb->pGboleData.at(n).ats.m_usRatedPWFlow = paramView->item(row, col)->text().toUShort();
 		break;
 	case 24:
-		qGb->pGboleData.at(n).ats.m_iOutTempStop = paramView->item(row, col)->text().toInt();
+		qGb->pGboleData.at(n).ats.m_usHeatTemp = paramView->item(row, col)->text().toShort();
 		break;
 	case 25:
+		qGb->pGboleData.at(n).ats.m_usCoolTemp = paramView->item(row, col)->text().toShort();
+		break;
+	case 26:
+		qGb->pGboleData.at(n).ats.m_bTurnOffFlow = paramView->item(row, col)->text().toShort();
+		break;
+	case 27:
+		qGb->pGboleData.at(n).ats.m_bTurnOffCool = paramView->item(row, col)->text().toShort();
+		break;
+	case 28:
+		qGb->pGboleData.at(n).ats.m_iOutTempStop = paramView->item(row, col)->text().toInt();
+		break;
+	case 29:
 		qGb->pGboleData.at(n).ats.m_usOutOrInTemp = paramView->item(row, col)->text().toInt();
 		break;
 	default:

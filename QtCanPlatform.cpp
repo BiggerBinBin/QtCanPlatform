@@ -454,10 +454,10 @@ void QtCanPlatform::initUi()
     pbSummitCode->setDefault(true);
     connect(pbSummitCode, &QPushButton::clicked, this, &QtCanPlatform::on_pbSummitCode_clicked, Qt::QueuedConnection);
     tableAutoResults = new QTableWidget(this);
-    QStringList autotabtlename = { "测试项","测试结果","备注"};
-    tableAutoResults->setColumnCount(3);
+    QStringList autotabtlename = { "SW","测试项","测试结果","备注"};
+    tableAutoResults->setColumnCount(4);
     tableAutoResults->setHorizontalHeaderLabels(autotabtlename);
-    
+    tableAutoResults->setColumnWidth(0, 20);
     QHBoxLayout* bHBoxLayout = new QHBoxLayout(this);
     bHBoxLayout->addWidget(pbStartAutoTest);
     bHBoxLayout->addWidget(pbDevicesManage);
@@ -630,7 +630,11 @@ void QtCanPlatform::initAutoResTableWidget()
     testItemList << "MES允许入站" << "通信测试" << "软件版本号" << "欠压保护" << "过压保护" << "额定功率" << "过温保护" << "过温恢复" << "其它故障" << "测试结果";
     tableAutoResults->setRowCount(testItemList.size());
     for (int m = 0; m < testItemList.size(); m++)
-        tableAutoResults->setItem(m, 0, new QTableWidgetItem(testItemList.at(m)));
+    {
+        QCheckBox* cb = new QCheckBox(this);
+        tableAutoResults->setCellWidget(m, 0, cb);
+        tableAutoResults->setItem(m, 1, new QTableWidgetItem(testItemList.at(m)));
+    }
 }
 void QtCanPlatform::on_action_About_triggered()
 {
@@ -925,7 +929,9 @@ bool QtCanPlatform::sendDataIntoTab_up()
 }
 bool QtCanPlatform::recDataIntoTab()
 {
-   
+    
+    
+
     rollTitle.clear();
     recCanData.clear();
     showTableVec.clear();
@@ -1039,6 +1045,9 @@ bool QtCanPlatform::recDataIntoTab()
     tableRollTitleArray[ch]->clear();
     tableRollTitleArray[ch]->setHorizontalHeaderLabels(rollTitle);
     tableRollTitleArray[ch]->horizontalHeader()->setStyleSheet(rollTitleStyle);
+    int nRowRoll = tableRollDataArray[ch]->rowCount();
+    for (int im = nRowRoll - 1; im >= 0; im--)
+        tableRollDataArray[ch]->removeRow(im);
     //QHeaderView::section {background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1,stop:0 #0078d7, stop: 0.5 #0078d7,stop: 0.6 #0078d7, stop:1 #0078d7);color: white;}
     for (int i = 0; i < rollTitle.size(); i++)
     {
@@ -1102,7 +1111,7 @@ void QtCanPlatform::sendData()
 
    
 
-    uchar s_Data[8];
+    static uchar s_Data[8];
     getSendDataFromTable();
     
     {
@@ -1206,6 +1215,25 @@ void QtCanPlatform::sendData()
             other[0] = recCanData.at(k).len;
             other[1] = 1;
             pHardWare->SendMessage(recCanData.at(k).strCanId.toInt(NULL,16), s_Data, other);
+        }
+        if (m_bGetVer)
+        {
+            
+            int other[2];
+            other[0] = 8;
+            other[1] = 0;
+            //版本请求
+            s_Data[0] = 0x06;
+            s_Data[1] = 0x20;
+            s_Data[2] = 0x22;
+            s_Data[3] = 0x10;
+            s_Data[4] = 0x24;
+            s_Data[5] = 0x09;
+            s_Data[6] = 0x24;
+            s_Data[7] = 0x06;
+            pHardWare->SendMessage(currentTestModel.ats.m_strVerSendID.toInt(NULL, 16), s_Data, other);
+            other[1] = 1;
+            pHardWare->SendMessage(currentTestModel.ats.m_strVerRecID.toInt(NULL, 16), s_Data, other);
         }
     }
 
@@ -1540,7 +1568,7 @@ void QtCanPlatform::recAnalyseIntel(unsigned int fream_id,QByteArray data)
         tableRecView->removeRow(rcount - m - 1);*/
 
     //=================10.10===============
-    QString dTime = QDateTime::currentDateTime().toString("yyyy-MM-dd-hh-mm-ss-zzz");
+    QString dTime = QDateTime::currentDateTime().toString("yyyy-MM-dd hh:mm:ss:zzz");
     QDateTime dd = QDateTime::currentDateTime();
     uint curCount = strSaveList.size() + 1;
     QString dTemp = QString::number(curCount) + "," + dTime + ",";
@@ -1866,7 +1894,7 @@ void QtCanPlatform::recAnalyseMoto(unsigned int fream_id, QByteArray data)
     for (int m = 0; m < rcount; m++)
         tableArray[0]->removeRow(rcount - m - 1);
     //=================10.10===============
-    QString dTime = QDateTime::currentDateTime().toString("yyyy-MM-dd-hh-mm-ss-zzz");
+    QString dTime = QDateTime::currentDateTime().toString("yyyy-MM-dd hh:mm:ss:zzz");
     QDateTime dd = QDateTime::currentDateTime();
     uint curCount = strSaveList.size() + 1;
     QString dTemp = QString::number(curCount) + "," + dTime + ",";
@@ -2187,7 +2215,7 @@ void QtCanPlatform::recAnalyseIntel(int ch,unsigned int fream_id, QByteArray dat
 
 
           //=================10.10===============
-    QString dTime = QDateTime::currentDateTime().toString("yyyy-MM-dd-hh-mm-ss-zzz");
+    QString dTime = QDateTime::currentDateTime().toString("yyyy-MM-dd hh:mm:ss:zzz");
     QDateTime dd = QDateTime::currentDateTime();
     uint curCount = tableRollDataArray[ch]->rowCount() + 1;
 
@@ -2663,7 +2691,7 @@ void QtCanPlatform::getByteInfo(const std::vector<parseData>& parseArr,int ch)
         {
             realHVErr[ch] = x.toWord;
         }
-        else if (x.name == "过温保护" || x.name == "过温故障" )
+        else if (x.name == "过温保护" || x.name == "过温故障" || x.name=="过温报警")
         {
             realOTPro[ch] = x.toWord;
         }
@@ -2725,6 +2753,8 @@ void QtCanPlatform::on_CurrentModelChanged(int index)
     timeStmp = 0;
     timeStmp_send = 0;
     currentModel = HashArr.at(index);
+    strSaveList.clear();
+    multReceData.clear();
     sendDataIntoTab();
     recDataIntoTab();
 }
@@ -3787,7 +3817,7 @@ void QtCanPlatform::on_setInToRollDataMult(int ch)
         //这个是保存到excel的表头
         //excelTitle += RollShowData.at(i).name + ",";
     }
-    tableRollTitleArray[ch]->setHorizontalHeaderLabels(title);
+    //tableRollTitleArray[ch]->setHorizontalHeaderLabels(title);
     //表格永远显示底部
     tableRollDataArray[ch]->scrollToBottom();
     //移除最后一个逗号
@@ -4315,18 +4345,65 @@ void QtCanPlatform::setHeatint(const AutoTestStruct& at, float value)
 {
     int en_row = at.m_iEnableInLine;
     int pw_row = at.m_iPowerInLine;
+    
+    bool temp_SW = at.m_bNeedTempture;
+   
+    //设置功率
     QTableWidgetItem* item = tableView->item(pw_row, 2);
     if (!item) { return; }
     item->setText(QString::number(value));
 
+    //使能加热
     QComboBox* cb = dynamic_cast<QComboBox*> (tableView->cellWidget(en_row, 1));
     if (!cb) { return; }
     cb->setCurrentIndex(at.m_iEnOp);
+    //设置加热温度
+    if (temp_SW && value)
+    {
+        int temp_row = at.m_iTemptureInLine;
+        int tempture = at.m_iTemptureProtect;
+        QTableWidgetItem* item = tableView->item(temp_row, 2);
+        if (!item) { return; }
+        item->setText(QString::number(tempture));
+    }
+    
+
 }
+void QtCanPlatform::setHeatint(const AutoTestStruct& at, float value,int tempture)
+{
+    int en_row = at.m_iEnableInLine;
+    int pw_row = at.m_iPowerInLine;
+
+    bool temp_SW = at.m_bNeedTempture;
+
+    //设置功率
+    QTableWidgetItem* item = tableView->item(pw_row, 2);
+    if (!item) { return; }
+    item->setText(QString::number(value));
+
+    //使能加热
+    QComboBox* cb = dynamic_cast<QComboBox*> (tableView->cellWidget(en_row, 1));
+    if (!cb) { return; }
+    cb->setCurrentIndex(at.m_iEnOp);
+    //设置加热温度
+    if (temp_SW)
+    {
+        int temp_row = at.m_iTemptureInLine;
+       
+        QTableWidgetItem* item = tableView->item(temp_row, 2);
+        if (!item) { return; }
+        item->setText(QString::number(tempture));
+    }
+
+
+}
+
 void QtCanPlatform::setCancelHeatint(const AutoTestStruct& at, float value)
 {
     int en_row = at.m_iEnableInLine;
     int pw_row = at.m_iPowerInLine;
+    bool temp_SW = at.m_bNeedTempture;
+
     QTableWidgetItem* item = tableView->item(pw_row, 2);
     if (!item) { return; }
     item->setText(QString::number(0));
@@ -4334,13 +4411,21 @@ void QtCanPlatform::setCancelHeatint(const AutoTestStruct& at, float value)
     QComboBox* cb = dynamic_cast<QComboBox*> (tableView->cellWidget(en_row, 1));
     if (!cb) { return; }
     cb->setCurrentIndex(0);
+
+    //设置加热温度
+    if (temp_SW)
+    {
+        int temp_row = at.m_iTemptureInLine;
+        QTableWidgetItem* item = tableView->item(temp_row, 2);
+        if (!item) { return; }
+        item->setText(QString::number(0));
+    }
 }
 void QtCanPlatform::getAveragePW(const AutoTestStruct& at)
 {
     int lestCount = 0;
     PowerArr[0].clear();
     int tempture = currentTestModel.ats.m_usRatedPWTemp;
-    QLOG_INFO() << "tempture:" << tempture;
     ushort outOrin= currentTestModel.ats.m_usOutOrInTemp;
     if (outOrin)
     {
@@ -4394,7 +4479,10 @@ void QtCanPlatform::getAveragePW(const AutoTestStruct& at)
     float sum=0;
     for (int i = 0; i < PowerArr[0].size(); i++)
         sum += PowerArr[0].at(i);
-    sum = sum / PowerArr[0].size();
+    if (PowerArr[0].size() > 0)
+        sum = sum / PowerArr[0].size();
+    else
+        sum = -1;
     QStringList tolerance = at.m_strTolerance.split(";");
     float nagetive = 0.1;
     float postive = 0.1;
@@ -4560,6 +4648,7 @@ void QtCanPlatform::on_BlowAir_Stop()
 }
 void QtCanPlatform::on_pbHidenAutoWidget_clicked(bool b)
 {
+    //m_bGetVer = b;
     if (!gp)return;
     gp->setHidden(b);
     m_bShowAutoTest = b;
@@ -4762,6 +4851,7 @@ void QtCanPlatform::on_pbStartAutoTest_clicked(bool b)
            connect(this, &QtCanPlatform::sigAutoTestSend, this, &QtCanPlatform::on_processAutoTestSignal);
            connect(autoDevMan, &AutoDeviceManage::sigMesNewData, this, &QtCanPlatform::on_sigFroMesNewData);
            connect(autoDevMan, &AutoDeviceManage::sigPowerNewData, this, &QtCanPlatform::on_sigFromPowerNewData);
+           connect(autoDevMan, &AutoDeviceManage::sigFlowCool, this, &QtCanPlatform::on_RecFlowCool);
        }
        autoDevMan->initializeDev();
        QTime tempT = QTime::currentTime().addMSecs(1500);
@@ -4846,8 +4936,8 @@ void QtCanPlatform::showAutoTestStep(int n, QString data, QString remake)
             item->setBackgroundColor(QColor(20, 240, 10));
         else if(remake=="NG")
             item->setBackgroundColor(QColor(240, 10, 10));
-        tableAutoResults->setItem(n, 1, item);
-        tableAutoResults->setItem(n, 2, item2);
+        tableAutoResults->setItem(n, 2, item);
+        tableAutoResults->setItem(n, 3, item2);
     }
 }
 void QtCanPlatform::on_processAutoTestSignal(int n, QString str)
@@ -4886,13 +4976,13 @@ void QtCanPlatform::on_processAutoTestSignal(int n, QString str)
     case 4:
         showAutoTestStep(3, str, "");
         setPowerSupply(currentTestModel.ats, -1);   //设置电压，极限电流
-        setHeatint(currentTestModel.ats, 0);        //设置使能但功率为0
+        setHeatint(currentTestModel.ats, 0,0);        //设置使能但功率为0
         QLOG_INFO() << "case 4";
         break;
     case 5:
         showAutoTestStep(3, str, "");
         setPowerSupply(currentTestModel.ats, -2);   //设置电压，极限电流
-        setHeatint(currentTestModel.ats, 0);        //设置使能但功率为0
+        setHeatint(currentTestModel.ats, 0,0);        //设置使能但功率为0
         QLOG_INFO() << "case 5";
         break;
     case 6:
@@ -4922,7 +5012,7 @@ void QtCanPlatform::on_processAutoTestSignal(int n, QString str)
     case 10://使能加热
         autoDevMan->setCoolantTemp(currentTestModel.ats.m_usCoolTemp, currentTestModel.ats.m_usRatedPWFlow, !(currentTestModel.ats.m_bTurnOffCool), true);
         setPowerSupply(currentTestModel.ats, 0);
-        setHeatint(currentTestModel.ats, currentTestModel.ats.m_fRequirePW);
+        setHeatint(currentTestModel.ats, currentTestModel.ats.m_fRequirePW, currentTestModel.ats.m_iTemptureProtect);
         break;
     case 11:
         showAutoTestStep(8, str, "NG");//其它故障
@@ -5035,6 +5125,12 @@ void QtCanPlatform::on_processAutoTestSignal(int n, QString str)
 bool QtCanPlatform::upMesOutData()
 {
     
+    //移除第一个星号
+    if (!up_mes_var.m_strOtherFault.isEmpty())
+    {
+        up_mes_var.m_strOtherFault = up_mes_var.m_strOtherFault.mid(1);
+    }
+
     QString t_data = up_mes_var.m_strRatedTemp + "," +
         up_mes_var.m_strRatedVoltage + "," +
         up_mes_var.m_strRatedFlow + "," +
@@ -5102,6 +5198,8 @@ void QtCanPlatform::workAutoTest()
                 while (!CodeOk)
                 {
                     QThread::msleep(100);
+                    if (runStep == -1)
+                        return;
                     continue;
                 }
                 QString sendstr = "#A101;" + m_strPHUCode + ";D_PHU01_006$";
@@ -5451,7 +5549,7 @@ void QtCanPlatform::workAutoTest()
             {
 
                 bool b = false;
-                if (realOTPro[0] == "过温" || realOTPro[0] == "出水口过温" || realOTPro[0] == "过温故障" || realOTPro[0] == "过温保护")
+                if (realOTPro[0] == "过温" || realOTPro[0] == "出水口过温" || realOTPro[0] == "过温故障" || realOTPro[0] == "过温保护" || realOTPro[0] == "冷却液过热")
                 {
                     b = true;
                 }
@@ -5495,7 +5593,7 @@ void QtCanPlatform::workAutoTest()
             while (runStep != -1)
             {
                 bool b = false;
-                if (realOTPro[0]=="正常"||(realOTPro[0] != "过温" && realOTPro[0] != "出水口过温" && realOTPro[0] != "过温故障" && realOTPro[0] != "过温保护"))
+                if (realOTPro[0]=="正常"||(realOTPro[0] != "过温" && realOTPro[0] != "出水口过温" && realOTPro[0] != "过温故障" && realOTPro[0] != "过温保护" && realOTPro[0] != "冷却液过热"))
                 {
                     b = true;
                 }
@@ -5537,10 +5635,15 @@ void QtCanPlatform::workAutoTest()
             }
 
 
+           
+            
+            
             emit sigAutoTestSend(18, up_mes_var.m_strTestResult);
             //Step9
             //保存测试结果,上传MES
             upMesOutData();
+            //延时一下，让冷却液再降温一下
+            QThread::msleep(5000);
             //正常测试完成的
             if (runStep != -1)
             {

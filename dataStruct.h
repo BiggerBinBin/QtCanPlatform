@@ -22,6 +22,7 @@ struct AutoTestStruct
 	QString m_strTolerance;		//13 功率误差
 	QString m_strVer;			//14 软件版本号
 	QString m_strVerRecID;		//15 版本号解析的ID
+	QString m_strVerSendID;		//15 版本号发送的ID(LIN 通信需要，唉)
 	ushort m_usIDBytelen;		//16 版本由几个字段组成
 	ushort m_usIDByteStartbit;	//17 版本解析的起止位
 	int m_usRatedPWTemp;		//18 额定功率的温度
@@ -29,9 +30,12 @@ struct AutoTestStruct
 	int m_usHeatTemp;			//20 加热起始温度
 	int m_usCoolTemp;			//21 制冷温度
 	int m_bTurnOffFlow;			//22 测试过温保护时是否关闭流量
-	int m_bTurnOffCool;			//22 测试过温保护时是否关闭制冷
-	int m_iOutTempStop;			//23 出水口过温温度，到达就停止使能
-	ushort m_usOutOrInTemp;		//24 使用出水口温度还是入水口温度（0出，1入）
+	int m_bTurnOffCool;			//23 测试过温保护时是否关闭制冷
+	int m_iOutTempStop;			//24 出水口过温温度，到达就停止使能
+	ushort m_usOutOrInTemp;		//25 使用出水口温度还是入水口温度（0出，1入）
+	bool m_bNeedTempture;		//26 是否需要输入温度
+	int m_iTemptureProtect;		//27 最高加热温度
+	int m_iTemptureInLine;		//28 温度所在行
 	//bool isIndepandSend;
 
 };

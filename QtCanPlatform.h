@@ -135,6 +135,7 @@ private:
     void getByteInfo(const std::vector<parseData>& parse,int ch);
     void setPowerSupply(const AutoTestStruct& at, int op);
     void setHeatint(const AutoTestStruct& at, float value);
+    void setHeatint(const AutoTestStruct& at, float value,int tempture);
     void setCancelHeatint(const AutoTestStruct& at, float value);
     void getAveragePW(const AutoTestStruct& at);
   
@@ -498,6 +499,7 @@ private slots:
 
     void on_pbBlowAir_clicked(bool);
     void on_BlowAir_Stop();
+
 
 signals:
     void sigNewRoll();
