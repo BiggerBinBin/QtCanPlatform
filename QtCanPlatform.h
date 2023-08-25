@@ -128,9 +128,11 @@ private:
     //接收到的数据解析(单通道)
     void recAnalyseIntel(unsigned int fream_id, QByteArray data);
     void recAnalyseMoto(unsigned int fream_id, QByteArray data);
+    void recAnalyseMotoLSB(unsigned int fream_id, QByteArray data);
     //kvaser多通道
     void recAnalyseIntel(int ch,unsigned int fream_id, QByteArray data);
     void recAnalyseMoto(int ch,unsigned int fream_id, QByteArray data);
+    void recAnalyseMotoLSB(int ch,unsigned int fream_id, QByteArray data);
 
     void getByteInfo(const std::vector<parseData>& parse,int ch);
     void setPowerSupply(const AutoTestStruct& at, int op);
@@ -499,9 +501,11 @@ private slots:
 
     void on_pbBlowAir_clicked(bool);
     void on_BlowAir_Stop();
+    void on_actionChinese_triggered(bool b);
+    void on_actionEnglish_triggered(bool b);
 
 
-signals:
+Q_SIGNALS:
     void sigNewRoll();
     void sigSendHttp(QByteArray byte, int id);
     void sigNewRollMult(int ch);
@@ -511,11 +515,14 @@ signals:
     void sigSendPutMesData(QByteArray data);
     void sigSendPutPowData(QString data);
     void sigSendMesState(int n, QString str);
+    void actionChinese_triggered(bool check);
+    void actionEnglish_triggered(bool check);
 public:
     void initLogger();
     void destroyLogger();
 
 public slots:
     void logSlot(const QString& message, int level);
+    void changeEvent(QEvent* e) override;
     
 };

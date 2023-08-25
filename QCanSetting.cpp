@@ -124,8 +124,9 @@ void QCanSetting::InitUi()
 	modelView->setHorizontalHeaderLabels(listname);
 	modelView->setSelectionBehavior(QAbstractItemView::SelectRows);
 	//modelView->setMinimumWidth(400);
-	connect(modelView, SIGNAL(cellDoubleClicked(int, int)), this, SLOT(on_modelView_doubleClicked(int, int)));
+	//connect(modelView, SIGNAL(cellDoubleClicked(int, int)), this, SLOT(on_modelView_doubleClicked(int, int)));
 	connect(modelView, SIGNAL(cellClicked(int, int)), this, SLOT(on_modelView_Clicked(int, int)));
+	connect(modelView, SIGNAL(cellChanged(int, int)), this, SLOT(on_modelView_cellChangedV2(int, int)));
 	
 	QVBoxLayout* vLayoutModel = new QVBoxLayout();
 	vLayoutModel->addLayout(hLayoutMdeol);
@@ -166,9 +167,9 @@ void QCanSetting::InitUi()
 	canIdView->setHorizontalHeaderLabels(listname);
 	canIdView->setSelectionBehavior(QAbstractItemView::SelectRows);
 	canIdView->setMinimumWidth(350);
-	connect(canIdView, SIGNAL(cellDoubleClicked(int, int)), this, SLOT(on_canIdView_doubleClicked(int, int)));
+	//connect(canIdView, SIGNAL(cellDoubleClicked(int, int)), this, SLOT(on_canIdView_doubleClicked(int, int)));
 	connect(canIdView, SIGNAL(cellClicked(int, int)), this, SLOT(on_canIdView_Clicked(int, int)));
-
+	connect(canIdView, SIGNAL(cellChanged(int, int)), this, SLOT(on_canIdView_cellChanged(int, int)));
 	//自动化测试参数部分
 	paramView = new QTableWidget(this);
 	listname.clear();
@@ -294,12 +295,15 @@ void QCanSetting::on_pbAddModel_clicked()
 	
 	if (!modelView)
 		return;
-	disconnect(modelView, SIGNAL(cellChanged(int, int)), this, SLOT(on_modelView_cellChangedV2(int, int)));
+	//disconnect(modelView, SIGNAL(cellChanged(int, int)), this, SLOT(on_modelView_cellChangedV2(int, int)));
+	//阻止信号发送
+	modelView->blockSignals(true);
 	short int row = modelView->rowCount();
 	modelView->setRowCount(row + 1);
 	QComboBox* proto = new QComboBox();
 	proto->addItem(tr("Intel"));
-	proto->addItem(tr("Motorola"));
+	proto->addItem(tr("MotorolaMSB"));
+	proto->addItem(tr("MotorolaLSB"));
 	QComboBox* bundRa = new QComboBox();
 	bundRa->addItem("200kb/s");
 	bundRa->addItem("250kb/s");
@@ -340,6 +344,8 @@ void QCanSetting::on_pbAddModel_clicked()
 	data.bStandardId = 0;
 	data.sPlatform = "Non";
 	data.circle = 1000;
+
+	modelView->blockSignals(false);
 	qGboleData* qGb = qGboleData::getInstance();
 	if (!qGb)return;
 	qGb->pGboleData.push_back(data);
@@ -383,7 +389,8 @@ void QCanSetting::SetTableData()
 		modelView->setRowCount(i + 1);
 		QComboBox* proto = new QComboBox();
 		proto->addItem(tr("Intel"));
-		proto->addItem(tr("Motorola"));
+		proto->addItem(tr("MotorolaMSB"));
+		proto->addItem(tr("MotorolaLSB"));
 		QComboBox* bundRa = new QComboBox();
 		bundRa->addItem("200kb/s");
 		bundRa->addItem("250kb/s");
@@ -457,7 +464,8 @@ void QCanSetting::on_pbMoveUpModel_clicked()
 	{
 		return;
 	}
-	disconnect(modelView, SIGNAL(cellChanged(int, int)), this, SLOT(on_modelView_cellChangedV2(int, int)));
+	//disconnect(modelView, SIGNAL(cellChanged(int, int)), this, SLOT(on_modelView_cellChangedV2(int, int)));
+	modelView->blockSignals(true);
 	//在它上面先插入一行
 	modelView->insertRow(curRow - 1);
 	//把这一行的所有列取出来
@@ -479,6 +487,9 @@ void QCanSetting::on_pbMoveUpModel_clicked()
 	//删除原来行，因为在它前面新增了一行，所以序号要变
 	modelView->removeRow(curRow + 1);
 	modelView->setCurrentCell(curRow - 1, 0);
+
+	modelView->blockSignals(false);
+
 	qGboleData* qGb = qGboleData::getInstance();
 	if (!qGb)return;
 	if (curRow > qGb->pGboleData.size() - 1)
@@ -500,12 +511,10 @@ void QCanSetting::on_pbMoveDownModel_clicked()
 		return;
 	}
 	
-	/*modelView->insertRow(curRow + 2);
-	QString idtex = modelView->item(curRow, 0)->text();
-	QComboBox* cb = dynamic_cast<QComboBox*>(modelView->cellWidget(curRow, 1));
-	modelView->setItem(curRow + 2, 0, new QTableWidgetItem(idtex));
-	modelView->setCellWidget(curRow + 2, 1, cb);*/
-	disconnect(modelView, SIGNAL(cellChanged(int, int)), this, SLOT(on_modelView_cellChangedV2(int, int)));
+	
+	//disconnect(modelView, SIGNAL(cellChanged(int, int)), this, SLOT(on_modelView_cellChangedV2(int, int)));
+	modelView->blockSignals(true);
+
 	modelView->insertRow(curRow + 2);
 	QString idtex = modelView->item(curRow, 0)->text();							//型号名称
 	QComboBox* cb = dynamic_cast<QComboBox*>(modelView->cellWidget(curRow, 1));		//格式：inter或者motorola
@@ -524,6 +533,9 @@ void QCanSetting::on_pbMoveDownModel_clicked()
 
 	modelView->removeRow(curRow);
 	modelView->setCurrentCell(curRow + 1, 0);
+
+	modelView->blockSignals(false);
+
 	qGboleData* qGb = qGboleData::getInstance();
 	if (!qGb)return;
 	if (curRow > qGb->pGboleData.size())
@@ -532,6 +544,8 @@ void QCanSetting::on_pbMoveDownModel_clicked()
 		return;
 	}
 	std::swap(qGb->pGboleData[curRow], qGb->pGboleData[curRow + 1]);
+
+	
 }
 
 void QCanSetting::on_pbDelModel_clicked()
@@ -595,7 +609,7 @@ void QCanSetting::on_pbAddCanId_clicked()
 		QMessageBox::warning(this, tr("warning"), tr("未选中型号，不能添加CanID"));
 		return;
 	}
-		
+	canIdView->blockSignals(true);
 	short int row = canIdView->rowCount();
 	canIdView->setRowCount(row + 1);
 	QComboBox* proto = new QComboBox();
@@ -619,6 +633,7 @@ void QCanSetting::on_pbAddCanId_clicked()
 	qGb->pGboleData.at(curSelectRow).cItem.push_back(cdata);
 	connect(isSend, &QCheckBox::stateChanged, this, &QCanSetting::on_canIdView_SendChanged);
 	connect(proto, SIGNAL(currentIndexChanged(int)), this, SLOT(on_canIdView_currentIndexChanged(int)));
+	canIdView->blockSignals(false);
 }
 
 void QCanSetting::on_pbMoveUpCanId_clicked()
@@ -635,7 +650,8 @@ void QCanSetting::on_pbMoveUpCanId_clicked()
 		QMessageBox::warning(NULL, "warnning", tr("未选中型号，不能上下移动"));
 		return;
 	}
-	disconnect(canIdView, SIGNAL(cellChanged(int, int)), this, SLOT(on_canIdView_cellChanged(int, int)));
+	//disconnect(canIdView, SIGNAL(cellChanged(int, int)), this, SLOT(on_canIdView_cellChanged(int, int)));
+	canIdView->blockSignals(true);
 	//在它上面先插入一行
 	canIdView->insertRow(curRow - 1);
 	//把这一行的所有列取出来，也就两个
@@ -653,6 +669,9 @@ void QCanSetting::on_pbMoveUpCanId_clicked()
 	//删除原来行，因为在它前面新增了一行，所以序号要变
 	canIdView->removeRow(curRow + 1);
 	canIdView->setCurrentCell(curRow - 1, 0);
+
+	canIdView->blockSignals(false);
+
 	qGboleData* qGb = qGboleData::getInstance();
 	if (!qGb)return;
 	if (curRow > qGb->pGboleData.at(modelCurRow).cItem.size() - 1)
@@ -677,7 +696,9 @@ void QCanSetting::on_pbMoveDownCanId_clicked()
 		QMessageBox::warning(NULL, "warnning", tr("未选中型号，不能上下移动"));
 		return;
 	}
-	disconnect(canIdView, SIGNAL(cellChanged(int, int)), this, SLOT(on_canIdView_cellChanged(int, int)));
+	//disconnect(canIdView, SIGNAL(cellChanged(int, int)), this, SLOT(on_canIdView_cellChanged(int, int)));
+	canIdView->blockSignals(true);
+
 	canIdView->insertRow(curRow + 2);
 	QString idtex = canIdView->item(curRow , 0)->text();
 	QComboBox* cb = dynamic_cast<QComboBox*>(canIdView->cellWidget(curRow, 1));
@@ -691,6 +712,9 @@ void QCanSetting::on_pbMoveDownCanId_clicked()
 	canIdView->setItem(curRow + 2, 4, new QTableWidgetItem(circle));
 	canIdView->removeRow(curRow );
 	canIdView->setCurrentCell(curRow + 1, 0);
+
+	canIdView->blockSignals(false);
+
 	qGboleData* qGb = qGboleData::getInstance();
 	if (!qGb)return;
 	if (curRow > qGb->pGboleData.at(modelCurRow).cItem.size())
@@ -708,7 +732,11 @@ void QCanSetting::on_pbDelCanId_clicked()
 	
 	short int index = canIdView->currentIndex().row();
 	if (index < 0)return;
+
+	canIdView->blockSignals(true);
 	canIdView->removeRow(index);
+	canIdView->blockSignals(false);
+
 	qGboleData* qGb = qGboleData::getInstance();
 	if (!qGb)return;
 	short int mr = modelView->currentRow();
@@ -898,7 +926,9 @@ void QCanSetting::on_pbMoveDownIteam_clicked()
 		return;
 	}
 	//关闭信号槽，因为下面的setItem会触发cellCHanged这个信号
-	disconnect(tableView, SIGNAL(cellChanged(int, int)), this, SLOT(on_tableView_cellChanged(int, int)));
+	//disconnect(tableView, SIGNAL(cellChanged(int, int)), this, SLOT(on_tableView_cellChanged(int, int)));
+	
+	tableView->blockSignals(true);
 	//在它上面先插入一行
 	tableView->insertRow(curRow + 2);
 	//把这行的所有列数据取出来
@@ -926,6 +956,9 @@ void QCanSetting::on_pbMoveDownIteam_clicked()
 	tableView->removeRow(curRow);
 
 	tableView->setCurrentCell(curRow + 1, 0);
+
+	tableView->blockSignals(false);
+
 	qGboleData* qGb = qGboleData::getInstance();
 	if (!qGb)return;
 	if (modelCurRow > qGb->pGboleData.size() - 1)
@@ -952,8 +985,10 @@ void QCanSetting::on_pbDelIteam_clicked()
 		return;
 	short int index = tableView->currentIndex().row();
 	if (index < 0)return;
-	tableView->removeRow(index);
 
+	tableView->blockSignals(true);
+	tableView->removeRow(index);
+	tableView->blockSignals(false);
 	qGboleData* qGb = qGboleData::getInstance();
 	if (!qGb)return;
 	if (!modelView)
@@ -1080,14 +1115,14 @@ void QCanSetting::on_modelView_cellChangedV2(int row, int col)
 	}
 	//关掉这个，防止添加行setData的时候，触发这个信号
 	//disconnect(modelView, SIGNAL(itemChanged(cellChanged(int, int))), this, SLOT(on_modelView_cellChangedV2(int, int)));
-	disconnect(modelView, SIGNAL(cellChanged(int, int)), this, SLOT(on_modelView_cellChangedV2(int, int)));
+	//disconnect(modelView, SIGNAL(cellChanged(int, int)), this, SLOT(on_modelView_cellChangedV2(int, int)));
 }
 
 void QCanSetting::on_modelView_doubleClicked(int, int)
 {
 	//注意QT的这个cellChanged信号，他会当setData的时候触发这个信号
 	//所以曲线救国，在双击的时候才连接这个槽，
-	connect(modelView, SIGNAL(cellChanged(int, int)), this, SLOT(on_modelView_cellChangedV2(int, int)));
+	//connect(modelView, SIGNAL(cellChanged(int, int)), this, SLOT(on_modelView_cellChangedV2(int, int)));
 }
 /***********************************
 *@brief:列表在初始化时，只会初始化型号列表的
@@ -1368,7 +1403,7 @@ void QCanSetting::on_canIdView_cellChanged(int row, int col)
 		QMessageBox::warning(this, tr("warning"), QString(tr("Vector超出:") + e.what() + "Infunction:on_canIdView_cellChanged"));
 	}
 	//关掉这个，防止添加行setData的时候，触发这个信号
-	disconnect(canIdView, SIGNAL(cellChanged(int, int)), this, SLOT(on_canIdView_cellChanged(int, int)));
+	//disconnect(canIdView, SIGNAL(cellChanged(int, int)), this, SLOT(on_canIdView_cellChanged(int, int)));
 }
 /*
 * @brief：第二层的双击事件响应，建立被编辑后的槽
@@ -1377,7 +1412,7 @@ void QCanSetting::on_canIdView_doubleClicked(int, int)
 {
 	//注意QT的这个cellChanged信号，他会当setData的时候触发这个信号
 	//所以曲线救国，在双击的时候才连接这个槽，
-	connect(canIdView, SIGNAL(cellChanged(int, int)), this, SLOT(on_canIdView_cellChanged(int, int)));
+	//connect(canIdView, SIGNAL(cellChanged(int, int)), this, SLOT(on_canIdView_cellChanged(int, int)));
 }
 /*
 * @brief: 在tableView这个表格上显示canId对应的项
@@ -1465,7 +1500,7 @@ void QCanSetting::on_canIdView_Clicked(int row, int col)
 void QCanSetting::on_tableView_doubleCLicked(int row , int col)
 {
 	//建立编辑后的信号槽
-	connect(tableView, SIGNAL(cellChanged(int, int)), this, SLOT(on_tableView_cellChanged(int, int)));
+	//connect(tableView, SIGNAL(cellChanged(int, int)), this, SLOT(on_tableView_cellChanged(int, int)));
 }
 
 void QCanSetting::on_tableView_cellChanged(int row, int col)
@@ -1725,24 +1760,24 @@ void QCanSetting::on_paramView_cellChanged(int row, int col)
 {
 	if ( col > 1 || row < 0 || col < 0)
 	{
-		disconnect(paramView, SIGNAL(cellChanged(int, int)), this, SLOT(on_paramView_cellChanged(int, int)));
+		//disconnect(paramView, SIGNAL(cellChanged(int, int)), this, SLOT(on_paramView_cellChanged(int, int)));
 		return;
 	}
 	if (col != 1)
 	{
-		disconnect(paramView, SIGNAL(cellChanged(int, int)), this, SLOT(on_paramView_cellChanged(int, int)));
+		//disconnect(paramView, SIGNAL(cellChanged(int, int)), this, SLOT(on_paramView_cellChanged(int, int)));
 		return;
 	}
 	int n = modelView->currentRow();
 	qGboleData* qGb = qGboleData::getInstance();
 	if (!qGb)
 	{
-		disconnect(paramView, SIGNAL(cellChanged(int, int)), this, SLOT(on_paramView_cellChanged(int, int)));
+		//disconnect(paramView, SIGNAL(cellChanged(int, int)), this, SLOT(on_paramView_cellChanged(int, int)));
 		return;
 	}
 	if (n < 0 || n>qGb->pGboleData.size() - 1)
 	{
-		disconnect(paramView, SIGNAL(cellChanged(int, int)), this, SLOT(on_paramView_cellChanged(int, int)));
+		//disconnect(paramView, SIGNAL(cellChanged(int, int)), this, SLOT(on_paramView_cellChanged(int, int)));
 		return;
 	}
 	switch (row)
@@ -1841,5 +1876,5 @@ void QCanSetting::on_paramView_cellChanged(int row, int col)
 	default:
 		break;
 	}
-	disconnect(paramView, SIGNAL(cellChanged(int, int)), this, SLOT(on_paramView_cellChanged(int, int)));
+	//disconnect(paramView, SIGNAL(cellChanged(int, int)), this, SLOT(on_paramView_cellChanged(int, int)));
 }

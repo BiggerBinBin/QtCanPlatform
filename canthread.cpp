@@ -498,7 +498,10 @@ void CANThread::sendData(UINT ID, uchar qbt[],bool bStandard)
     vco->DataLen = 8;
     vco->RemoteFlag = 0U;
     vco->SendType = 0;
-    vco->ExternFlag = (!bStandard);
+    if(bStandard)
+        vco->ExternFlag = 0;
+    else
+        vco->ExternFlag = 1;
     for (int j = 0; j < i_DEVICE_NUM; j++)
         for (int i = 0; i < i_CAN_NUM; i++)
         {

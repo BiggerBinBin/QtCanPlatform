@@ -427,7 +427,7 @@ void AutoDeviceManage::onReceiveData(int ch , quint32 fream_id, QByteArray data)
 		}
 		else
 		{
-			temp_o = ((float)(data[0]) * 16.0 * 16.0 + (float)(data[1])) / 10.0;		//冷水机出水温度,拼接高字节与低字节
+			temp_o = ((uchar)(data[0]) * 16.0 * 16.0 + (uchar)(data[1])) / 10.0;		//冷水机出水温度,拼接高字节与低字节
 		}
 
 		if ((uchar)data[2] > 0xF)
@@ -438,14 +438,14 @@ void AutoDeviceManage::onReceiveData(int ch , quint32 fream_id, QByteArray data)
 		}
 		else
 		{
-			temp_b = ((float)(data[2]) * 16.0 * 16.0 + (float)(data[3])) / 10.0;		//冷水机回水温度,拼接高字节与低字节
+			temp_b = ((uchar)(data[2]) * 16.0 * 16.0 + (uchar)(data[3])) / 10.0;		//冷水机回水温度,拼接高字节与低字节
 		}
 		ui.label_dInTempture->setText(QString::number(temp_o, (char)103, 2) + " °C");
 		ui.label_dOutTempture->setText(QString::number(temp_b, (char)103, 2) + " °C");
 	}
 	else if (6 == fream_id)
 	{
-		float temp_o = ((float)(data[0]) * 16.0 * 16.0 + (float)(data[1])) / 10.0;		//冷水机流量,拼接高字节与低字节
+		float temp_o = ((uchar)(data[0]) * 16.0 * 16.0 + (uchar)(data[1])) / 10.0;		//冷水机流量,拼接高字节与低字节
 		ui.label_dFollow->setText(QString::number(temp_o, (char)103, 2) + " L/min");
 		emit sigFlowCool(temp_o);
 	}
@@ -459,12 +459,12 @@ void AutoDeviceManage::onReceiveData(int ch , quint32 fream_id, QByteArray data)
 
 		QString inback = inCircle ? strGreen : strRed;
 		ui.label_inCircle->setStyleSheet(inback);
-		if (ui.pbStartInCricle->isChecked() != inCircle)
-			ui.pbStartInCricle->setChecked(inCircle);
+		/*if (ui.pbStartInCricle->isChecked() != inCircle)
+			ui.pbStartInCricle->setChecked(inCircle);*/
 		QString outback = outCircle ? strGreen : strRed;
 		ui.label_outCircle->setStyleSheet(outback);
-		if (ui.pbStartOutCricle->isChecked() != outCircle)
-			ui.pbStartOutCricle->setChecked(outCircle);
+		/*if (ui.pbStartOutCricle->isChecked() != outCircle)
+			ui.pbStartOutCricle->setChecked(outCircle);*/
 		QString warmback = warm ? strRed : strGreen;
 		ui.label_warm->setStyleSheet(warmback);
 
@@ -500,7 +500,7 @@ void AutoDeviceManage::on_pbStartInCricle_clicked(bool isCheck)
 	h8bit = flow >> 8;
 	data[3] = h8bit;
 	data[2] = l8bit;
-	m_pWaterCAN.data()->sendData(0x01, data, false);
+	m_pWaterCAN.data()->sendData(0x00000001, data, false);
 }
 void AutoDeviceManage::on_pbStartOutCricle_clicked(bool isCheck)
 {
@@ -531,7 +531,7 @@ void AutoDeviceManage::on_pbStartOutCricle_clicked(bool isCheck)
 	h8bit = flow >> 8;
 	data[3] = h8bit;
 	data[2] = l8bit;
-	m_pWaterCAN.data()->sendData(0x01, data,false);
+	m_pWaterCAN.data()->sendData(0x00000001, data,false);
 }
 void AutoDeviceManage::on_pbBlowWater_clicked(bool isCheck)
 {
@@ -556,11 +556,11 @@ void AutoDeviceManage::on_pbBlowWater_clicked(bool isCheck)
 
 	if (isCheck)
 	{
-		data[6] = 0x5;
+		data[6] = 0x4;
 	}
 	else
-		data[6] = 0x1;
-	m_pWaterCAN.data()->sendData(0x01, data,false);
+		data[6] = 0x00;
+	m_pWaterCAN.data()->sendData(0x00000001, data,false);
 }
 void AutoDeviceManage::on_pbGrasp_clicked(bool isClicked)
 {

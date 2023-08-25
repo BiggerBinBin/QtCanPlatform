@@ -351,7 +351,7 @@ void QLogPlot::runSendMes(float times)
 		emit sigNewMessage(LogData->vData[LogData->iIndex++].Id, data);
 		emit sinNewMessageInline(LogData->vData[LogData->iIndex-1].Id, data, time);
 		emit sigDataIndexChange(LogData->iIndex);
-		QThread::msleep(tempt * times);
+		QThread::msleep(100);
 		//2是暂停，意思是卡在这里不发送消息
 		while (m_bRunSend == 2)
 		{

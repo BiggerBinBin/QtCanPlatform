@@ -57,7 +57,7 @@ void LogAsc::readAsc(messageMange* LogData)
 		memset(msg.Data, 0, 8);
 		for (int m = 0; m < len; m++)
 		{
-			msg.Data[m] = strspilte.at(6 + m).toUShort();
+			msg.Data[m] = strspilte.at(6 + m).toUShort(nullptr,16);
 		}
 		msg.Id = id;
 		msg.TimeStemp = fabs(strspilte.at(0).toDouble() * 10000 - lastTime);

@@ -68,6 +68,8 @@ QtCanPlatform::QtCanPlatform(QWidget *parent)
     m_iSavePeroidNum = 1;
     ui.menu->setEnabled(true);
     isLogin = false;
+    
+   // ui.retranslateUi(this);
 }
 
 QtCanPlatform::~QtCanPlatform()
@@ -268,7 +270,7 @@ void QtCanPlatform::initUi()
     cbBitRate->addItem("10400b/s");
     cbBitRate->addItem("19200b/s");
     cbBitRate->setCurrentIndex(1);
-    QLabel* Period = new QLabel(tr("报文周期："));
+    QLabel* Period = new QLabel(tr("报文周期"));
     cycle = new QLineEdit("1000");
     cycle->setValidator(new QIntValidator(0, 9999999, this));
     cycle->setFixedWidth(60);
@@ -278,8 +280,8 @@ void QtCanPlatform::initUi()
     cbIsMutil->setCurrentIndex(0);
     pbOpen = new QPushButton(tr("打开设备"));
     connect(pbOpen, SIGNAL(clicked()), this, SLOT(on_pbOpenPcan_clicked()));
-    QLabel* cstate = new QLabel(tr(" 通信状态："));
-    communicaLabel = new QLabel(tr("待机中…"));
+    QLabel* cstate = new QLabel(tr(" 通信状态"));
+    communicaLabel = new QLabel(tr("待机中"));
     communicaLabel->setStyleSheet("background-color:yellow");
 
     LogPb = new QPushButton(this);
@@ -622,6 +624,9 @@ void QtCanPlatform::initUi()
     canSeting = nullptr;
     this->on_pbHidenAutoWidget_clicked(m_bShowAutoTest);
 
+    connect(ui.actionChinese, &QAction::triggered, this, &QtCanPlatform::actionChinese_triggered);
+    connect(ui.actionEnglish, &QAction::triggered, this, &QtCanPlatform::actionEnglish_triggered);
+
 }
 void QtCanPlatform::initAutoResTableWidget()
 {
@@ -635,6 +640,27 @@ void QtCanPlatform::initAutoResTableWidget()
         tableAutoResults->setCellWidget(m, 0, cb);
         tableAutoResults->setItem(m, 1, new QTableWidgetItem(testItemList.at(m)));
     }
+}
+void QtCanPlatform::changeEvent(QEvent* e)
+{
+    if (e->type() == QEvent::LanguageChange)
+    {
+        
+        ui.retranslateUi(this);
+    }
+    QMainWindow::changeEvent(e);
+}
+void QtCanPlatform::on_actionChinese_triggered(bool b)
+{
+    QTranslator* translator = new QTranslator(this);
+    bool bk = translator->load(QApplication::applicationDirPath() + "/translations/QtCanPlatform_zh.qm");
+    if (bk)
+        qApp->installTranslator(translator);
+    ui.retranslateUi(this);
+}
+void QtCanPlatform::on_actionEnglish_triggered(bool b)
+{
+
 }
 void QtCanPlatform::on_action_About_triggered()
 {
@@ -656,7 +682,7 @@ void QtCanPlatform::on_action_History_triggered()
     QFile F(QApplication::QCoreApplication::applicationDirPath() + "/Data/history_version.kus");
     if (F.open(QIODevice::ReadOnly | QIODevice::Text))
     {
-        QMessageBox::about(this, tr("历史版本"),QString(F.readAll()));
+        QMessageBox::about(this, tr("历史版本"),QString(F.readAll())); 
     }
     else
     {
@@ -2024,6 +2050,323 @@ void QtCanPlatform::recAnalyseMoto(unsigned int fream_id, QByteArray data)
         saveCanData();
     }
 }
+void QtCanPlatform::recAnalyseMotoLSB(unsigned int fream_id, QByteArray data)
+{
+    QStringList binaryStr;
+    QString hex;
+    for (int k = 0; k < data.size(); ++k)
+    {
+        QString str = QString("%1").arg((uint8_t)data[k], 8, 2, QLatin1Char('0'));
+        binaryStr.append(str);
+
+        hex += QString("%1").arg(str.toInt(NULL, 2), 2, 16, QLatin1Char('0')).toUpper() + " ";
+    }
+    m_strVerCanMessage = binaryStr;
+    if (isTrace)
+    {
+        QString strId = "0x" + QString("%1").arg(fream_id, 8, 16, QLatin1Char('0')).toUpper();
+        QLOG_INFO() << "Rx:" << strId << "  " << hex;
+    }
+
+    bool isRoll = false;
+    //std::vector<std::vector<parseData>>showVec;
+    struct dFromStru {
+        int index;
+        float f1;
+        float f2;
+        int showCount;
+    };
+    bool id_in = false;
+    rw_Lock.lockForWrite();
+    for (int i = 0; i < recCanData.size(); i++)
+    {
+        uint currID = recCanData.at(i).strCanId.toUInt(NULL, 16);
+        if (currID != fream_id)
+            continue;
+        id_in = true;
+        m_bCommunication++;
+        std::vector<parseData>parseArr;
+        std::vector<dFromStru>ddFF;
+        int countShow = 0;
+        for (int m = 0; m < recCanData.at(i).pItem.size(); ++m)
+        {
+            int startByte = recCanData.at(i).pItem.at(m).startByte;
+            int startBit = recCanData.at(i).pItem.at(m).startBit;
+            int startLenght = recCanData.at(i).pItem.at(m).bitLeng;
+            float precision = recCanData.at(i).pItem.at(m).precision;
+            int offset = recCanData.at(i).pItem.at(m).offset;
+            QString datafrom = recCanData.at(i).pItem.at(m).dataFrom;
+            bool octHex = recCanData.at(i).pItem.at(m).octhex;
+            parseData pd;
+            float temp = 0;
+            //判断是否跨字节，起止位模8，得出是当前字节的起止位，再加个长度
+            //if (datafrom != "-1")
+            if (datafrom.contains("*") || datafrom.contains("/"))
+            {
+                QStringList splt = datafrom.split("*");
+                if (splt.size() > 1)
+                {
+                    dFromStru ddf;
+                    ddf.index = m;
+                    ddf.f1 = splt.at(0).toInt();
+                    ddf.f2 = splt.at(1).toInt();
+                    ddFF.push_back(ddf);
+                }
+            }
+            else if (datafrom.contains("XOR"))
+            {
+                (uint8_t)data[m];
+                uchar cData[8];
+                for (int d = 0; d < 8; d++)
+                {
+                    cData[d] = (uchar)data[d];
+                }
+                uchar res = checksumXOR(cData);
+                uchar csum = data[m];
+                if (res == csum)
+                {
+                    temp = 0;
+                }
+                else
+                {
+                    temp = 1;
+                }
+            }
+            else
+            {
+                temp = MsgParser::moto_Lsb_Parser(recCanData.at(i).pItem.at(m), data, false);
+            }
+
+            pd.name = recCanData.at(i).pItem.at(m).bitName;
+            pd.value = temp;
+            //pd.toWord = QString::number(temp,'g',2);
+            pd.toWord = QString::number(temp);
+            pd.color.r = 255;
+            pd.color.g = 255;
+            pd.color.b = 255;
+
+            // std::map<QString, cellProperty>& tt = recCanData.at(i).pItem.at(m).itemProperty;
+            std::vector<cellProperty>& ss = recCanData.at(i).pItem.at(m).stl_itemProperty;
+
+            //如果是需要滚动显示的
+            if (recCanData.at(i).pItem.at(m).isRoll)
+            {
+                isRoll = true;
+                int index = 0;
+                if (YB::nameInVector(RollShowData, recCanData.at(i).pItem.at(m).bitName, index))
+                {
+                    RollShowData.at(index).value = temp;
+                }
+                else
+                {
+                    RollStruct rr;
+                    rr.name = recCanData.at(i).pItem.at(m).bitName;
+                    rr.value = temp;
+                    RollShowData.push_back(rr);
+                }
+                if (datafrom != "-1" && ddFF.size() > 0)
+                    ddFF.at(ddFF.size() - 1).showCount++;
+            }
+
+            std::vector<dFromStru>::iterator iB = ddFF.begin();
+            std::vector<dFromStru>::iterator iE = ddFF.end();
+            int count0 = 0;
+            while (iB != iE)
+            {
+                int max = iB->f1 > iB->f2 ? iB->f1 : iB->f2;
+                if (m >= max - 1)
+                {
+                    parseArr.at(iB->index).value = parseArr.at(iB->f1 - 1).value * parseArr.at(iB->f2 - 1).value;
+                    parseArr.at(iB->index).toWord = QString::number(parseArr.at(iB->index).value);
+                    if (RollShowData.size() - 1 >= iB->showCount)
+                    {
+                        RollShowData.at(iB->showCount).value = parseArr.at(iB->index).value;
+                    }
+                    ddFF.erase(iB);
+                    break;
+                }
+                iB++;
+            }
+
+            //解析要显示到单元格的颜色
+            int stdddd = 0;
+            for (int i = 0; i < ss.size(); i++)
+            {
+                if (ss.at(i).isStand)
+                {
+                    stdddd = ss.at(i).value.toInt();
+                }
+                if (ss.at(i).value.toInt() == temp)
+                {
+                    pd.color.r = ss.at(i).r;
+                    pd.color.g = ss.at(i).g;
+                    pd.color.b = ss.at(i).b;
+                    pd.toWord = ss.at(i).toWord;
+                    break;
+                }
+            }
+            parseArr.push_back(pd);
+
+            //这里保存有错误的，stdddd是正确的标志，如果返回的数据跟正确的不一样，就是有错误
+            if (ss.size() > 0 && stdddd != temp && isRecordError)
+            {
+                Error[0].insert(pd.toWord);
+            }
+        }
+        getByteInfo(parseArr, 0);
+
+        int i_index = YB::idNameInVector(showTableVec, QString::number(fream_id));
+        if (i_index >= 0)
+        {
+            showTableVec.at(i_index).Pdata = parseArr;
+        }
+        else
+        {
+            showTableData temp;
+            temp.IdName = QString::number(fream_id);
+            temp.Pdata = parseArr;
+            showTableVec.push_back(temp);
+        }
+    }
+    m_bResetfault = true;
+    rw_Lock.unlock();
+    if (!id_in)return;
+    if (!tableArray[0])
+        return;
+    int rcount = tableArray[0]->rowCount();
+    for (int m = 0; m < rcount; m++)
+        tableArray[0]->removeRow(rcount - m - 1);
+    //=================10.10===============
+    QString dTime = QDateTime::currentDateTime().toString("yyyy-MM-dd hh:mm:ss:zzz");
+    QDateTime dd = QDateTime::currentDateTime();
+    uint curCount = strSaveList.size() + 1;
+    QString dTemp = QString::number(curCount) + "," + dTime + ",";
+
+    std::vector<showTableData>::iterator iBeginV = showTableVec.begin();
+    std::vector<showTableData>::iterator iEndV = showTableVec.end();
+    int cr = 0;
+    while (iBeginV != iEndV)
+    {
+
+        //每加一行就要设置到表格去
+        int num = iBeginV->Pdata.size();
+        int idex = 0;
+        for (int j = 0; j < num; j++, idex++)
+        {
+            if (idex > 9)   //一行最多放10个数据
+            {
+                //满10个，从头开始
+                idex = 0;
+                //下一行的下一行，也就是隔一行，要加2；
+                cr += 2;
+            }
+            tableArray[0]->setRowCount(cr + 2);
+            QString tnamp = iBeginV->Pdata.at(j).name;
+            QString toword = iBeginV->Pdata.at(j).toWord;
+            try
+            {
+                tableArray[0]->setItem(cr, idex, new QTableWidgetItem(tnamp));
+                QFont ff;
+                ff.setBold(true);
+                QTableWidgetItem* b = tableArray[0]->item(cr, idex);
+                if (!b)
+                    continue;
+                b->setFont(ff);
+                b = tableArray[0]->item(cr, idex);
+                if (!b)
+                    continue;
+                b->setTextAlignment(Qt::AlignCenter);
+                b = tableArray[0]->item(cr, idex);
+                if (!b)
+                    continue;
+                b->setBackgroundColor(recBackgroudColor);
+                b = tableArray[0]->item(cr, idex);
+                if (!b)
+                    continue;
+                b->setForeground(QBrush(recFontColor));
+                tableArray[0]->setItem(cr + 1, idex, new QTableWidgetItem(toword));
+                b = tableArray[0]->item(cr + 1, idex);
+                if (!b)
+                    continue;
+                b->setBackgroundColor(QColor(iBeginV->Pdata.at(j).color.r, iBeginV->Pdata.at(j).color.g, iBeginV->Pdata.at(j).color.b));
+                b = tableArray[0]->item(cr + 1, idex);
+                if (!b)
+                    continue;
+                b->setTextAlignment(Qt::AlignCenter);
+            }
+            catch (const std::exception& e)
+            {
+                QLOG_INFO() << "Error:" << e.what();
+            }
+
+
+            dTemp += toword + ",";
+        }
+        if (idex < 9)
+        {
+            QString tnamp = "";
+            QString toword = "";
+            for (; idex <= 9; idex++)
+            {
+                try
+                {
+                    tableArray[0]->setItem(cr, idex, new QTableWidgetItem(tnamp));
+                    QFont ff;
+                    ff.setBold(true);
+                    QTableWidgetItem* b = tableArray[0]->item(cr, idex);
+                    if (!b)
+                        continue;
+                    b->setFont(ff);
+                    b = tableArray[0]->item(cr, idex);
+                    if (!b)
+                        continue;
+                    b->setTextAlignment(Qt::AlignCenter);
+                    b = tableArray[0]->item(cr, idex);
+                    if (!b)
+                        continue;
+                    b->setBackgroundColor(recBackgroudColor);
+                    b = tableArray[0]->item(cr, idex);
+                    if (!b)
+                        continue;
+                    b->setForeground(QBrush(recFontColor));
+                    tableArray[0]->setItem(cr + 1, idex, new QTableWidgetItem(toword));
+                    b = tableArray[0]->item(cr + 1, idex);
+                    if (!b)
+                        continue;
+
+                }
+                catch (const std::exception& e)
+                {
+                    QLOG_INFO() << "Error:" << e.what();
+                }
+            }
+        }
+        cr += 2;
+        iBeginV++;
+
+    }
+    dTemp.remove(dTemp.size() - 1, 1);
+
+    uint nn = (dd.toMSecsSinceEpoch() - lastTime.toMSecsSinceEpoch());
+    lastTime = dd;
+    //防止一个周期内来一帧就保存一次
+    if (nn > 50)
+    {
+        countPeroid++;
+        if (countPeroid >= m_iSavePeroidNum)
+        {
+            strSaveList.append(dTemp); //放到一个list存着
+            countPeroid = 0;
+        }
+        
+    }
+    if (isRoll)
+        emit sigNewRollMult(0);
+    if (strSaveList.size() >= saveListNum)
+    {
+        saveCanData();
+    }
+}
 void QtCanPlatform::recAnalyseIntel(int ch,unsigned int fream_id, QByteArray data)
 {
 
@@ -2665,7 +3008,319 @@ void QtCanPlatform::recAnalyseMoto(int ch,unsigned int fream_id, QByteArray data
         saveCanDataMult();
     }
 }
+void QtCanPlatform::recAnalyseMotoLSB(int ch, unsigned int fream_id, QByteArray data)
+{
+    QStringList binaryStr;
+    QString hex;
+    for (int k = 0; k < data.size(); ++k)
+    {
+        QString str = QString("%1").arg((uint8_t)data[k], 8, 2, QLatin1Char('0'));
+        binaryStr.append(str);
 
+        hex += QString("%1").arg(str.toInt(NULL, 2), 2, 16, QLatin1Char('0')).toUpper() + " ";
+    }
+    m_strVerCanMessage = binaryStr;
+    if (isTrace)
+    {
+        QString strId = "0x" + QString("%1").arg(fream_id, 8, 16, QLatin1Char('0')).toUpper();
+        QLOG_INFO() << "Rx:" << strId << "  " << hex;
+    }
+
+    bool isRoll = false;
+    //std::vector<std::vector<parseData>>showVec;
+    struct dFromStru {
+        int index;
+        float f1;
+        float f2;
+        int showCount;
+    };
+    rw_Lock.lockForWrite();
+    for (int i = 0; i < recCanData.size(); i++)
+    {
+        uint currID = recCanData.at(i).strCanId.toUInt(NULL, 16);
+        if (currID != fream_id)
+            continue;
+        m_bCommunication++;
+        std::vector<parseData>parseArr;
+        std::vector<dFromStru>ddFF;
+        int countShow = 0;
+        for (int m = 0; m < recCanData.at(i).pItem.size(); ++m)
+        {
+            int startByte = recCanData.at(i).pItem.at(m).startByte;
+            int startBit = recCanData.at(i).pItem.at(m).startBit;
+            int startLenght = recCanData.at(i).pItem.at(m).bitLeng;
+            float precision = recCanData.at(i).pItem.at(m).precision;
+            int offset = recCanData.at(i).pItem.at(m).offset;
+            bool octHex = recCanData.at(i).pItem.at(m).octhex;
+            QString datafrom = recCanData.at(i).pItem.at(m).dataFrom;
+            parseData pd;
+            float temp = 0;
+            //判断是否跨字节，起止位模8，得出是当前字节的起止位，再加个长度
+            if (datafrom != "-1")
+            {
+                QStringList splt = datafrom.split("*");
+                if (splt.size() > 1)
+                {
+                    dFromStru ddf;
+                    ddf.index = m;
+                    ddf.f1 = splt.at(0).toInt();
+                    ddf.f2 = splt.at(1).toInt();
+                    ddFF.push_back(ddf);
+                }
+            }
+            else if (datafrom.contains("XOR"))
+            {
+                (uint8_t)data[m];
+                uchar cData[8];
+                for (int d = 0; d < 8; d++)
+                {
+                    cData[d] = (uchar)data[d];
+                }
+                uchar res = checksumXOR(cData);
+                uchar csum = data[m];
+                if (res == csum)
+                {
+                    temp = 0;
+                }
+                else
+                {
+                    temp = 1;
+                }
+            }
+            else
+            {
+                temp = MsgParser::moto_Lsb_Parser(recCanData.at(i).pItem.at(m), data, false);
+
+            }
+
+            pd.name = recCanData.at(i).pItem.at(m).bitName;
+            pd.value = temp;
+            pd.toWord = QString::number(temp, 'g', 2);
+            pd.color.r = 255;
+            pd.color.g = 255;
+            pd.color.b = 255;
+
+            // std::map<QString, cellProperty>& tt = recCanData.at(i).pItem.at(m).itemProperty;
+            std::vector<cellProperty>& ss = recCanData.at(i).pItem.at(m).stl_itemProperty;
+
+            //如果是需要滚动显示的
+            if (recCanData.at(i).pItem.at(m).isRoll)
+            {
+                isRoll = true;
+                int index = 0;
+                if (YB::nameInVector(RollShowData, recCanData.at(i).pItem.at(m).bitName, index))
+                {
+                    RollShowData.at(index).value = temp;
+                }
+                else
+                {
+                    RollStruct rr;
+                    rr.name = recCanData.at(i).pItem.at(m).bitName;
+                    rr.value = temp;
+                    RollShowData.push_back(rr);
+                }
+                if (datafrom != "-1" && ddFF.size() > 0)
+                    ddFF.at(ddFF.size() - 1).showCount++;
+            }
+
+            std::vector<dFromStru>::iterator iB = ddFF.begin();
+            std::vector<dFromStru>::iterator iE = ddFF.end();
+            int count0 = 0;
+            while (iB != iE)
+            {
+                int max = iB->f1 > iB->f2 ? iB->f1 : iB->f2;
+                if (m >= max - 1)
+                {
+                    parseArr.at(iB->index).value = parseArr.at(iB->f1 - 1).value * parseArr.at(iB->f2 - 1).value;
+                    parseArr.at(iB->index).toWord = QString::number(parseArr.at(iB->index).value);
+                    if (RollShowData.size() - 1 >= iB->showCount)
+                    {
+                        RollShowData.at(iB->showCount).value = parseArr.at(iB->index).value;
+                    }
+                    ddFF.erase(iB);
+                    break;
+                }
+                iB++;
+            }
+
+            int stdddd = 0;
+            for (int i = 0; i < ss.size(); i++)
+            {
+                if (ss.at(i).isStand)
+                {
+                    stdddd = ss.at(i).value.toInt();
+                }
+                if (ss.at(i).value.toInt() == temp)
+                {
+                    pd.color.r = ss.at(i).r;
+                    pd.color.g = ss.at(i).g;
+                    pd.color.b = ss.at(i).b;
+                    pd.toWord = ss.at(i).toWord;
+                    break;
+                }
+
+            }
+            parseArr.push_back(pd);
+
+            //这里保存有错误的，stdddd是正确的标志，如果返回的数据跟正确的不一样，就是有错误
+            if (ss.size() > 0 && stdddd != temp && isRecordError)
+            {
+                Error[ch].insert(pd.toWord);
+            }
+
+        }
+        getByteInfo(parseArr, ch);
+        //判断map里面是否已经存在有了
+
+        int i_index = YB::idNameInVector(showTableVec, QString::number(fream_id));
+        if (i_index >= 0)
+        {
+            showTableVec.at(i_index).Pdata = parseArr;
+        }
+        else
+        {
+            showTableData temp;
+            temp.IdName = QString::number(fream_id);
+            temp.Pdata = parseArr;
+            showTableVec.push_back(temp);
+        }
+
+    }
+    m_bResetfault = true;
+    rw_Lock.unlock();
+    if (!tableArray[ch])
+        return;
+    int rcount = tableArray[ch]->rowCount();
+    for (int m = 0; m < rcount; m++)
+        tableArray[ch]->removeRow(rcount - m - 1);
+    //=================10.10===============
+    QString dTime = QDateTime::currentDateTime().toString("yyyy-MM-dd-hh-ss-zzz");
+    QDateTime dd = QDateTime::currentDateTime();
+    uint curCount = tableRollDataArray[ch]->rowCount() + 1;
+    QString dTemp = QString::number(curCount) + "," + dTime + ",";
+
+    /*std::map<QString, std::vector<parseData>>::iterator iBegin = showTableD.begin();
+    std::map<QString, std::vector<parseData>>::iterator iEnd = showTableD.end();*/
+
+    std::vector<showTableData>::iterator iBeginV = showTableVec.begin();
+    std::vector<showTableData>::iterator iEndV = showTableVec.end();
+    int cr = 0;
+    while (iBeginV != iEndV)
+    {
+        int num = iBeginV->Pdata.size();
+        int idex = 0;
+        for (int j = 0; j < num; j++, idex++)
+        {
+            if (idex > 9)   //每行10列
+            {
+                idex = 0;
+                cr += 2;
+            }
+
+            QString tnamp = iBeginV->Pdata.at(j).name;
+            QString toword = iBeginV->Pdata.at(j).toWord;
+            tableArray[ch]->setItem(cr, idex, new QTableWidgetItem(tnamp));
+            QFont ff;
+            ff.setBold(true);
+            tableArray[ch]->item(cr, idex)->setFont(ff);
+            tableArray[ch]->item(cr, idex)->setTextAlignment(Qt::AlignCenter);
+            tableArray[ch]->item(cr, idex)->setBackgroundColor(recBackgroudColor);
+            tableArray[ch]->item(cr, idex)->setForeground(QBrush(recFontColor));
+            tableArray[ch]->setItem(cr + 1, idex, new QTableWidgetItem(toword));
+            tableArray[ch]->item(cr + 1, idex)->setBackgroundColor(QColor(iBeginV->Pdata.at(j).color.r, iBeginV->Pdata.at(j).color.g, iBeginV->Pdata.at(j).color.b));
+            tableArray[ch]->item(cr + 1, idex)->setTextAlignment(Qt::AlignCenter);
+            dTemp += toword + ",";
+        }
+        if (idex < 9)
+        {
+            QString tnamp = "";
+            QString toword = "";
+            for (; idex <= 9; idex++)
+            {
+                try
+                {
+                    tableArray[ch]->setItem(cr, idex, new QTableWidgetItem(tnamp));
+                    QFont ff;
+                    ff.setBold(true);
+                    QTableWidgetItem* b = tableArray[ch]->item(cr, idex);
+                    if (!b)
+                        continue;
+                    b->setFont(ff);
+                    b = tableArray[ch]->item(cr, idex);
+                    if (!b)
+                        continue;
+                    b->setTextAlignment(Qt::AlignCenter);
+                    b = tableArray[ch]->item(cr, idex);
+                    if (!b)
+                        continue;
+                    b->setBackgroundColor(recBackgroudColor);
+                    b = tableArray[ch]->item(cr, idex);
+                    if (!b)
+                        continue;
+                    b->setForeground(QBrush(recFontColor));
+                    tableArray[ch]->setItem(cr + 1, idex, new QTableWidgetItem(toword));
+                    b = tableArray[ch]->item(cr + 1, idex);
+                    if (!b)
+                        continue;
+
+                }
+                catch (const std::exception& e)
+                {
+                    QLOG_INFO() << "Error:" << e.what();
+                }
+            }
+        }
+        cr += 2;
+        iBeginV++;
+
+    }
+    dTemp.remove(dTemp.size() - 1, 1);
+    uint nn = (dd.toMSecsSinceEpoch() - lastTime.toMSecsSinceEpoch());
+    lastTime = dd;
+    //if (nn > 50)
+    {
+        if (YB::isExistKey(multReceData, ch))
+        {
+            if (multReceData[ch].size() > 1)
+            {
+                QStringList ss = multReceData[ch].at(multReceData[ch].size() - 1).split(",");
+                QStringList ss2 = dTemp.split(",");
+                if (ss.at(0) != ss2.at(0))
+                {
+                    countPeroid++;
+                    if (countPeroid >= m_iSavePeroidNum)
+                    {
+                        multReceData[ch].append(dTemp);
+                        countPeroid = 0;
+                    }
+                }
+            }
+            else
+            {
+                countPeroid++;
+                if (countPeroid >= m_iSavePeroidNum)
+                {
+                    multReceData[ch].append(dTemp);
+                    countPeroid = 0;
+                }
+            }
+
+        }
+        else
+        {
+            QStringList ss;
+            ss.append(dTemp);
+            multReceData.insert(std::make_pair(ch, ss));
+        }
+    }
+
+    if (isRoll)
+        emit sigNewRollMult(ch);
+    if (tableRollDataArray[ch]->rowCount() >= saveListNum)
+    {
+        saveCanDataMult();
+    }
+}
 void QtCanPlatform::getByteInfo(const std::vector<parseData>& parseArr,int ch)
 {
     for (auto& x : parseArr)
@@ -2755,6 +3410,7 @@ void QtCanPlatform::on_CurrentModelChanged(int index)
     currentModel = HashArr.at(index);
     strSaveList.clear();
     multReceData.clear();
+    RollShowData.clear();
     sendDataIntoTab();
     recDataIntoTab();
 }
@@ -3520,10 +4176,14 @@ void QtCanPlatform::on_ReceiveData(uint fream_id, QByteArray data)
         //intel protocol
         recAnalyseIntel(fream_id, data);
     }
-    else
+    else if(1 == qGb->pGboleData.at(index).agreement)
     {
         //moto protocol
         recAnalyseMoto(fream_id, data);
+    }
+    else if (2 == qGb->pGboleData.at(index).agreement)
+    {
+        recAnalyseMotoLSB(fream_id, data);
     }
    
     int period = cycle->text().toInt();
@@ -3642,9 +4302,13 @@ void QtCanPlatform::on_ReceiveData(const int ch, uint fream_id, QByteArray data)
     {
         recAnalyseIntel(ch,fream_id, data);
     }
-    else
+    else if(1 == qGb->pGboleData.at(index).agreement)
     {
         recAnalyseMoto(ch,fream_id, data);
+    }
+    else if (2 == qGb->pGboleData.at(index).agreement)
+    {
+        recAnalyseMotoLSB(ch, fream_id, data);
     }
 }
 /*
@@ -3820,6 +4484,7 @@ void QtCanPlatform::on_setInToRollDataMult(int ch)
     //tableRollTitleArray[ch]->setHorizontalHeaderLabels(title);
     //表格永远显示底部
     tableRollDataArray[ch]->scrollToBottom();
+    tableRollTitleArray[ch]->setHorizontalHeaderLabels(title);
     //移除最后一个逗号
    // dTemp.remove(dTemp.size() - 1, 1);
    // excelTitle.remove(excelTitle.size() - 1, 1);
@@ -4688,6 +5353,7 @@ float QtCanPlatform::getPowerResponed(QString str)
     _bIsRec_Pow = false;
     //发送设置电压指令，注意不要这个线程收发，因为在不同的线程收发会有问题
     emit sigSendPutPowData(sendData);
+    QThread::msleep(200);
     //QLOG_INFO() << str;
     QTime tt = QTime::currentTime().addMSecs(10000);
     while (QTime::currentTime() < tt)
@@ -4977,13 +5643,13 @@ void QtCanPlatform::on_processAutoTestSignal(int n, QString str)
         showAutoTestStep(3, str, "");
         setPowerSupply(currentTestModel.ats, -1);   //设置电压，极限电流
         setHeatint(currentTestModel.ats, 0,0);        //设置使能但功率为0
-        QLOG_INFO() << "case 4";
+        //QLOG_INFO() << "case 4";
         break;
     case 5:
         showAutoTestStep(3, str, "");
         setPowerSupply(currentTestModel.ats, -2);   //设置电压，极限电流
         setHeatint(currentTestModel.ats, 0,0);        //设置使能但功率为0
-        QLOG_INFO() << "case 5";
+        //QLOG_INFO() << "case 5";
         break;
     case 6:
         if(str.contains("NG"))
@@ -5081,6 +5747,9 @@ void QtCanPlatform::on_processAutoTestSignal(int n, QString str)
         break;
     case 36:
         autoDevMan->on_pbBlowWater_clicked(true);
+        break;
+    case 37:
+        autoDevMan->on_pbBlowWater_clicked(false);
         break;
     case 38:
         //进度条
@@ -5461,6 +6130,20 @@ void QtCanPlatform::workAutoTest()
                 break;
 
             }
+
+
+            //检测流量
+            float f_Flow = currentTestModel.ats.m_usRatedPWFlow;
+            while (runStep != -1)
+            {
+                QThread::msleep(100);
+                if (fabs(m_fFlowCool - f_Flow) > 0.8)
+                {
+                    continue;
+                }
+                break;
+            }
+
             QThread::msleep(500);
             //emit sigAutoTestSend(23, "关闭加热");
             isRecordError = false;
@@ -5494,13 +6177,11 @@ void QtCanPlatform::workAutoTest()
            
             //检测退出
             if (runStep == -1) { up_mes_var.m_strTestResult = "N"; emit sigAutoTestSend(-99, "人工退出测试"); upMesOutData();  QLOG_INFO() << "退出测试"; return; }
-            
-            //检测流量
-            float f_Flow = currentTestModel.ats.m_usRatedPWFlow;
+            //再次检测流量
             while (runStep != -1)
             {
                 QThread::msleep(100);
-                if (fabs(m_fFlowCool - f_Flow) > 0.5)
+                if (fabs(m_fFlowCool - f_Flow) > 0.8)
                 {
                     continue;
                 }
@@ -5634,10 +6315,6 @@ void QtCanPlatform::workAutoTest()
                 up_mes_var.m_strTestResult = "N";
             }
 
-
-           
-            
-            
             emit sigAutoTestSend(18, up_mes_var.m_strTestResult);
             //Step9
             //保存测试结果,上传MES
@@ -5658,6 +6335,7 @@ void QtCanPlatform::workAutoTest()
                     emit sigAutoTestSend(39, QString::number(inp));
                     Sleep(1000);
                 }
+                emit sigAutoTestSend(37, "关水");
             }
             QThread::msleep(500);
             emit sigAutoTestSend(-2, "冷水机开");

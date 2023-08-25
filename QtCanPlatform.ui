@@ -33,12 +33,20 @@
     <addaction name="action_History"/>
     <addaction name="action_About"/>
    </widget>
+   <widget class="QMenu" name="menuLanguage">
+    <property name="title">
+     <string>Language</string>
+    </property>
+    <addaction name="actionChinese"/>
+    <addaction name="actionEnglish"/>
+   </widget>
    <addaction name="menu"/>
+   <addaction name="menuLanguage"/>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
   <action name="action_History">
    <property name="checkable">
-    <bool>true</bool>
+    <bool>false</bool>
    </property>
    <property name="text">
     <string>历史版本(History)</string>
@@ -56,6 +64,16 @@
    </property>
    <property name="shortcut">
     <string>F2</string>
+   </property>
+  </action>
+  <action name="actionChinese">
+   <property name="text">
+    <string>Chinese</string>
+   </property>
+  </action>
+  <action name="actionEnglish">
+   <property name="text">
+    <string>English</string>
    </property>
   </action>
  </widget>
