@@ -9,6 +9,7 @@
 #include "QsLog.h"
 #include "./unit/MsgParser.h"
 #include "LogAsc.h"
+#include "AlgorithmSet.h"
 #pragma execution_character_set("utf-8")
 QLogPlot::QLogPlot(int index,QWidget *parent)
 	: m_iModel(index), QWidget(parent)
@@ -673,8 +674,9 @@ void QLogPlot::runExportMsg(QString filepath)
 	excelTitle.remove(excelTitle.size() - 1,1);
 	ushort protol = pModelMes.agreement;
 	QStringList strData;
-	QString strtemp;
+	//QString strtemp;
 	int count = 0;
+
 	for (int m = 0; m < LogData->vData.size(); m++)
 	{
 		uint id = LogData->vData[m].Id;
@@ -693,6 +695,7 @@ void QLogPlot::runExportMsg(QString filepath)
 			{
 				continue;
 			}
+			std::vector<parseData>parseArr;
 			for (int j = 0; j < pModelMes.cItem.at(i).pItem.size(); j++)
 			{
 				if (!pModelMes.cItem.at(i).pItem.at(j).isRoll)
@@ -715,21 +718,76 @@ void QLogPlot::runExportMsg(QString filepath)
 				{
 					value = MsgParser::moto_Lsb_Parser(pModelMes.cItem.at(i).pItem.at(j), data, pModelMes.cItem.at(i).isSend);
 				}
+				parseData pd;
+				pd.name = pModelMes.cItem.at(i).pItem.at(j).bitName;
+				pd.value = value;
+				pd.toWord = QString::number(value);
+				pd.color.r = 255;
+				pd.color.g = 255;
+				pd.color.b = 255;
+				std::vector<cellProperty>& ss = pModelMes.cItem.at(i).pItem.at(j).stl_itemProperty;
+				//解析要显示到单元格的颜色
+				int stdddd = 0;
 				
-				strtemp+=QString::number(value)+",";
+				
+				for (int i = 0; i < ss.size(); i++)
+				{
+					if (ss.at(i).isStand)
+					{
+						stdddd = ss.at(i).value.toInt();
+					}
+					if (ss.at(i).value.toInt() == value)
+					{
+						pd.color.r = ss.at(i).r;
+						pd.color.g = ss.at(i).g;
+						pd.color.b = ss.at(i).b;
+						pd.toWord = ss.at(i).toWord;
+						break;
+					}
+				}
+				parseArr.push_back(pd);
+
+				int i_index = YB::idNameInVector(showTableVec, QString::number(id));
+				if (i_index >= 0)
+				{
+					showTableVec.at(i_index).Pdata = parseArr;
+				}
+				else
+				{
+					showTableData temp;
+					temp.IdName = QString::number(id);
+					temp.Pdata = parseArr;
+					showTableVec.push_back(temp);
+				}
+
+				//strtemp+=QString::number(value)+",";
 			}
 		}
+		std::vector<showTableData>::iterator iBeginV = showTableVec.begin();
+		std::vector<showTableData>::iterator iEndV = showTableVec.end();
+		QString strdTemp;
+		while (iBeginV != iEndV)
+		{
+			int num = iBeginV->Pdata.size();
+			for (int j = 0; j < num; j++)
+			{
+				strdTemp += (iBeginV->Pdata.at(j).toWord + ",");
+			}
+			iBeginV++;
+		}
+
 		if (m < LogData->vData.size() - 2 && LogData->vData[m+1].TimeStemp < 50)
 		{
 			continue;
 		}
-		if (strtemp.isEmpty())
+		if (strdTemp.isEmpty())
 			continue;
-		strtemp.remove(strtemp.size() - 1, 1);
-		QString a = QString::number(count++) + "," + QString::number(timestemp) + "," + strtemp;
+		strdTemp.remove(strdTemp.size() - 1, 1);
+		QString a = QString::number(count++) + "," + QString::number(timestemp) + "," + strdTemp;
 		strData.append(a);
-		strtemp = "";
-		strtemp.clear();
+		strdTemp = "";
+		strdTemp.clear();
+		//showTableVec.clear();
 	}
 	
 	m_dataSave->setTitle(excelTitle);

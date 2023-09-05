@@ -35,6 +35,8 @@ private:
 	QList<QColor>LableLineColor;
 	QScopedPointer<LogMessage::LogBase>m_pLogSource;
 	QScopedPointer<DataSave>m_dataSave;
+	//保存当前接到的数据
+	std::vector<showTableData>showTableVec;
 private:
 	void runSendMes(float times);
 	void plotItem();

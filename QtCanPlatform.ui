@@ -40,8 +40,15 @@
     <addaction name="actionChinese"/>
     <addaction name="actionEnglish"/>
    </widget>
+   <widget class="QMenu" name="menu_2">
+    <property name="title">
+     <string>关于</string>
+    </property>
+    <addaction name="actionAboutQT"/>
+   </widget>
    <addaction name="menu"/>
    <addaction name="menuLanguage"/>
+   <addaction name="menu_2"/>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
   <action name="action_History">
@@ -70,10 +77,21 @@
    <property name="text">
     <string>Chinese</string>
    </property>
+   <property name="autoRepeat">
+    <bool>false</bool>
+   </property>
   </action>
   <action name="actionEnglish">
    <property name="text">
     <string>English</string>
+   </property>
+  </action>
+  <action name="actionAboutQT">
+   <property name="text">
+    <string>AboutQT</string>
+   </property>
+   <property name="autoRepeat">
+    <bool>false</bool>
    </property>
   </action>
  </widget>

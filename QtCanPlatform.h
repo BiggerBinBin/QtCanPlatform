@@ -44,12 +44,14 @@
 #include "canthread.h"
 #include "mHttp.h"
 #include "HardWarePlin.h"
+#include "HardWareTcan.h"
 #include "AutoDeviceManage.h"
 #include "QLogPlot.h"
 #include <qpointer.h>
 #include <qreadwritelock.h>
 #include <QMetaType>
 #include "Login.h"
+#include "HardWareTlin.h"
 
 #pragma execution_character_set("utf-8")  
 
@@ -198,6 +200,8 @@ private:
 
     //PLIN硬件接口，未来会扩充到其它硬件，以实现多态
     HardWareBase* pHardWare = nullptr;
+    HardWareTcan* pHardTcan = nullptr;
+    HardWareTlin* pHardTlin = nullptr;
     QLogPlot* qlogp = nullptr;
 
     //发送按钮
@@ -503,7 +507,7 @@ private slots:
     void on_BlowAir_Stop();
     void on_actionChinese_triggered(bool b);
     void on_actionEnglish_triggered(bool b);
-
+    void on_actionAboutQT_triggered(bool b);
 
 Q_SIGNALS:
     void sigNewRoll();

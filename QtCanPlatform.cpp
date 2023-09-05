@@ -29,6 +29,7 @@ QString qmyss = "QComboBox{height:25px;border: 1px solid gray;border-radius: 5px
 QComboBox::drop-down{subcontrol-origin: padding;subcontrol-position: top right;width: 15px;border-left-width: 1px;border-left-color: darkgray;border-left-style: solid;border-top-right-radius: 3px;border-bottom-right-radius: 3px;image: url(:/QtCanPlatform/Resources/down.png)}";
 QString rollTitleStyle = "QHeaderView::section {background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1,stop:0 #0078d7, stop: 0.5 #0078d7,stop: 0.6 #0078d7, stop:1 #0078d7);color: white;border:1px solid;border-color:white;font-weight: bold;}QHeaderView{background-color:#0078d7}";
 #define _NEED_CODE_
+#define _PRINT_MODEL_NAME__
 QtCanPlatform::QtCanPlatform(QWidget *parent)
     : QMainWindow(parent)
 {
@@ -223,6 +224,8 @@ void QtCanPlatform::initUi()
     cbCanType->addItem(tr("选择Kvaser"));
     cbCanType->addItem(tr("选择CANayst"));
     cbCanType->addItem(tr("选择PLIN"));
+    cbCanType->addItem(tr("选择Toomoss"));
+    cbCanType->addItem(tr("选择TLIN"));
     connect(cbCanType, SIGNAL(currentIndexChanged(int)), this, SLOT(on_cbCanType_currentIndexChanged(int)));
     cbPcan = new QComboBox();
    
@@ -248,6 +251,9 @@ void QtCanPlatform::initUi()
     connect(p_dev_Handle.data(), SIGNAL(sigNewMessage(int, quint32, QByteArray)), this, SLOT(on_ReceiveData(int, quint32, QByteArray)));*/
 
     pHardWare = new HardWarePlin(this);
+    pHardTcan = new HardWareTcan(this);
+    //connect(pHardTcan,)
+    connect(pHardTcan, SIGNAL(getProtocolData(int, quint32, QByteArray)), this, SLOT(on_ReceiveData(int, quint32, QByteArray)));
     QStringList canStr = pcanArr[0]->DetectDevice();
     cbPcan->addItems(canStr);
     /*for (int i = 0; i < canStr.size(); ++i)
@@ -661,6 +667,10 @@ void QtCanPlatform::on_actionChinese_triggered(bool b)
 void QtCanPlatform::on_actionEnglish_triggered(bool b)
 {
 
+}
+void QtCanPlatform::on_actionAboutQT_triggered(bool b)
+{
+    QMessageBox::aboutQt(this);
 }
 void QtCanPlatform::on_action_About_triggered()
 {
@@ -1206,6 +1216,46 @@ void QtCanPlatform::sendData()
                 pHardWare->SendMessage(fream_id, s_Data, other);
                 
             }
+            else if (cbCanType->currentIndex() == 4)
+            {
+                int other[2]{0};
+                pHardTcan->SendMessage(fream_id, s_Data, other);
+            }
+            else if (cbCanType->currentIndex() == 4)
+            {
+                int other[2];
+                other[0] = sendCanData.at(i).len;
+                other[1] = 0;
+                pHardTlin->SendMessage(fream_id, s_Data, other);
+
+
+                for (int k = 0; k < recCanData.size(); k++)
+                {
+                    int other[2];
+                    other[0] = recCanData.at(k).len;
+                    other[1] = 1;
+                    pHardTlin->SendMessage(recCanData.at(k).strCanId.toInt(NULL, 16), s_Data, other);
+                }
+                if (m_bGetVer)
+                {
+
+                    int other[2];
+                    other[0] = 8;
+                    other[1] = 0;
+                    //版本请求
+                    s_Data[0] = 0x06;
+                    s_Data[1] = 0x20;
+                    s_Data[2] = 0x22;
+                    s_Data[3] = 0x10;
+                    s_Data[4] = 0x24;
+                    s_Data[5] = 0x09;
+                    s_Data[6] = 0x24;
+                    s_Data[7] = 0x06;
+                    pHardTlin->SendMessage(currentTestModel.ats.m_strVerSendID.toInt(NULL, 16), s_Data, other);
+                    other[1] = 1;
+                    pHardTlin->SendMessage(currentTestModel.ats.m_strVerRecID.toInt(NULL, 16), s_Data, other);
+                }
+            }
             //_sleep(20);
             QByteArray bydd;
             for (int h = 0; h < 8; h++)
@@ -1292,6 +1342,7 @@ bool QtCanPlatform::intelProtocol(canIdData& cdata,uchar data[], unsigned int& f
     if (cdata.pItem.size() <= 0)
         return false;
     fream_id = cdata.strCanId.toUInt(NULL, 16);
+    memset(data, 0x0, 8);
     protoItem crcTemp;
     bool crc = false;
     for (int i = 0; i < cdata.pItem.size(); i++)
@@ -1311,7 +1362,8 @@ bool QtCanPlatform::intelProtocol(canIdData& cdata,uchar data[], unsigned int& f
         {
             int iTemp = itemp.dataFrom.mid(2).toInt();
             if (m_usRoll > iTemp)m_usRoll = 0;
-            data[startbyte] = m_usRoll++;
+            int pos = startbit % 8;
+            data[startbyte] += (m_usRoll++)<< pos;
             continue;
         }
         
@@ -1559,16 +1611,7 @@ void QtCanPlatform::recAnalyseIntel(unsigned int fream_id,QByteArray data)
 
         getByteInfo(parseArr, 0);
 
-        //判断map里面是否已经存在有了
-        //if (YB::keyInMap(showTableD, QString::number(fream_id)))
-        //{
-        //    showTableD[QString::number(fream_id)] = parseArr;
-        //}
-        //else
-        //{
-        //    showTableD.insert({ QString::number(fream_id),parseArr });
-        //    //tableArray[0]->clearContents();
-        //}
+
         int i_index = YB::idNameInVector(showTableVec, QString::number(fream_id));
         if (i_index >= 0)
         {
@@ -3445,6 +3488,11 @@ void QtCanPlatform::on_CurrentPlatformChanged(int index)
                         {
                             HashArr.push_back(i);
                             cbSelectModel->addItem(qGb->pGboleData.at(i).modelName);
+#ifdef _PRINT_MODEL_NAME_
+                            QLOG_INFO() << qGb->pGboleData.at(i).modelName;
+#endif // _PRINT_MODEL_NAME_
+
+                            
                             break;
                         }
                     break;
@@ -3455,6 +3503,9 @@ void QtCanPlatform::on_CurrentPlatformChanged(int index)
                         {
                             HashArr.push_back(i);
                             cbSelectModel->addItem(qGb->pGboleData.at(i).modelName);
+#ifdef _PRINT_MODEL_NAME_
+                            QLOG_INFO() << qGb->pGboleData.at(i).modelName;
+#endif // _PRINT_MODEL_NAME_
                             break;
                         }
                     break;
@@ -3465,6 +3516,9 @@ void QtCanPlatform::on_CurrentPlatformChanged(int index)
                         {
                             HashArr.push_back(i);
                             cbSelectModel->addItem(qGb->pGboleData.at(i).modelName);
+#ifdef _PRINT_MODEL_NAME_
+                            QLOG_INFO() << qGb->pGboleData.at(i).modelName;
+#endif // _PRINT_MODEL_NAME_
                             break;
                         }
                     break;
@@ -3475,6 +3529,9 @@ void QtCanPlatform::on_CurrentPlatformChanged(int index)
                         {
                             HashArr.push_back(i);
                             cbSelectModel->addItem(qGb->pGboleData.at(i).modelName);
+#ifdef _PRINT_MODEL_NAME_
+                            QLOG_INFO() << qGb->pGboleData.at(i).modelName;
+#endif // _PRINT_MODEL_NAME_
                             break;
                         }
                     break;
@@ -3485,6 +3542,9 @@ void QtCanPlatform::on_CurrentPlatformChanged(int index)
                         {
                             HashArr.push_back(i);
                             cbSelectModel->addItem(qGb->pGboleData.at(i).modelName);
+#ifdef _PRINT_MODEL_NAME_
+                            QLOG_INFO() << qGb->pGboleData.at(i).modelName;
+#endif // _PRINT_MODEL_NAME_
                             break;
                         }
                     break;
@@ -3495,6 +3555,9 @@ void QtCanPlatform::on_CurrentPlatformChanged(int index)
                         {
                             HashArr.push_back(i);
                             cbSelectModel->addItem(qGb->pGboleData.at(i).modelName);
+#ifdef _PRINT_MODEL_NAME_
+                            QLOG_INFO() << qGb->pGboleData.at(i).modelName;
+#endif // _PRINT_MODEL_NAME_
                             break;
                         }
                     break;
@@ -3505,6 +3568,9 @@ void QtCanPlatform::on_CurrentPlatformChanged(int index)
                         {
                             HashArr.push_back(i);
                             cbSelectModel->addItem(qGb->pGboleData.at(i).modelName);
+#ifdef _PRINT_MODEL_NAME_
+                            QLOG_INFO() << qGb->pGboleData.at(i).modelName;
+#endif // _PRINT_MODEL_NAME_
                             break;
                         }
                     break;
@@ -3515,6 +3581,9 @@ void QtCanPlatform::on_CurrentPlatformChanged(int index)
                         {
                             HashArr.push_back(i);
                             cbSelectModel->addItem(qGb->pGboleData.at(i).modelName);
+#ifdef _PRINT_MODEL_NAME_
+                            QLOG_INFO() << qGb->pGboleData.at(i).modelName;
+#endif // _PRINT_MODEL_NAME_
                             break;
                         }
                     break;
@@ -3525,6 +3594,9 @@ void QtCanPlatform::on_CurrentPlatformChanged(int index)
                         {
                             HashArr.push_back(i);
                             cbSelectModel->addItem(qGb->pGboleData.at(i).modelName);
+#ifdef _PRINT_MODEL_NAME_
+                            QLOG_INFO() << qGb->pGboleData.at(i).modelName;
+#endif // _PRINT_MODEL_NAME_
                             break;
                         }
                     break;
@@ -3535,6 +3607,9 @@ void QtCanPlatform::on_CurrentPlatformChanged(int index)
                         {
                             HashArr.push_back(i);
                             cbSelectModel->addItem(qGb->pGboleData.at(i).modelName);
+#ifdef _PRINT_MODEL_NAME_
+                            QLOG_INFO() << qGb->pGboleData.at(i).modelName;
+#endif // _PRINT_MODEL_NAME_
                             break;
                         }
                     break;
@@ -3727,6 +3802,28 @@ void QtCanPlatform::on_pbRefreshDevice_clicked()
     else if (cbCanType->currentIndex() == 3)
     {
         QStringList n = pHardWare->GetHardWare();
+        for (int m = 0; m < n.size(); m++)
+        {
+            cbPcan->addItem(n.at(m));
+        }
+    }
+    else if (cbCanType->currentIndex() == 4)
+    {
+        
+        QStringList n = pHardTcan->GetHardWare();
+        for (int m = 0; m < n.size(); m++)
+        {
+            cbPcan->addItem(n.at(m));
+        }
+    }
+    else if (cbCanType->currentIndex() == 5)
+    {
+        if (!pHardTlin)
+        {
+            pHardTlin = new HardWareTlin(this);
+            connect(pHardTlin, &HardWareTlin::newMessage, this, &QtCanPlatform::on_ReceiveDataLIN);
+        }
+        QStringList n = pHardTlin->GetHardWare();
         for (int m = 0; m < n.size(); m++)
         {
             cbPcan->addItem(n.at(m));
@@ -4049,9 +4146,144 @@ void QtCanPlatform::on_pbOpenPcan_clicked()
             cbSelectModel->setEnabled(false);
         }
     }
-    if (dCtrl) {
-        dCtrl->on_dCanRefresh_clicked();
+    else if (cbCanType->currentIndex() == 4)
+    {
+        if (pcanIsOpen)
+        {
+            pHardTcan->CloseHardWare();
+            pbOpen->setText(tr("打开设备"));
+            cbBitRate->setEnabled(true);
+            cbPcan->setEnabled(true);
+            pbSend->setChecked(false);
+            pbSend->setEnabled(false);
+            pbSend->setStyleSheet("");
+            pcanIsOpen = false;
+            sendTimer->stop();
+            reFresh->setEnabled(true);
+            communicaLabel->setText(tr("待机中..."));
+            cbSelectModel->setEnabled(true);
+            if (multiCircle > 1)
+            {
+                qGboleData* qGb = qGboleData::getInstance();
+                if (!qGb)return;
+                int index = cbSelectModel->currentIndex();
+
+                if (index > qGb->pGboleData.size() - 1)
+                    return;
+                int real = HashArr[index];
+                for (int k = 0; k < qGb->pGboleData.at(real).cItem.size(); k++)
+                    if (qGb->pGboleData.at(real).cItem.at(k).isSend && qGb->pGboleData.at(real).cItem.at(k).circle != -1)
+                    {
+                        if (qGb->pGboleData.at(real).cItem.at(k).timeAdd)
+                            qGb->pGboleData.at(real).cItem.at(k).timeAdd->stop();
+                    }
+            }
+        }
+        else
+        {
+            int curindex = cbBitRate->currentIndex();
+            int bitRate = 250;
+            switch (curindex)
+            {
+            case 0:
+                bitRate = 200; break;
+            case 1:
+                bitRate = 250; break;
+            case 2:
+                bitRate = 500; break;
+            case 3:
+                bitRate = 800; break;
+            default:
+                bitRate = 250;
+                break;
+            }
+            bundRate = bitRate;
+            QString dev = QString::number(cbPcan->currentIndex());
+            bool b = pHardTcan->OpenHardWare(dev, bitRate, 0);
+
+            if (!b)
+            {
+                QMessageBox::warning(NULL, tr("错误"), tr("打开KCAN失败,请检测设备是否被占用或者已经连接？"));
+                return;
+            }
+            pbOpen->setText(tr("关闭设备"));
+            cbBitRate->setEnabled(false);
+            cbPcan->setEnabled(false);
+            pbSend->setEnabled(true);
+            pcanIsOpen = true;
+            cbSelectModel->setEnabled(false);
+        }
     }
+    else if (cbCanType->currentIndex() == 5)
+    {
+    if (pcanIsOpen)
+    {
+        pHardTlin->CloseHardWare();
+        pbOpen->setText(tr("打开设备"));
+        cbBitRate->setEnabled(true);
+        cbPcan->setEnabled(true);
+        pbSend->setChecked(false);
+        pbSend->setEnabled(false);
+        pbSend->setStyleSheet("");
+        pcanIsOpen = false;
+        sendTimer->stop();
+        reFresh->setEnabled(true);
+        communicaLabel->setText(tr("待机中..."));
+        cbSelectModel->setEnabled(true);
+        
+    }
+    else
+    {
+        std::vector<int>idvec;
+        qGboleData* qGb = qGboleData::getInstance();
+        if (!qGb)return;
+        int index = cbSelectModel->currentIndex();
+
+        if (index > qGb->pGboleData.size() - 1)
+            return;
+        int real = HashArr[index];
+        for (int k = 0; k < qGb->pGboleData.at(real).cItem.size(); k++)
+        {
+            if (!qGb->pGboleData.at(real).cItem.at(k).opt)
+                idvec.push_back(qGb->pGboleData.at(real).cItem.at(k).strCanId.toInt(nullptr, 16));
+        }
+        pHardTlin->setRespondID(idvec);
+        int curindex = cbBitRate->currentIndex();
+        int bitRate = 19200;
+        switch (curindex)
+        {
+        case 4:
+            bitRate = 2400; break;
+        case 5:
+            bitRate = 9600; break;
+        case 6:
+            bitRate = 10400; break;
+        case 7:
+            bitRate = 19200; break;
+        default:
+            bitRate = 19200;
+            break;
+        }
+        bundRate = bitRate;
+        QString dev = QString::number(cbPcan->currentIndex());
+        bool b = pHardTlin->OpenHardWare(dev, bitRate, 0);
+
+        if (!b)
+        {
+            QMessageBox::warning(NULL, tr("错误"), tr("打开KCAN失败,请检测设备是否被占用或者已经连接？"));
+            return;
+        }
+        pbOpen->setText(tr("关闭设备"));
+        cbBitRate->setEnabled(false);
+        cbPcan->setEnabled(false);
+        pbSend->setEnabled(true);
+        pcanIsOpen = true;
+        cbSelectModel->setEnabled(false);
+    }
+    }
+    /*if (dCtrl) {
+        dCtrl->on_dCanRefresh_clicked();
+    }*/
 
    
 }
@@ -4238,7 +4470,7 @@ void QtCanPlatform::on_ReceiveDataMulti(uint fream_id, QByteArray data)
 //}
 void QtCanPlatform::on_ReceiveData(const int ch, uint fream_id, QByteArray data)
 {
-    if (1 == cbCanType->currentIndex() || 2 == cbCanType->currentIndex())
+    //if (1 == cbCanType->currentIndex() || 2 == cbCanType->currentIndex())
     {
         tabRollBox->tabBar()->setTabIcon(ch, QApplication::style()->standardIcon((QStyle::StandardPixmap)31));
         tabRecBox->tabBar()->setTabIcon(ch, QApplication::style()->standardIcon((QStyle::StandardPixmap)31));

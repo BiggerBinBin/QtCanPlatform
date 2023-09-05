@@ -136,6 +136,12 @@
     <ClCompile Include="LogAsc.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="HardWareTcan.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="HardWareTlin.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="QCanSetting.h">
@@ -217,6 +223,12 @@
       <Filter>Header Files</Filter>
     </QtMoc>
     <QtMoc Include="LogAsc.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="HardWareTcan.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="HardWareTlin.h">
       <Filter>Header Files</Filter>
     </QtMoc>
   </ItemGroup>
