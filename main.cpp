@@ -14,8 +14,8 @@ int main(int argc, char *argv[])
     {
         qApp->installTranslator(translator);
     }
-    QtCanPlatform w;
-    QObject::connect(&w, &QtCanPlatform::actionChinese_triggered, [&] () {
+    CanTestPlatform w;
+    QObject::connect(&w, &CanTestPlatform::actionChinese_triggered, [&] () {
         if (!translator)
             translator = new QTranslator();
         
@@ -26,7 +26,7 @@ int main(int argc, char *argv[])
         }
         
         });
-    QObject::connect(&w, &QtCanPlatform::actionEnglish_triggered, [&]() {
+    QObject::connect(&w, &CanTestPlatform::actionEnglish_triggered, [&]() {
         if(!translator)
             translator = new QTranslator();
         bool b = translator->load(apppath);

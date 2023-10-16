@@ -52,7 +52,7 @@
 #include <QMetaType>
 #include "Login.h"
 #include "HardWareTlin.h"
-
+#include "SerialportManage.h"
 #pragma execution_character_set("utf-8")  
 
 struct UpMesData {
@@ -73,14 +73,14 @@ struct UpMesData {
     QString m_strTestResult;            //测试结果
 };
 
-class QtCanPlatform : public QMainWindow
+class CanTestPlatform : public QMainWindow
 {
     Q_OBJECT
    
 public:
     
-    QtCanPlatform(QWidget *parent = nullptr);
-    ~QtCanPlatform();
+    CanTestPlatform(QWidget *parent = nullptr);
+    ~CanTestPlatform();
     virtual void closeEvent(QCloseEvent* event) override;
 private:
     Ui::QtCanPlatformClass ui;
@@ -112,6 +112,7 @@ private:
    
     std::atomic_bool _bWork = false;
     std::atomic_int _iSetp = 0;
+
 
     int currentModel = -1;
     ushort m_usRoll;
@@ -412,6 +413,15 @@ private:
     bool m_bShowAutoTest;
     //使能时间
     //uint m_iEnableCount;
+
+    SerialportManage* serialport = nullptr;
+    QByteArray OpenLowPwSerial;     //低压电压继电器开启，即断开（常开）
+    QByteArray CloseLowPwSerial;    //低压电源继电器关闭，即导通
+    QByteArray OpenPureSerial;      //纯水机继电器开（常闭）
+    QByteArray ClosePureSerial;     //纯水机继电器关
+    int m_iBlowAirTime = 120000;    //吹气时间(ms)
+    int m_iWashTime = 120000;       //纯水清洗时间(ms)
+ 
 
 private slots:
       void on_CapturePower();

@@ -5,15 +5,17 @@
 #include "usb2lin_ex.h"
 #include "usb_device.h"
 #include "lin_uds.h"
+
 HardWareTlin::HardWareTlin(QObject *parent)
 	: HardWareBase(parent)
 {
-	m_cycle = 500;
+	m_cycle = 100;
 }
 
 HardWareTlin::~HardWareTlin()
 {
 	bRunRead = false;
+	condition.wakeAll();
 	QThread::msleep(7);
 	CloseHardWare();
 }
@@ -40,8 +42,16 @@ bool HardWareTlin::CloseHardWare()
 }
 bool HardWareTlin::SendMessage(uint id, uchar data[], int resever[])
 {
+	bool ret;
+	qmutex.lock();
 	if(0==resever[1])
-		return (LIN_EX_MasterWrite(m_curHandle, m_curIndex, id, data, resever[0], LIN_EX_CHECK_EXT) == 0);
+	{
+		ret = (LIN_EX_MasterWrite(m_curHandle, m_curIndex, id, data, resever[0], LIN_EX_CHECK_EXT) == 0);
+		
+	}
+	qmutex.unlock();
+	condition.wakeAll();
+	return (ret==0);
 
 }
 void HardWareTlin::setRespondID(const std::vector<int> vec_id)
@@ -54,6 +64,8 @@ bool HardWareTlin::ReadMessage()
 {
 	while (bRunRead)
 	{
+		qmutex.lock();
+		condition.wait(&qmutex);
 		uchar data[8];
 		for (auto x : m_respondID)
 		{
@@ -69,6 +81,7 @@ bool HardWareTlin::ReadMessage()
 			}
 			QThread::msleep(5);
 		}
+		qmutex.unlock();
 		QThread::msleep(m_cycle);
 	}
 	return true;
@@ -76,9 +89,8 @@ bool HardWareTlin::ReadMessage()
 
 QStringList HardWareTlin::GetHardWare()
 {
-	
+	//查找设备，并把找到的设备的句柄放到m_hardHandle数组中
 	int num = USB_ScanDevice(m_hardHandle);
-	//lwHwHandles = new HLINHW[8];
 	m_hardNum = num;
 	QStringList devList;
 

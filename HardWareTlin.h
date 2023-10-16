@@ -4,6 +4,8 @@
 #include <windows.h>
 #include "HardWareBase.h"
 #include <vector>
+#include <qmutex.h>
+#include <qwaitcondition.h>
 class HardWareTlin  : public HardWareBase
 {
 	Q_OBJECT
@@ -27,6 +29,8 @@ private:
 	int m_curIndex;
 	int m_cycle;
 	std::vector<int>m_respondID;
+	QMutex qmutex;
+	QWaitCondition condition;
     // Constant value that indicate the mask of the client filter (64bit)
     static const unsigned __int64 FRAME_FILTER_MASK = 0xFFFFFFFFFFFFFFFF;
     bool bRunRead = false;

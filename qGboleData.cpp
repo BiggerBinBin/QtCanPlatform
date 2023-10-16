@@ -80,6 +80,10 @@ void qGboleData::save()
 		mItem.insert("m_bNeedTempture", pGboleData.at(i).ats.m_bNeedTempture);
 		mItem.insert("m_iTemptureProtect", pGboleData.at(i).ats.m_iTemptureProtect);
 		mItem.insert("m_iTemptureInLine", pGboleData.at(i).ats.m_iTemptureInLine);
+		mItem.insert("m_needSWLowPower", pGboleData.at(i).ats.m_needSWLowPower);
+		mItem.insert("m_iWashTime", pGboleData.at(i).ats.m_iWashTime);
+		mItem.insert("m_iBlowAirTime", pGboleData.at(i).ats.m_iBlowAirTime);
+		mItem.insert("m_bOverTempOrDry", pGboleData.at(i).ats.m_bOverTempOrDry);
 
 
 
@@ -240,6 +244,10 @@ void qGboleData::read()
 		ptem.ats.m_bNeedTempture = rootSecond["m_bNeedTempture"].toBool(false);
 		ptem.ats.m_iTemptureProtect = rootSecond["m_iTemptureProtect"].toInt(95);
 		ptem.ats.m_iTemptureInLine = rootSecond["m_iTemptureInLine"].toInt(1);
+		ptem.ats.m_needSWLowPower = rootSecond["m_needSWLowPower"].toBool(false);
+		ptem.ats.m_iWashTime = rootSecond["m_iWashTime"].toInt(120000);
+		ptem.ats.m_iBlowAirTime = rootSecond["m_iBlowAirTime"].toInt(120000);
+		ptem.ats.m_bOverTempOrDry = rootSecond["m_bOverTempOrDry"].toBool(false);
 
 
 		//如果还有嵌套对象

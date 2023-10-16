@@ -1201,7 +1201,7 @@ void QCanSetting::on_modelView_Clicked(int row, int col)
 	int mc = paramView->rowCount();
 	for (int p = 0; p < paramView->rowCount(); p++)
 		paramView->removeRow(mc - p - 1);
-	paramView->setRowCount(30);
+	paramView->setRowCount(34);
 	paramView->setItem(0, 0, new QTableWidgetItem(QString("使能所在行")));
 	paramView->setItem(0, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_iEnableInLine)));
 	paramView->setItem(1, 0, new QTableWidgetItem(QString("使能操作")));
@@ -1276,9 +1276,20 @@ void QCanSetting::on_modelView_Clicked(int row, int col)
 
 	paramView->setItem(28, 0, new QTableWidgetItem(QString("出口停止使能温度")));
 	paramView->setItem(28, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_iOutTempStop)));
+	
 	paramView->setItem(29, 0, new QTableWidgetItem(QString("参考出(0)入(1)水口温度")));
 	paramView->setItem(29, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_usOutOrInTemp)));
 
+	paramView->setItem(30, 0, new QTableWidgetItem(QString("需要控制低压电源？")));
+	paramView->setItem(30, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_needSWLowPower)));
+
+	paramView->setItem(31, 0, new QTableWidgetItem(QString("清洗时间ms")));
+	paramView->setItem(31, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_iWashTime)));
+	paramView->setItem(32, 0, new QTableWidgetItem(QString("吹气时间ms")));
+	paramView->setItem(32, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_iBlowAirTime)));
+
+	paramView->setItem(33, 0, new QTableWidgetItem(QString("测过温Or干烧")));
+	paramView->setItem(33, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_bOverTempOrDry)));
 }
 
 void QCanSetting::on_modelView_cbStandar(int bStandard)
@@ -1749,7 +1760,7 @@ void QCanSetting::on_pbSaveItemParam_clicked()
 
 void QCanSetting::on_paramView_doubleCLicked(int, int)
 {
-	connect(paramView, SIGNAL(cellChanged(int, int)), this, SLOT(on_paramView_cellChanged(int, int)));
+	//connect(paramView, SIGNAL(cellChanged(int, int)), this, SLOT(on_paramView_cellChanged(int, int)));
 }
 /*
 * @brief: Slot function。responed by autotest paramter changed
@@ -1872,6 +1883,18 @@ void QCanSetting::on_paramView_cellChanged(int row, int col)
 		break;
 	case 29:
 		qGb->pGboleData.at(n).ats.m_usOutOrInTemp = paramView->item(row, col)->text().toInt();
+		break;
+	case 30:
+		qGb->pGboleData.at(n).ats.m_needSWLowPower = paramView->item(row, col)->text().toUShort();
+		break;
+	case 31:
+		qGb->pGboleData.at(n).ats.m_iWashTime = paramView->item(row, col)->text().toInt();
+		break;
+	case 32:
+		qGb->pGboleData.at(n).ats.m_iBlowAirTime = paramView->item(row, col)->text().toInt();
+		break;
+	case 33:
+		qGb->pGboleData.at(n).ats.m_bOverTempOrDry = paramView->item(row, col)->text().toInt();
 		break;
 	default:
 		break;

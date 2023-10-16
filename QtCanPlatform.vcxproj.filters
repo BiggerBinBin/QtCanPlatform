@@ -142,6 +142,9 @@
     <ClCompile Include="HardWareTlin.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="SerialportManage.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="QCanSetting.h">
@@ -229,6 +232,9 @@
       <Filter>Header Files</Filter>
     </QtMoc>
     <QtMoc Include="HardWareTlin.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="SerialportManage.h">
       <Filter>Header Files</Filter>
     </QtMoc>
   </ItemGroup>

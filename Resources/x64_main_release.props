@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ImportGroup Label="PropertySheets" />
+  <PropertyGroup Label="UserMacros">
+    <SoftwareName>功能测试上位机</SoftwareName>
+  </PropertyGroup>
+  <PropertyGroup>
+    <TargetName>$(SoftwareName)</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Label="QtSettings">
+    <QtModules>core;network;axcontainer;widgets;serialport;printsupport;concurrent;serialbus</QtModules>
+  </PropertyGroup>
+  <ItemDefinitionGroup />
+  <ItemGroup>
+    <BuildMacro Include="SoftwareName">
+      <Value>$(SoftwareName)</Value>
+    </BuildMacro>
+  </ItemGroup>
+</Project>

@@ -23,6 +23,7 @@
 #include <qsettings.h>
 #include <WinBase.h>
 #include "./unit/MsgParser.h"
+#include <qlist.h>
 using namespace QsLogging;
 
 QString qmyss = "QComboBox{height:25px;border: 1px solid gray;border-radius: 5px;padding:1px 2px 1px 2px;}\
@@ -30,7 +31,7 @@ QComboBox::drop-down{subcontrol-origin: padding;subcontrol-position: top right;w
 QString rollTitleStyle = "QHeaderView::section {background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1,stop:0 #0078d7, stop: 0.5 #0078d7,stop: 0.6 #0078d7, stop:1 #0078d7);color: white;border:1px solid;border-color:white;font-weight: bold;}QHeaderView{background-color:#0078d7}";
 #define _NEED_CODE_
 #define _PRINT_MODEL_NAME__
-QtCanPlatform::QtCanPlatform(QWidget *parent)
+CanTestPlatform::CanTestPlatform(QWidget *parent)
     : QMainWindow(parent)
 {
     ui.setupUi(this);
@@ -41,7 +42,7 @@ QtCanPlatform::QtCanPlatform(QWidget *parent)
     readSetFile();
     initUi();
     sendTimer = new QTimer(this);
-    connect(sendTimer, &QTimer::timeout, this, &QtCanPlatform::sendData);
+    connect(sendTimer, &QTimer::timeout, this, &CanTestPlatform::sendData);
     
     QFile F(QApplication::QCoreApplication::applicationDirPath() + "/Data/title_version.kus");
     if (F.open(QIODevice::ReadOnly | QIODevice::Text))
@@ -57,8 +58,8 @@ QtCanPlatform::QtCanPlatform(QWidget *parent)
     //connect(this, &QtCanPlatform::sigEndRunWork, this, &QtCanPlatform::on_recSigEndRunWork);
     
     //connect(this, &QtCanPlatform::sigSendHttp, this, &QtCanPlatform::on_commitData);
-    connect(this, &QtCanPlatform::sigSendPutMesData, this, &QtCanPlatform::on_TCPDataSend_MES);
-    connect(this, &QtCanPlatform::sigSendPutPowData, this, &QtCanPlatform::on_sigFromThisPowerSet);
+    connect(this, &CanTestPlatform::sigSendPutMesData, this, &CanTestPlatform::on_TCPDataSend_MES);
+    connect(this, &CanTestPlatform::sigSendPutPowData, this, &CanTestPlatform::on_sigFromThisPowerSet);
     //博世的获取版本定时器
     t_GetVer = new QTimer(this);
     autoDevMan = nullptr;
@@ -70,10 +71,49 @@ QtCanPlatform::QtCanPlatform(QWidget *parent)
     ui.menu->setEnabled(true);
     isLogin = false;
     
+
+    OpenLowPwSerial.resize(8);
+    OpenLowPwSerial[0] = 0xFF;
+    OpenLowPwSerial[1] = 0x05;
+    OpenLowPwSerial[2] = 0x00;
+    OpenLowPwSerial[3] = 0x00;
+    OpenLowPwSerial[4] = 0xFF;
+    OpenLowPwSerial[5] = 0x00;
+    OpenLowPwSerial[6] = 0x99;
+    OpenLowPwSerial[7] = 0xE4;
+    CloseLowPwSerial.resize(8);
+    CloseLowPwSerial[0] = 0xFF;
+    CloseLowPwSerial[1] = 0x05;
+    CloseLowPwSerial[2] = 0x00;
+    CloseLowPwSerial[3] = 0x00;
+    CloseLowPwSerial[4] = 0x00;
+    CloseLowPwSerial[5] = 0x00;
+    CloseLowPwSerial[6] = 0xD8;
+    CloseLowPwSerial[7] = 0x14;
+
+    OpenPureSerial.resize(8);
+    OpenPureSerial[0] = 0xFF;
+    OpenPureSerial[1] = 0x05;
+    OpenPureSerial[2] = 0x00;
+    OpenPureSerial[3] = 0x01;
+    OpenPureSerial[4] = 0xFF;
+    OpenPureSerial[5] = 0x00;
+    OpenPureSerial[6] = 0xC8;
+    OpenPureSerial[7] = 0x24;
+
+    ClosePureSerial.resize(8);
+    ClosePureSerial[0] = 0xFF;
+    ClosePureSerial[1] = 0x05;
+    ClosePureSerial[2] = 0x00;
+    ClosePureSerial[3] = 0x01;
+    ClosePureSerial[4] = 0x00;
+    ClosePureSerial[5] = 0x00;
+    ClosePureSerial[6] = 0x89;
+    ClosePureSerial[7] = 0xD4;
    // ui.retranslateUi(this);
 }
 
-QtCanPlatform::~QtCanPlatform()
+CanTestPlatform::~CanTestPlatform()
 {
     runStep = -1;
     //恢复休眠
@@ -131,7 +171,7 @@ QtCanPlatform::~QtCanPlatform()
     
 }
 
-void QtCanPlatform::closeEvent(QCloseEvent* event)
+void CanTestPlatform::closeEvent(QCloseEvent* event)
 {
     saveSetFile();
     if (pcan)
@@ -162,7 +202,7 @@ void QtCanPlatform::closeEvent(QCloseEvent* event)
     event->accept();
 }
 
-void QtCanPlatform::initUi()
+void CanTestPlatform::initUi()
 {
    /* QString path = QApplication::applicationDirPath() + "/app-logo.ico";
     this->setWindowIcon(QIcon(path));*/
@@ -189,7 +229,7 @@ void QtCanPlatform::initUi()
     textBrowser = new QTextBrowser();
     textBrowser->setMinimumWidth(100);
     QPushButton* pbClearText = new QPushButton(this);
-    connect(pbClearText, &QPushButton::clicked, this, &QtCanPlatform::on_pbClearLogShow_clicked);
+    connect(pbClearText, &QPushButton::clicked, this, &CanTestPlatform::on_pbClearLogShow_clicked);
     //textBrowser->setMaximumWidth(300);
     initData();
     cbSelectModel = new QComboBox();
@@ -212,7 +252,7 @@ void QtCanPlatform::initUi()
     connect(cbSelectModel, SIGNAL(currentIndexChanged(int)), this, SLOT(on_CurrentModelChanged(int)));
     //添加个按钮
     QPushButton* pbAddModel = new QPushButton(tr("协议管理"));
-    connect(pbAddModel, &QPushButton::clicked, this, &QtCanPlatform::qCanSettingShow);
+    connect(pbAddModel, &QPushButton::clicked, this, &CanTestPlatform::qCanSettingShow);
     pbSend = new QPushButton(tr("发送"));
     pbSend->setCheckable(true);
     pbSend->setEnabled(false);
@@ -235,7 +275,7 @@ void QtCanPlatform::initUi()
         pcanArr[i] = new PCAN(this);
         pcanArr[i]->DetectDevice();
         connect(pcanArr[i], SIGNAL(getProtocolData(quint32, QByteArray)), this, SLOT(on_ReceiveDataMulti(quint32, QByteArray)));
-        connect(lostQTimerArr[i], &QTimer::timeout, this, &QtCanPlatform::on_recTimeoutMutil);
+        connect(lostQTimerArr[i], &QTimer::timeout, this, &CanTestPlatform::on_recTimeoutMutil);
         
 
     }
@@ -292,7 +332,7 @@ void QtCanPlatform::initUi()
 
     LogPb = new QPushButton(this);
     LogPb->setText(tr("报文回放&&图形化"));
-    connect(LogPb, &QPushButton::clicked, this, &QtCanPlatform::on_pbLogReplay_clicked);
+    connect(LogPb, &QPushButton::clicked, this, &CanTestPlatform::on_pbLogReplay_clicked);
     //添加个水平的布局
     QHBoxLayout* hLayout = new QHBoxLayout();
     //把按钮丢进去
@@ -316,10 +356,10 @@ void QtCanPlatform::initUi()
     hLayout->addWidget(pbAddModel);
     hLayout->addWidget(LogPb);
     QLineEdit* debugLine = new QLineEdit("-1");
-    connect(debugLine, &QLineEdit::editingFinished, this, &QtCanPlatform::on_lineEdit_editingFinished);
+    connect(debugLine, &QLineEdit::editingFinished, this, &CanTestPlatform::on_lineEdit_editingFinished);
     QCheckBox* checkTrace = new QCheckBox();
     checkTrace->setText(tr("数据监控   "));
-    connect(checkTrace, &QCheckBox::stateChanged, this, &QtCanPlatform::on_checkTraceChanged);
+    connect(checkTrace, &QCheckBox::stateChanged, this, &CanTestPlatform::on_checkTraceChanged);
     QLabel* pLabel = new QLabel();
     pLabel->setText(tr("平台"));
     pLabel->setStyleSheet("font:normal bold 18px SimHei");
@@ -414,8 +454,8 @@ void QtCanPlatform::initUi()
     if(cbSelectModel->count()>0)
         on_CurrentModelChanged(0);
     //建立动态显示报文的槽
-    connect(this, &QtCanPlatform::sigNewRoll, this, &QtCanPlatform::on_setInToRollData);
-    connect(this, &QtCanPlatform::sigNewRollMult, this, &QtCanPlatform::on_setInToRollDataMult);
+    connect(this, &CanTestPlatform::sigNewRoll, this, &CanTestPlatform::on_setInToRollData);
+    connect(this, &CanTestPlatform::sigNewRollMult, this, &CanTestPlatform::on_setInToRollDataMult);
     QSplitter* mainQSpli = new QSplitter(Qt::Vertical);
     QSplitter* topSpli = new QSplitter(mainQSpli);
     QWidget* mw = new QWidget;
@@ -439,28 +479,28 @@ void QtCanPlatform::initUi()
     QSplitter* bootomright = new QSplitter(Qt::Vertical, mainBottom);
     dCtrl = new QDeviceCtrl();
     //connect(dCtrl, &QDeviceCtrl::sigWorkRun, this, &QtCanPlatform::on_autoWork);
-    connect(dCtrl, &QDeviceCtrl::sigCanChanged, this, &QtCanPlatform::on_pbRefreshDevice_clicked);
+    connect(dCtrl, &QDeviceCtrl::sigCanChanged, this, &CanTestPlatform::on_pbRefreshDevice_clicked);
     m_cbOutTempMonitor = new QCheckBox(this);
     m_cbOutTempMonitor->setText("出口温度监控");
-    connect(m_cbOutTempMonitor, &QCheckBox::stateChanged, this, &QtCanPlatform::on_outTempMonitor_Changed);
+    connect(m_cbOutTempMonitor, &QCheckBox::stateChanged, this, &CanTestPlatform::on_outTempMonitor_Changed);
     pbStartAutoTest = new QPushButton(this);
     pbStartAutoTest->setText("开启自动测试");
     pbStartAutoTest->setCheckable(true);
-    connect(pbStartAutoTest, &QPushButton::clicked, this, &QtCanPlatform::on_pbStartAutoTest_clicked);
-    connect(this, &QtCanPlatform::sigAutoTestSend, this, &QtCanPlatform::on_processAutoTestSignal);
+    connect(pbStartAutoTest, &QPushButton::clicked, this, &CanTestPlatform::on_pbStartAutoTest_clicked);
+    //connect(this, &CanTestPlatform::sigAutoTestSend, this, &CanTestPlatform::on_processAutoTestSignal);
     pbDevicesManage = new QPushButton(this);
     pbDevicesManage->setText("设备连接管理");
-    connect(pbDevicesManage, &QPushButton::clicked, this, &QtCanPlatform::on_pbDevicesManage_clicked);
+    connect(pbDevicesManage, &QPushButton::clicked, this, &CanTestPlatform::on_pbDevicesManage_clicked);
     pbGeneralParameter = new QPushButton(this);
     pbGeneralParameter->setText("测试通用参数");
-    connect(pbGeneralParameter, &QPushButton::clicked, this, &QtCanPlatform::on_pbGeneralParameter_clicked);
+    connect(pbGeneralParameter, &QPushButton::clicked, this, &CanTestPlatform::on_pbGeneralParameter_clicked);
     lineEditCodeIn = new QLineEdit(this);
-    connect(lineEditCodeIn, &QLineEdit::editingFinished, this, &QtCanPlatform::on_lineEditCodeIn_editingFinished,Qt::QueuedConnection);
+    connect(lineEditCodeIn, &QLineEdit::editingFinished, this, &CanTestPlatform::on_lineEditCodeIn_editingFinished,Qt::QueuedConnection);
     pbGeneralParameter->setHidden(true);
     pbSummitCode = new QPushButton(this);
     pbSummitCode->setText("提交");
     pbSummitCode->setDefault(true);
-    connect(pbSummitCode, &QPushButton::clicked, this, &QtCanPlatform::on_pbSummitCode_clicked, Qt::QueuedConnection);
+    connect(pbSummitCode, &QPushButton::clicked, this, &CanTestPlatform::on_pbSummitCode_clicked, Qt::QueuedConnection);
     tableAutoResults = new QTableWidget(this);
     QStringList autotabtlename = { "SW","测试项","测试结果","备注"};
     tableAutoResults->setColumnCount(4);
@@ -481,6 +521,7 @@ void QtCanPlatform::initUi()
     mBlowAirPb = new QPushButton(this);
     mBlowAirPb->setCheckable(true);
     mBlowAirPb->setText("吹水");
+    mBlowAirPb->setEnabled(false);
     connect(mBlowAirPb, SIGNAL(clicked(bool)), this, SLOT(on_pbBlowAir_clicked(bool)));
     QLabel* blowLable = new QLabel(this);
     blowLable->setText("吹水时间s:");
@@ -529,7 +570,7 @@ void QtCanPlatform::initUi()
     m_lePeroid = new QLineEdit(this);
     m_cbSavePeriod->setText(tr("保存周期->"));
     m_lePeroid->setText(tr("1"));
-    connect(m_cbSavePeriod, &QCheckBox::stateChanged, this, &QtCanPlatform::on_savePeriodCheck_Changed);
+    connect(m_cbSavePeriod, &QCheckBox::stateChanged, this, &CanTestPlatform::on_savePeriodCheck_Changed);
     QHBoxLayout* clay = new QHBoxLayout(this);
     clay->addWidget(pbClearText);
     clay->addWidget(checkTrace);
@@ -557,7 +598,7 @@ void QtCanPlatform::initUi()
     //clearCountTime->setFixedWidth(60);
     connect(clearCountTime, &QPushButton::clicked, [this](bool b) { m_uiElspseTime = 0; m_uiElspseTotalTime = 0; curruntime->setText("T：0H 0M 0S"); totaltime->setText("  Total：0H 0M 0S"); saveSetFile(); });
     m_tRecord = new QTimer(this);
-    connect(m_tRecord, &QTimer::timeout, this, &QtCanPlatform::on_CaptureElapseTime);
+    connect(m_tRecord, &QTimer::timeout, this, &CanTestPlatform::on_CaptureElapseTime);
     QHBoxLayout* recordElapseTime = new QHBoxLayout(this);
     recordElapseTime->addWidget(curruntime);
     recordElapseTime->addWidget(totaltime);
@@ -571,7 +612,7 @@ void QtCanPlatform::initUi()
     m_pbStartRad->setCheckable(true);
     m_labShowTime = new QLabel(this);
     m_labShowTime->setText(tr("运行时间：0秒"));
-    connect(m_tCaptureTimer, &QTimer::timeout, this, &QtCanPlatform::on_CapturePower);
+    connect(m_tCaptureTimer, &QTimer::timeout, this, &CanTestPlatform::on_CapturePower);
     QLabel* qlabInputCapTimer = new QLabel(this);
     qlabInputCapTimer->setText(tr("捕获时间"));
     QHBoxLayout* layCap = new QHBoxLayout(this);
@@ -598,7 +639,7 @@ void QtCanPlatform::initUi()
         bootomright->addWidget(wg);
     }
     QPushButton* pbHidenAutoWidget = new QPushButton(this);
-    connect(pbHidenAutoWidget, &QPushButton::clicked, this, &QtCanPlatform::on_pbHidenAutoWidget_clicked);
+    connect(pbHidenAutoWidget, &QPushButton::clicked, this, &CanTestPlatform::on_pbHidenAutoWidget_clicked);
     pbHidenAutoWidget->setFixedHeight(25);
     pbHidenAutoWidget->setText("隐藏/展开");
     pbHidenAutoWidget->setCheckable(true);
@@ -630,11 +671,11 @@ void QtCanPlatform::initUi()
     canSeting = nullptr;
     this->on_pbHidenAutoWidget_clicked(m_bShowAutoTest);
 
-    connect(ui.actionChinese, &QAction::triggered, this, &QtCanPlatform::actionChinese_triggered);
-    connect(ui.actionEnglish, &QAction::triggered, this, &QtCanPlatform::actionEnglish_triggered);
+    connect(ui.actionChinese, &QAction::triggered, this, &CanTestPlatform::actionChinese_triggered);
+    connect(ui.actionEnglish, &QAction::triggered, this, &CanTestPlatform::actionEnglish_triggered);
 
 }
-void QtCanPlatform::initAutoResTableWidget()
+void CanTestPlatform::initAutoResTableWidget()
 {
     tableAutoResults->clearContents();
     testItemList.clear();
@@ -647,7 +688,7 @@ void QtCanPlatform::initAutoResTableWidget()
         tableAutoResults->setItem(m, 1, new QTableWidgetItem(testItemList.at(m)));
     }
 }
-void QtCanPlatform::changeEvent(QEvent* e)
+void CanTestPlatform::changeEvent(QEvent* e)
 {
     if (e->type() == QEvent::LanguageChange)
     {
@@ -656,7 +697,7 @@ void QtCanPlatform::changeEvent(QEvent* e)
     }
     QMainWindow::changeEvent(e);
 }
-void QtCanPlatform::on_actionChinese_triggered(bool b)
+void CanTestPlatform::on_actionChinese_triggered(bool b)
 {
     QTranslator* translator = new QTranslator(this);
     bool bk = translator->load(QApplication::applicationDirPath() + "/translations/QtCanPlatform_zh.qm");
@@ -664,15 +705,15 @@ void QtCanPlatform::on_actionChinese_triggered(bool b)
         qApp->installTranslator(translator);
     ui.retranslateUi(this);
 }
-void QtCanPlatform::on_actionEnglish_triggered(bool b)
+void CanTestPlatform::on_actionEnglish_triggered(bool b)
 {
 
 }
-void QtCanPlatform::on_actionAboutQT_triggered(bool b)
+void CanTestPlatform::on_actionAboutQT_triggered(bool b)
 {
     QMessageBox::aboutQt(this);
 }
-void QtCanPlatform::on_action_About_triggered()
+void CanTestPlatform::on_action_About_triggered()
 {
    
     QFile F(QApplication::QCoreApplication::applicationDirPath() + "/Data/about.kus");
@@ -687,7 +728,7 @@ void QtCanPlatform::on_action_About_triggered()
     
 
 }
-void QtCanPlatform::on_action_History_triggered()
+void CanTestPlatform::on_action_History_triggered()
 {
     QFile F(QApplication::QCoreApplication::applicationDirPath() + "/Data/history_version.kus");
     if (F.open(QIODevice::ReadOnly | QIODevice::Text))
@@ -699,23 +740,23 @@ void QtCanPlatform::on_action_History_triggered()
         QMessageBox::about(this, tr("历史版本"), "历史版本丢失");
     }
 }
-void QtCanPlatform::on_pbLogReplay_clicked()
+void CanTestPlatform::on_pbLogReplay_clicked()
 {
     int realIndex = HashArr.at(cbSelectModel->currentIndex());
     if (!qlogp)
     {
         qlogp = new QLogPlot(realIndex,this);
         qlogp->setWindowFlags(qlogp->windowFlags() | Qt::Tool);
-        connect(qlogp, &QLogPlot::sigNewMessage, this, QOverload<uint, QByteArray>::of(&QtCanPlatform::on_ReceiveData));
-        connect(this, &QtCanPlatform::sigNewMessageToGraph, qlogp, &QLogPlot::proLogData);
-        connect(qlogp, &QLogPlot::sigCloseWindow, this, &QtCanPlatform::on_plotWindowCLose);
+        connect(qlogp, &QLogPlot::sigNewMessage, this, QOverload<uint, QByteArray>::of(&CanTestPlatform::on_ReceiveData));
+        connect(this, &CanTestPlatform::sigNewMessageToGraph, qlogp, &QLogPlot::proLogData);
+        connect(qlogp, &QLogPlot::sigCloseWindow, this, &CanTestPlatform::on_plotWindowCLose);
     }
     qlogp->setModelIndex(realIndex);
     qlogp->show();
    
     if (LogPb) LogPb->setEnabled(false);
 }
-void QtCanPlatform::initData()
+void CanTestPlatform::initData()
 {
     //获取数据类指针
     qGboleData* qGb = qGboleData::getInstance();
@@ -727,7 +768,7 @@ void QtCanPlatform::initData()
 /*
 * ================“发送报文”填充到Tablewidget去============
 */
-bool QtCanPlatform::sendDataIntoTab()
+bool CanTestPlatform::sendDataIntoTab()
 {
     
     sendCanData.clear();
@@ -788,7 +829,7 @@ bool QtCanPlatform::sendDataIntoTab()
             layout->setAlignment(Qt::AlignCenter);
             layout->addWidget(cbSend);
             widget->setLayout(layout);
-            connect(cbSend, &QCheckBox::stateChanged, this, &QtCanPlatform::on_checkSendChanged);
+            connect(cbSend, &QCheckBox::stateChanged, this, &CanTestPlatform::on_checkSendChanged);
             tableView->setCellWidget(cr, 0, cbSend);
             
             //发送操作的下拉框
@@ -845,7 +886,7 @@ bool QtCanPlatform::sendDataIntoTab()
    }
     return true;
 }
-bool QtCanPlatform::sendDataIntoTab_up()
+bool CanTestPlatform::sendDataIntoTab_up()
 {
 
     sendCanData.clear();
@@ -963,7 +1004,7 @@ bool QtCanPlatform::sendDataIntoTab_up()
     //}
     return true;
 }
-bool QtCanPlatform::recDataIntoTab()
+bool CanTestPlatform::recDataIntoTab()
 {
     
     
@@ -1142,14 +1183,15 @@ bool QtCanPlatform::recDataIntoTab()
     return true;
 }
 
-void QtCanPlatform::sendData()
+void CanTestPlatform::sendData()
 {
 
    
 
     static uchar s_Data[8];
     getSendDataFromTable();
-    
+    static QString modelName;
+    modelName = currentTestModel.modelName;
     {
         for (int i = 0; i < sendCanData.size(); i++)
         {
@@ -1157,6 +1199,7 @@ void QtCanPlatform::sendData()
             if (!sendCanData.at(i).isSend)
                 if (!m_bGetVer)
                     continue;
+
             if (multiCircle > 1)
             {
                 QTimer* t= dynamic_cast<QTimer*> (sender());
@@ -1214,6 +1257,27 @@ void QtCanPlatform::sendData()
                 other[0] = sendCanData.at(i).len;
                 other[1] = 0;
                 pHardWare->SendMessage(fream_id, s_Data, other);
+                QTime time = QTime::currentTime().addMSecs(240);
+                while (QTime::currentTime() < time)
+                {
+                    QApplication::processEvents();
+                    Sleep(1);
+                }
+          
+                if (currentTestModel.modelName == "Bergstrom-LIN-330V7kW")
+                {
+                    other[0] = recCanData.at(i).len;
+                    other[1] = 1;
+                    pHardWare->SendMessage(recCanData.at(i).strCanId.toInt(NULL, 16), s_Data, other);
+                    QTime time = QTime::currentTime().addMSecs(240);
+                    while (QTime::currentTime() < time)
+                    {
+                        QApplication::processEvents();
+                        Sleep(1);
+                    }
+                }
+                
+                
                 
             }
             else if (cbCanType->currentIndex() == 4)
@@ -1221,19 +1285,37 @@ void QtCanPlatform::sendData()
                 int other[2]{0};
                 pHardTcan->SendMessage(fream_id, s_Data, other);
             }
-            else if (cbCanType->currentIndex() == 4)
+            else if (cbCanType->currentIndex() == 5)
             {
                 int other[2];
                 other[0] = sendCanData.at(i).len;
                 other[1] = 0;
                 pHardTlin->SendMessage(fream_id, s_Data, other);
-
+                QTime time = QTime::currentTime().addMSecs(240);
+                while (QTime::currentTime() < time)
+                {
+                    QApplication::processEvents();
+                    Sleep(1);
+                }
+                if (currentTestModel.modelName == "Bergstrom-LIN-330V7kW")
+                {
+                    other[0] = recCanData.at(i).len;
+                    other[1] = 1;
+                    pHardTlin->SendMessage(recCanData.at(i).strCanId.toInt(NULL, 16), s_Data, other);
+                    QTime time = QTime::currentTime().addMSecs(240);
+                    while (QTime::currentTime() < time)
+                    {
+                        QApplication::processEvents();
+                        Sleep(1);
+                    }
+                }
 
                 for (int k = 0; k < recCanData.size(); k++)
                 {
                     int other[2];
                     other[0] = recCanData.at(k).len;
                     other[1] = 1;
+                    if (currentTestModel.modelName != "Bergstrom-LIN-330V7kW")
                     pHardTlin->SendMessage(recCanData.at(k).strCanId.toInt(NULL, 16), s_Data, other);
                 }
                 if (m_bGetVer)
@@ -1281,7 +1363,7 @@ void QtCanPlatform::sendData()
                 timeStmp_send = period;
             emit sigNewMessageToGraph(fream_id, bydd, timeStmp_send);
         }
-
+        
     }
     if (cbCanType->currentIndex() == 3)
     {
@@ -1290,7 +1372,9 @@ void QtCanPlatform::sendData()
             int other[2];
             other[0] = recCanData.at(k).len;
             other[1] = 1;
-            pHardWare->SendMessage(recCanData.at(k).strCanId.toInt(NULL,16), s_Data, other);
+            if(currentTestModel.modelName!="Bergstrom-LIN-330V7kW")
+                pHardWare->SendMessage(recCanData.at(k).strCanId.toInt(NULL,16), s_Data, other);
+           
         }
         if (m_bGetVer)
         {
@@ -1314,10 +1398,27 @@ void QtCanPlatform::sendData()
     }
 
 }
-void QtCanPlatform::getSendDataFromTable()
+void CanTestPlatform::getSendDataFromTable()
 {
     int rows = tableView->rowCount();
-    
+    if (m_bGetVer)
+    {
+        //卡特新多ID的版本获取
+        if (currentTestModel.modelName.contains("CAT-P4&")) {
+            int en_row = currentTestModel.ats.m_iEnableInLine;
+            int ver_op = 2;
+            if(en_row>=0&& en_row < rows)
+            {
+                QComboBox* ver = dynamic_cast<QComboBox*>(tableView->cellWidget(en_row, 1));
+                if (ver)
+                {
+                    ver->setCurrentIndex(ver_op);
+                }
+            }
+            
+        }
+    }
+
     for (int i = 0; i < rows; i++)
     {
         unsigned int cbInId = tableView->item(i, 4)->text().toUInt(NULL, 16);
@@ -1337,7 +1438,7 @@ void QtCanPlatform::getSendDataFromTable()
     }
     
 }
-bool QtCanPlatform::intelProtocol(canIdData& cdata,uchar data[], unsigned int& fream_id)
+bool CanTestPlatform::intelProtocol(canIdData& cdata,uchar data[], unsigned int& fream_id)
 {
     if (cdata.pItem.size() <= 0)
         return false;
@@ -1388,7 +1489,7 @@ bool QtCanPlatform::intelProtocol(canIdData& cdata,uchar data[], unsigned int& f
     data[crcTemp.startByte] = crc_high_first(data, 7);
     return true;
 }
-bool QtCanPlatform::motoProtocol(canIdData& cdata,uchar data[], unsigned int& fream_id)
+bool CanTestPlatform::motoProtocol(canIdData& cdata,uchar data[], unsigned int& fream_id)
 {
     if (cdata.pItem.size() <= 0)
         return false;
@@ -1418,7 +1519,7 @@ bool QtCanPlatform::motoProtocol(canIdData& cdata,uchar data[], unsigned int& fr
     }
     return true;
 }
-void QtCanPlatform::recAnalyseIntel(unsigned int fream_id,QByteArray data)
+void CanTestPlatform::recAnalyseIntel(unsigned int fream_id,QByteArray data)
 {
     QStringList binaryStr;
     QString hex;
@@ -1776,7 +1877,7 @@ void QtCanPlatform::recAnalyseIntel(unsigned int fream_id,QByteArray data)
         saveCanData();
     }
 }
-void QtCanPlatform::recAnalyseMoto(unsigned int fream_id, QByteArray data)
+void CanTestPlatform::recAnalyseMoto(unsigned int fream_id, QByteArray data)
 {
     QStringList binaryStr;
     QString hex;
@@ -2093,7 +2194,7 @@ void QtCanPlatform::recAnalyseMoto(unsigned int fream_id, QByteArray data)
         saveCanData();
     }
 }
-void QtCanPlatform::recAnalyseMotoLSB(unsigned int fream_id, QByteArray data)
+void CanTestPlatform::recAnalyseMotoLSB(unsigned int fream_id, QByteArray data)
 {
     QStringList binaryStr;
     QString hex;
@@ -2410,7 +2511,7 @@ void QtCanPlatform::recAnalyseMotoLSB(unsigned int fream_id, QByteArray data)
         saveCanData();
     }
 }
-void QtCanPlatform::recAnalyseIntel(int ch,unsigned int fream_id, QByteArray data)
+void CanTestPlatform::recAnalyseIntel(int ch,unsigned int fream_id, QByteArray data)
 {
 
     QStringList binaryStr;
@@ -2738,7 +2839,7 @@ void QtCanPlatform::recAnalyseIntel(int ch,unsigned int fream_id, QByteArray dat
         saveCanDataMult();
     }
 }
-void QtCanPlatform::recAnalyseMoto(int ch,unsigned int fream_id, QByteArray data)
+void CanTestPlatform::recAnalyseMoto(int ch,unsigned int fream_id, QByteArray data)
 {
     QStringList binaryStr;
     QString hex;
@@ -3051,7 +3152,7 @@ void QtCanPlatform::recAnalyseMoto(int ch,unsigned int fream_id, QByteArray data
         saveCanDataMult();
     }
 }
-void QtCanPlatform::recAnalyseMotoLSB(int ch, unsigned int fream_id, QByteArray data)
+void CanTestPlatform::recAnalyseMotoLSB(int ch, unsigned int fream_id, QByteArray data)
 {
     QStringList binaryStr;
     QString hex;
@@ -3364,7 +3465,7 @@ void QtCanPlatform::recAnalyseMotoLSB(int ch, unsigned int fream_id, QByteArray 
         saveCanDataMult();
     }
 }
-void QtCanPlatform::getByteInfo(const std::vector<parseData>& parseArr,int ch)
+void CanTestPlatform::getByteInfo(const std::vector<parseData>& parseArr,int ch)
 {
     for (auto& x : parseArr)
     {
@@ -3414,7 +3515,7 @@ void QtCanPlatform::getByteInfo(const std::vector<parseData>& parseArr,int ch)
         }
     }
 }
-unsigned char QtCanPlatform::crc_high_first(const uchar data[], unsigned char len)
+unsigned char CanTestPlatform::crc_high_first(const uchar data[], unsigned char len)
 {
     //    unsigned char i;
     unsigned char crc = 0xFF; /* 计算的初始crc值 */
@@ -3437,16 +3538,16 @@ unsigned char QtCanPlatform::crc_high_first(const uchar data[], unsigned char le
     qDebug() << "crc:" << crc;
     return (crc);
 }
-unsigned char QtCanPlatform::checksumXOR(const uchar data[])
+unsigned char CanTestPlatform::checksumXOR(const uchar data[])
 {
     return (data[1] ^ data[2] ^ data[3] ^ data[4] ^ data[5] ^ data[6] ^ data[7]);
 }
-void QtCanPlatform::getModelTitle()
+void CanTestPlatform::getModelTitle()
 {
 
     rollTitle;
 }
-void QtCanPlatform::on_CurrentModelChanged(int index)
+void CanTestPlatform::on_CurrentModelChanged(int index)
 {
     timeStmp = 0;
     timeStmp_send = 0;
@@ -3457,7 +3558,7 @@ void QtCanPlatform::on_CurrentModelChanged(int index)
     sendDataIntoTab();
     recDataIntoTab();
 }
-void QtCanPlatform::on_CurrentPlatformChanged(int index)
+void CanTestPlatform::on_CurrentPlatformChanged(int index)
 {
     timeStmp = 0;
     timeStmp_send = 0;
@@ -3624,7 +3725,7 @@ void QtCanPlatform::on_CurrentPlatformChanged(int index)
         on_CurrentModelChanged(0);
     connect(cbSelectModel, SIGNAL(currentIndexChanged(int)), this, SLOT(on_CurrentModelChanged(int)));
 }
-void QtCanPlatform::on_cbCanType_currentIndexChanged(int index)
+void CanTestPlatform::on_cbCanType_currentIndexChanged(int index)
 {
     cbPcan->clear();
     on_pbRefreshDevice_clicked();
@@ -3650,7 +3751,7 @@ void QtCanPlatform::on_cbCanType_currentIndexChanged(int index)
 //        QLOG_INFO() << "工位-"<<id<<":上传数据成功";
 //    }
 //}
-void QtCanPlatform::on_pbSend_clicked(bool clicked)
+void CanTestPlatform::on_pbSend_clicked(bool clicked)
 {
 
     if (clicked)
@@ -3676,7 +3777,7 @@ void QtCanPlatform::on_pbSend_clicked(bool clicked)
                     QTimer* t = new QTimer(this);
                     t->start(qGb->pGboleData.at(real).cItem.at(k).circle);
                     qGb->pGboleData.at(real).cItem.at(k).timeAdd = t;
-                    connect(t, &QTimer::timeout, this, &QtCanPlatform::sendData);
+                    connect(t, &QTimer::timeout, this, &CanTestPlatform::sendData);
                 }
         }
         else
@@ -3767,7 +3868,7 @@ void QtCanPlatform::on_pbSend_clicked(bool clicked)
         }
     }
 }
-void QtCanPlatform::on_pbRefreshDevice_clicked()
+void CanTestPlatform::on_pbRefreshDevice_clicked()
 {
     cbPcan->clear();
     if (cbCanType->currentIndex() == 0)
@@ -3821,7 +3922,7 @@ void QtCanPlatform::on_pbRefreshDevice_clicked()
         if (!pHardTlin)
         {
             pHardTlin = new HardWareTlin(this);
-            connect(pHardTlin, &HardWareTlin::newMessage, this, &QtCanPlatform::on_ReceiveDataLIN);
+            connect(pHardTlin, &HardWareTlin::newMessage, this, &CanTestPlatform::on_ReceiveDataLIN);
         }
         QStringList n = pHardTlin->GetHardWare();
         for (int m = 0; m < n.size(); m++)
@@ -3831,7 +3932,7 @@ void QtCanPlatform::on_pbRefreshDevice_clicked()
     }
     
 }
-void QtCanPlatform::on_pbOpenPcan_clicked()
+void CanTestPlatform::on_pbOpenPcan_clicked()
 {
     if (cbCanType->currentIndex() == 0)
     {
@@ -4142,7 +4243,7 @@ void QtCanPlatform::on_pbOpenPcan_clicked()
             cbPcan->setEnabled(false);
             pbSend->setEnabled(true);
             pcanIsOpen = true;
-            connect(pHardWare, &HardWarePlin::newMessage, this, &QtCanPlatform::on_ReceiveDataLIN);
+            connect(pHardWare, &HardWarePlin::newMessage, this, &CanTestPlatform::on_ReceiveDataLIN);
             cbSelectModel->setEnabled(false);
         }
     }
@@ -4203,7 +4304,7 @@ void QtCanPlatform::on_pbOpenPcan_clicked()
 
             if (!b)
             {
-                QMessageBox::warning(NULL, tr("错误"), tr("打开KCAN失败,请检测设备是否被占用或者已经连接？"));
+                QMessageBox::warning(NULL, tr("错误"), tr("打开Toomss失败,请检测设备是否被占用或者已经连接？\n或者重新拔插一下"));
                 return;
             }
             pbOpen->setText(tr("关闭设备"));
@@ -4270,7 +4371,7 @@ void QtCanPlatform::on_pbOpenPcan_clicked()
 
         if (!b)
         {
-            QMessageBox::warning(NULL, tr("错误"), tr("打开KCAN失败,请检测设备是否被占用或者已经连接？"));
+            QMessageBox::warning(NULL, tr("错误"), tr("打开TLIN失败,请检测设备是否被占用或者已经连接？\n或者重新拔插一下"));
             return;
         }
         pbOpen->setText(tr("关闭设备"));
@@ -4293,7 +4394,7 @@ void QtCanPlatform::on_pbOpenPcan_clicked()
 * @parm: rcol 发生变化的所在列
 * return: 无
 */
-void QtCanPlatform::on_tableDoubleClicked(int, int)
+void CanTestPlatform::on_tableDoubleClicked(int, int)
 {
     connect(tableView, SIGNAL(cellChanged(int, int)), this, SLOT(on_tableClicked(int, int)));
 }
@@ -4304,7 +4405,7 @@ void QtCanPlatform::on_tableDoubleClicked(int, int)
 * @parm: rcol 发生变化的所在列
 * return: 无
 */
-void QtCanPlatform::on_tableClicked(int row, int col)
+void CanTestPlatform::on_tableClicked(int row, int col)
 {
     int rows = tableView->rowCount();
     if (row > rows - 1)
@@ -4346,7 +4447,7 @@ void QtCanPlatform::on_tableClicked(int row, int col)
 * @parm: data 报文数据
 * return: 无
 */
-void QtCanPlatform::on_ReceiveData(uint fream_id, QByteArray data)
+void CanTestPlatform::on_ReceiveData(uint fream_id, QByteArray data)
 {
     QStringList binaryStr;
     QString hex;
@@ -4437,7 +4538,7 @@ void QtCanPlatform::on_ReceiveData(uint fream_id, QByteArray data)
     if(pbSend->isChecked())
         emit sigNewMessageToGraph(fream_id, data, timeStmp);
 }
-void QtCanPlatform::on_ReceiveDataLIN(uint frame_id, QByteArray data, int reserve)
+void CanTestPlatform::on_ReceiveDataLIN(uint frame_id, QByteArray data, int reserve)
 {
     tabRollBox->tabBar()->setTabIcon(0, QApplication::style()->standardIcon((QStyle::StandardPixmap)31));
     tabRecBox->tabBar()->setTabIcon(0, QApplication::style()->standardIcon((QStyle::StandardPixmap)31));
@@ -4445,7 +4546,7 @@ void QtCanPlatform::on_ReceiveDataLIN(uint frame_id, QByteArray data, int reserv
    // for(int i=0;i<)
     on_ReceiveData(frame_id, data);
 }
-void QtCanPlatform::on_ReceiveDataMulti(uint fream_id, QByteArray data)
+void CanTestPlatform::on_ReceiveDataMulti(uint fream_id, QByteArray data)
 {
     PCAN* _pcan = dynamic_cast<PCAN*>(sender());
     if (!_pcan)return;
@@ -4468,7 +4569,7 @@ void QtCanPlatform::on_ReceiveDataMulti(uint fream_id, QByteArray data)
 //    }
 //    on_ReceiveData(ch, frame_id, by);
 //}
-void QtCanPlatform::on_ReceiveData(const int ch, uint fream_id, QByteArray data)
+void CanTestPlatform::on_ReceiveData(const int ch, uint fream_id, QByteArray data)
 {
     //if (1 == cbCanType->currentIndex() || 2 == cbCanType->currentIndex())
     {
@@ -4548,7 +4649,7 @@ void QtCanPlatform::on_ReceiveData(const int ch, uint fream_id, QByteArray data)
 * @parm: 无
 * return: 无
 */
-void QtCanPlatform::on_SettingWidowsClose()
+void CanTestPlatform::on_SettingWidowsClose()
 {
     disconnect(tableView, SIGNAL(cellChanged(int, int)), this, SLOT(on_tableClicked(int, int)));
     int index = cbSelectModel->currentIndex();
@@ -4557,7 +4658,7 @@ void QtCanPlatform::on_SettingWidowsClose()
 /*
 * @brief:发送字段的下拉框发生变化时的响应槽函数
 */
-void QtCanPlatform::on_cbSelectSendItemChanged(int index)
+void CanTestPlatform::on_cbSelectSendItemChanged(int index)
 {
     QComboBox* cb = dynamic_cast<QComboBox*>(sender());
     if (!cb)
@@ -4613,7 +4714,7 @@ void QtCanPlatform::on_cbSelectSendItemChanged(int index)
 * @param : int check，若大于0，则选中，此项所有的ID组所有位都会发送，否则不会
 * @return: void
 */
-void QtCanPlatform::on_checkSendChanged(int check)
+void CanTestPlatform::on_checkSendChanged(int check)
 {
     QCheckBox* cb = dynamic_cast<QCheckBox*>(sender());
     if (!cb)
@@ -4633,7 +4734,7 @@ void QtCanPlatform::on_checkSendChanged(int check)
         if (sendCanData.at(k).strCanId.toUInt(NULL, 16) != cbInId)
             continue;
         sendCanData.at(k).isSend = b;
-        QLOG_INFO() << "b:" << sendCanData.at(k).isSend;
+        //QLOG_INFO() << "b:" << sendCanData.at(k).isSend;
         break;
     }
     int tbRowCount = tableView->rowCount();
@@ -4648,12 +4749,12 @@ void QtCanPlatform::on_checkSendChanged(int check)
             cb2->setChecked(b);
     }
 }
-void QtCanPlatform::on_recTimeout()
+void CanTestPlatform::on_recTimeout()
 {
     communicaLabel->setText(tr("通信超时"));
     communicaLabel->setStyleSheet("background-color:red");
 }
-void QtCanPlatform::on_recTimeoutMutil()
+void CanTestPlatform::on_recTimeoutMutil()
 {
     //获取发送者的指针
     QTimer* t = dynamic_cast<QTimer*>(sender());
@@ -4677,7 +4778,7 @@ void QtCanPlatform::on_recTimeoutMutil()
 * @param：无
 * @return：void
 */
-void QtCanPlatform::on_setInToRollDataMult(int ch)
+void CanTestPlatform::on_setInToRollDataMult(int ch)
 {
     //设置列数
     tableRollDataArray[ch]->setColumnCount(rollTitle.size());
@@ -4728,7 +4829,7 @@ void QtCanPlatform::on_setInToRollDataMult(int ch)
         saveCanData();
     }*/
 }
-void QtCanPlatform::on_setInToRollData()
+void CanTestPlatform::on_setInToRollData()
 {
     //设置列数
     tableRollData->setColumnCount(rollTitle.size());
@@ -4774,7 +4875,7 @@ void QtCanPlatform::on_setInToRollData()
 * @param:无
 * @return:无
 */
-void QtCanPlatform::saveCanData()
+void CanTestPlatform::saveCanData()
 {
     QString appPath = QApplication::applicationDirPath() + "/PCAN-DATA/";
     QDir dd(appPath);
@@ -4795,7 +4896,7 @@ void QtCanPlatform::saveCanData()
 /*
 * @brief：
 */
-void QtCanPlatform::saveCanDataMult()
+void CanTestPlatform::saveCanDataMult()
 {
     QString appPath = QApplication::applicationDirPath() + "/PCAN-DATA/";
     QDir dd(appPath);
@@ -4816,7 +4917,7 @@ void QtCanPlatform::saveCanDataMult()
     on_pbClearCanData_clicked();
 }
 
-void QtCanPlatform::on_checkTraceChanged(int check)
+void CanTestPlatform::on_checkTraceChanged(int check)
 {
     if (check)
     {
@@ -4825,14 +4926,14 @@ void QtCanPlatform::on_checkTraceChanged(int check)
     else
         isTrace = false;
 }
-void QtCanPlatform::on_pbSaveCanData_clicked()
+void CanTestPlatform::on_pbSaveCanData_clicked()
 {
     if ((cbCanType->currentIndex() == 0 || cbCanType->currentIndex() == 3) && cbIsMutil->currentIndex() == 0)
         saveCanData();
     else if (cbCanType->currentIndex() == 1|| cbCanType->currentIndex() ==2|| cbIsMutil->currentIndex() == 1)
         saveCanDataMult();
 }
-void QtCanPlatform::on_pbClearCanData_clicked()
+void CanTestPlatform::on_pbClearCanData_clicked()
 {
     multErr.clear();
     
@@ -4854,7 +4955,7 @@ void QtCanPlatform::on_pbClearCanData_clicked()
     
     
 }
-void QtCanPlatform::on_CapturePower()
+void CanTestPlatform::on_CapturePower()
 {
     countRunTime++;
     m_labShowTime->setText("运行时间：" + QString::number(countRunTime) + "秒");
@@ -4868,7 +4969,7 @@ void QtCanPlatform::on_CapturePower()
     }
     
 }
-void QtCanPlatform::on_pbGetVer_clicked(bool isCheck)
+void CanTestPlatform::on_pbGetVer_clicked(bool isCheck)
 {
     if (!t_GetVer)
         t_GetVer = new QTimer(this);
@@ -4903,18 +5004,18 @@ void QtCanPlatform::on_pbGetVer_clicked(bool isCheck)
      }
 
 }
-void QtCanPlatform::on_pbClearLogShow_clicked()
+void CanTestPlatform::on_pbClearLogShow_clicked()
 {
     if (textBrowser)
         textBrowser->clear();
 }
-void QtCanPlatform::on_lineEdit_editingFinished()
+void CanTestPlatform::on_lineEdit_editingFinished()
 {
     QLineEdit* le = dynamic_cast<QLineEdit*>(sender());
     if (!le)return;
     runStep = le->text().toInt();
 }
-void QtCanPlatform::initLogger()
+void CanTestPlatform::initLogger()
 {
     Logger& logger = Logger::instance();    //初始化
     logger.setLoggingLevel(QsLogging::InfoLevel);  //设置写入等级
@@ -4946,11 +5047,11 @@ void QtCanPlatform::initLogger()
     QLOG_INFO() << "欢迎使用CANPlatform";
    
 }
-void QtCanPlatform::destroyLogger()
+void CanTestPlatform::destroyLogger()
 {
     QsLogging::Logger::destroyInstance();
 }
-void QtCanPlatform::logSlot(const QString& message, int level)
+void CanTestPlatform::logSlot(const QString& message, int level)
 {
     //qUtf8Printable使用这个宏避免中文乱码
     textBrowser->append(qUtf8Printable(message));
@@ -4967,7 +5068,7 @@ void QtCanPlatform::logSlot(const QString& message, int level)
 * @parm: 无
 * return: 无
 */
-void QtCanPlatform::qCanSettingShow()
+void CanTestPlatform::qCanSettingShow()
 {
    /* if (isLogin)
     {
@@ -4977,13 +5078,13 @@ void QtCanPlatform::qCanSettingShow()
     if (!canSeting)
     {
         canSeting = new Login(this);
-        connect(canSeting, &Login::sigLogin, this, &QtCanPlatform::on_canSettingShowFromLogin);
+        connect(canSeting, &Login::sigLogin, this, &CanTestPlatform::on_canSettingShowFromLogin);
     }
     canSeting->show();
     canSeting->setModal(true);
     
 }
-void QtCanPlatform::on_CaptureElapseTime()
+void CanTestPlatform::on_CaptureElapseTime()
 {
     m_uiElspseTotalTime++;
     m_uiElspseTime++;
@@ -4992,19 +5093,19 @@ void QtCanPlatform::on_CaptureElapseTime()
     curruntime->setText(cut);
     totaltime->setText(tot);
 }
-void QtCanPlatform::on_canSettingShowFromLogin(int n)
+void CanTestPlatform::on_canSettingShowFromLogin(int n)
 {
    /* this->isLogin = true;
     this->loginType = n;*/
     if (!canSetting) {
         canSetting = new QCanSetting();
-        connect(canSetting, &QCanSetting::settingWidowsClose, this, &QtCanPlatform::on_SettingWidowsClose);
+        connect(canSetting, &QCanSetting::settingWidowsClose, this, &CanTestPlatform::on_SettingWidowsClose);
     }
     canSetting->setUserType(n);
     canSetting->reInitUI();
     canSetting->show();
 }
-void QtCanPlatform::readSetFile()
+void CanTestPlatform::readSetFile()
 {
     
     qGboleData* gb = qGboleData::getInstance();
@@ -5031,7 +5132,7 @@ void QtCanPlatform::readSetFile()
         saveListNum = 600;
 
 }
-void QtCanPlatform::saveSetFile()
+void CanTestPlatform::saveSetFile()
 {
     qGboleData* gb = qGboleData::getInstance();
     if (!gb)
@@ -5049,7 +5150,7 @@ void QtCanPlatform::saveSetFile()
 * @param: void
 * @return: void
 ******************************************************/
-void QtCanPlatform::configSetFile()
+void CanTestPlatform::configSetFile()
 {
     //程序目录下Data文件，名字为Jugde.ini
     QString filepath = QApplication::applicationDirPath() + "/Data/Jugde.ini";
@@ -5065,24 +5166,24 @@ void QtCanPlatform::configSetFile()
     setf->setValue("rmFirstFream", rmFirstFream);*/
     //setf->setValue("agvPowerFream", agvPowerFream);
 }
-void QtCanPlatform::on_pbDevicesManage_clicked()
+void CanTestPlatform::on_pbDevicesManage_clicked()
 {
     if (!autoDevMan)
     {
         autoDevMan = new AutoDeviceManage(this);
         autoDevMan->setWindowFlags(autoDevMan->windowFlags()|Qt::Tool);
         
-        connect(autoDevMan, &AutoDeviceManage::sigMesNewData, this, &QtCanPlatform::on_sigFroMesNewData);
-        connect(autoDevMan, &AutoDeviceManage::sigPowerNewData, this, &QtCanPlatform::on_sigFromPowerNewData);
-        connect(autoDevMan, &AutoDeviceManage::sigFlowCool, this, &QtCanPlatform::on_RecFlowCool);
+        connect(autoDevMan, &AutoDeviceManage::sigMesNewData, this, &CanTestPlatform::on_sigFroMesNewData);
+        connect(autoDevMan, &AutoDeviceManage::sigPowerNewData, this, &CanTestPlatform::on_sigFromPowerNewData);
+        connect(autoDevMan, &AutoDeviceManage::sigFlowCool, this, &CanTestPlatform::on_RecFlowCool);
     }
     autoDevMan->show();
 }
-void QtCanPlatform::on_pbGeneralParameter_clicked()
+void CanTestPlatform::on_pbGeneralParameter_clicked()
 {
 
 }
-QStringList QtCanPlatform::ucharToBinay(const uchar data[8])
+QStringList CanTestPlatform::ucharToBinay(const uchar data[8])
 {
     QStringList binaryStr;
     //QString hex;
@@ -5095,7 +5196,7 @@ QStringList QtCanPlatform::ucharToBinay(const uchar data[8])
     }
     return binaryStr;
 }
-void QtCanPlatform::getVerAuto(const AutoTestStruct& at)
+void CanTestPlatform::getVerAuto(const AutoTestStruct& at)
 {
     memset(m_arrVerCanMessage, 0, 8);
     emit showAutoTestStep(2, "获取版本号中...", "");
@@ -5201,7 +5302,7 @@ void QtCanPlatform::getVerAuto(const AutoTestStruct& at)
     m_bGetVer = false;
     m_bParseVer = false;
 }
-void QtCanPlatform::setPowerSupply(const AutoTestStruct& at,int op)
+void CanTestPlatform::setPowerSupply(const AutoTestStruct& at,int op)
 {
     QString reqV;
     QString cur = "Current:lim 60\n";
@@ -5238,7 +5339,7 @@ void QtCanPlatform::setPowerSupply(const AutoTestStruct& at,int op)
     on_sigFromThisPowerSet(reqV);
     //setHeatint(at, 0);
 }
-void QtCanPlatform::setHeatint(const AutoTestStruct& at, float value)
+void CanTestPlatform::setHeatint(const AutoTestStruct& at, float value)
 {
     int en_row = at.m_iEnableInLine;
     int pw_row = at.m_iPowerInLine;
@@ -5266,7 +5367,7 @@ void QtCanPlatform::setHeatint(const AutoTestStruct& at, float value)
     
 
 }
-void QtCanPlatform::setHeatint(const AutoTestStruct& at, float value,int tempture)
+void CanTestPlatform::setHeatint(const AutoTestStruct& at, float value,int tempture)
 {
     int en_row = at.m_iEnableInLine;
     int pw_row = at.m_iPowerInLine;
@@ -5295,7 +5396,7 @@ void QtCanPlatform::setHeatint(const AutoTestStruct& at, float value,int temptur
 
 }
 
-void QtCanPlatform::setCancelHeatint(const AutoTestStruct& at, float value)
+void CanTestPlatform::setCancelHeatint(const AutoTestStruct& at, float value)
 {
     int en_row = at.m_iEnableInLine;
     int pw_row = at.m_iPowerInLine;
@@ -5318,7 +5419,7 @@ void QtCanPlatform::setCancelHeatint(const AutoTestStruct& at, float value)
         item->setText(QString::number(0));
     }
 }
-void QtCanPlatform::getAveragePW(const AutoTestStruct& at)
+void CanTestPlatform::getAveragePW(const AutoTestStruct& at)
 {
     int lestCount = 0;
     PowerArr[0].clear();
@@ -5418,7 +5519,7 @@ void QtCanPlatform::getAveragePW(const AutoTestStruct& at)
     }
     up_mes_var.m_strRatedPW = QString::number(sum);
 }
-void QtCanPlatform::on_pbMESConnect(bool b)
+void CanTestPlatform::on_pbMESConnect(bool b)
 {
     if (!b)
     {
@@ -5429,16 +5530,16 @@ void QtCanPlatform::on_pbMESConnect(bool b)
     else
     {
         postMes = new QTcpSocket(this);
-        connect(postMes, &QTcpSocket::stateChanged, this, &QtCanPlatform::on_TCPStateChanged);
-        connect(postMes, &QTcpSocket::readyRead, this, &QtCanPlatform::on_TCPDataReadyRec);
-        connect(this, &QtCanPlatform::sigSendMesState, this, &QtCanPlatform::on_SendMesState);
+        connect(postMes, &QTcpSocket::stateChanged, this, &CanTestPlatform::on_TCPStateChanged);
+        connect(postMes, &QTcpSocket::readyRead, this, &CanTestPlatform::on_TCPDataReadyRec);
+        connect(this, &CanTestPlatform::sigSendMesState, this, &CanTestPlatform::on_SendMesState);
     }
     if (postMes->state() == QAbstractSocket::ConnectedState)
         return;
     postMes->connectToHost(LineEdit_IPAddr_Mes->text().trimmed(), LineEdit_Port_Mes->text().toInt());
 
 }
-void QtCanPlatform::on_TCPStateChanged(QAbstractSocket::SocketState state)
+void CanTestPlatform::on_TCPStateChanged(QAbstractSocket::SocketState state)
 {
     QTcpSocket* tcp = dynamic_cast<QTcpSocket*>(sender());
     if (state == QAbstractSocket::UnconnectedState)
@@ -5457,7 +5558,7 @@ void QtCanPlatform::on_TCPStateChanged(QAbstractSocket::SocketState state)
         }
     }
 }
-void QtCanPlatform::on_TCPDataReadyRec()
+void CanTestPlatform::on_TCPDataReadyRec()
 {
     QTcpSocket* tcp = dynamic_cast<QTcpSocket*>(sender());
    if (tcp && tcp == postMes)
@@ -5474,11 +5575,11 @@ void QtCanPlatform::on_TCPDataReadyRec()
     }
 
 }
-void QtCanPlatform::on_sigFromThisPowerSet(QString data)
+void CanTestPlatform::on_sigFromThisPowerSet(QString data)
 {
     autoDevMan->requireTcpPower(data);
 }
-void QtCanPlatform::on_savePeriodCheck_Changed(int n)
+void CanTestPlatform::on_savePeriodCheck_Changed(int n)
 {
     if (n == 0)
     {
@@ -5491,7 +5592,7 @@ void QtCanPlatform::on_savePeriodCheck_Changed(int n)
         m_lePeroid->setEnabled(false);
     }
 }
-void QtCanPlatform::on_outTempMonitor_Changed(int n)
+void CanTestPlatform::on_outTempMonitor_Changed(int n)
 {
     if (!pbStartAutoTest)return;
     if (n == 0)
@@ -5506,12 +5607,12 @@ void QtCanPlatform::on_outTempMonitor_Changed(int n)
 
     }
 }
-void QtCanPlatform::on_plotWindowCLose()
+void CanTestPlatform::on_plotWindowCLose()
 {
     if (LogPb)
         LogPb->setEnabled(true);
 }
-void QtCanPlatform::on_pbBlowAir_clicked(bool b)
+void CanTestPlatform::on_pbBlowAir_clicked(bool b)
 {
     QLOG_INFO() << "start";
     if (!autoDevMan)return;
@@ -5521,7 +5622,7 @@ void QtCanPlatform::on_pbBlowAir_clicked(bool b)
         if (!mBlowAirTimer)
         {
             mBlowAirTimer = new QTimer(this);
-            connect(mBlowAirTimer, &QTimer::timeout, this, &QtCanPlatform::on_BlowAir_Stop);
+            connect(mBlowAirTimer, &QTimer::timeout, this, &CanTestPlatform::on_BlowAir_Stop);
        }
         int timee = mBlowAirLineedit->text().toInt()*1000;
         mBlowAirTimer->start(timee);
@@ -5535,7 +5636,7 @@ void QtCanPlatform::on_pbBlowAir_clicked(bool b)
 
     }
 }
-void QtCanPlatform::on_BlowAir_Stop()
+void CanTestPlatform::on_BlowAir_Stop()
 {
     QLOG_INFO() << "stop";
     if(mBlowAirTimer)
@@ -5543,20 +5644,20 @@ void QtCanPlatform::on_BlowAir_Stop()
     if (!autoDevMan)return;
     autoDevMan->on_pbBlowWater_2_clicked(false);
 }
-void QtCanPlatform::on_pbHidenAutoWidget_clicked(bool b)
+void CanTestPlatform::on_pbHidenAutoWidget_clicked(bool b)
 {
     //m_bGetVer = b;
     if (!gp)return;
     gp->setHidden(b);
     m_bShowAutoTest = b;
 }
-void QtCanPlatform::on_TCPDataSend_MES(QByteArray data)
+void CanTestPlatform::on_TCPDataSend_MES(QByteArray data)
 {
    /* if (!postMes)return;
     postMes->write(data);*/
     autoDevMan->requireTcpMes(data);
 }
-void QtCanPlatform::on_pbSummitCode_clicked()
+void CanTestPlatform::on_pbSummitCode_clicked()
 {
     m_strPHUCode = lineEditCodeIn->text();
     CodeOk = true;
@@ -5572,13 +5673,13 @@ void QtCanPlatform::on_pbSummitCode_clicked()
     }
     lineEditCodeIn->setEnabled(false);
     
-    QtConcurrent::run(this, &QtCanPlatform::runPostMes, text);
+    QtConcurrent::run(this, &CanTestPlatform::runPostMes, text);
     
     lineEditCodeIn->clear();
     
     
 }
-float QtCanPlatform::getPowerResponed(QString str)
+float CanTestPlatform::getPowerResponed(QString str)
 {
     QByteArray sendData;
     sendData.append(str);
@@ -5608,7 +5709,7 @@ float QtCanPlatform::getPowerResponed(QString str)
     return dTemp.toFloat();
 
 }
-bool QtCanPlatform::getMesResponed(QString str)
+bool CanTestPlatform::getMesResponed(QString str)
 {
     QByteArray sendData;
     sendData.append(str.toUtf8());
@@ -5637,7 +5738,7 @@ bool QtCanPlatform::getMesResponed(QString str)
     return true;
 
 }
-QString QtCanPlatform::parserMESStr(QString str)
+QString CanTestPlatform::parserMESStr(QString str)
 {
     QStringList dlist = str.split(";");
     if (dlist.size() < 2)
@@ -5652,7 +5753,7 @@ QString QtCanPlatform::parserMESStr(QString str)
     QLOG_INFO() << dlist.at(1);
     return "Y";
 }
-void QtCanPlatform::on_SendMesState(int n, QString)
+void CanTestPlatform::on_SendMesState(int n, QString)
 {
     if (n == 0)
     {
@@ -5668,11 +5769,11 @@ void QtCanPlatform::on_SendMesState(int n, QString)
     }
     lineEditCodeIn->setEnabled(true);
 }
-void  QtCanPlatform::on_RecFlowCool(float flow)
+void  CanTestPlatform::on_RecFlowCool(float flow)
 {
     this->m_fFlowCool = flow;
 }
-void QtCanPlatform::runPostMes(QString text)
+void CanTestPlatform::runPostMes(QString text)
 {
     
     QString senddata = "#A101;" + text + "|PHU7KW-007|N$";
@@ -5693,19 +5794,19 @@ void QtCanPlatform::runPostMes(QString text)
     }
     sigSendMesState(0, "出站成功");
 }
-void QtCanPlatform::on_lineEditCodeIn_editingFinished()
+void CanTestPlatform::on_lineEditCodeIn_editingFinished()
 {
     pbSummitCode->setFocus();
    
 }
-void QtCanPlatform::on_sigFromPowerNewData(QString data)
+void CanTestPlatform::on_sigFromPowerNewData(QString data)
 {
     m_Mutex_Pow.lock();
     m_PowerData.append(data);
     _bIsRec_Pow = true;
     m_Mutex_Pow.unlock();
 }
-void QtCanPlatform::on_sigFroMesNewData(QString data)
+void CanTestPlatform::on_sigFroMesNewData(QString data)
 {
    
     m_Mutex_Mes.lock();
@@ -5714,7 +5815,7 @@ void QtCanPlatform::on_sigFroMesNewData(QString data)
     m_Mutex_Mes.unlock();
    
 }
-void QtCanPlatform::on_pbStartAutoTest_clicked(bool b)
+void CanTestPlatform::on_pbStartAutoTest_clicked(bool b)
 {
     
    
@@ -5723,10 +5824,12 @@ void QtCanPlatform::on_pbStartAutoTest_clicked(bool b)
         runStep = -1;
         return;
     }
+    
+
     if (m_cbOutTempMonitor && m_cbOutTempMonitor->isChecked())
     {
         runStep = 0;
-        QtConcurrent::run(this, &QtCanPlatform::runOutMonitor);
+        QtConcurrent::run(this, &CanTestPlatform::runOutMonitor);
         return;
     }
     else
@@ -5746,10 +5849,10 @@ void QtCanPlatform::on_pbStartAutoTest_clicked(bool b)
        {
            autoDevMan = new AutoDeviceManage(this);
            autoDevMan->setWindowFlags(autoDevMan->windowFlags() | Qt::Tool);
-           connect(this, &QtCanPlatform::sigAutoTestSend, this, &QtCanPlatform::on_processAutoTestSignal);
-           connect(autoDevMan, &AutoDeviceManage::sigMesNewData, this, &QtCanPlatform::on_sigFroMesNewData);
-           connect(autoDevMan, &AutoDeviceManage::sigPowerNewData, this, &QtCanPlatform::on_sigFromPowerNewData);
-           connect(autoDevMan, &AutoDeviceManage::sigFlowCool, this, &QtCanPlatform::on_RecFlowCool);
+           connect(this, &CanTestPlatform::sigAutoTestSend, this, &CanTestPlatform::on_processAutoTestSignal);
+           connect(autoDevMan, &AutoDeviceManage::sigMesNewData, this, &CanTestPlatform::on_sigFroMesNewData);
+           connect(autoDevMan, &AutoDeviceManage::sigPowerNewData, this, &CanTestPlatform::on_sigFromPowerNewData);
+           connect(autoDevMan, &AutoDeviceManage::sigFlowCool, this, &CanTestPlatform::on_RecFlowCool);
        }
        autoDevMan->initializeDev();
        QTime tempT = QTime::currentTime().addMSecs(1500);
@@ -5786,6 +5889,31 @@ void QtCanPlatform::on_pbStartAutoTest_clicked(bool b)
            runStep = -1;
            return;
        }
+       if (!serialport)
+       {
+           serialport = new SerialportManage(this);
+           QList<QSerialPortInfo> info = QSerialPortInfo::availablePorts();
+           _SERIAL_PARM ser;
+           if (info.size() > 0)
+           {
+               ser.serial_name = info.at(0).portName();
+               ser.baudrate = 19200;
+           }
+           bool ret = serialport->openSerialPort(ser);
+           if (currentTestModel.ats.m_needSWLowPower)
+           {
+               if (!ret)
+               {
+                   pbStartAutoTest->setChecked(false);
+                   QMessageBox::information(this, "Tips", "低压电源控制继电器未初始化");
+                   runStep = -1;
+                   return;
+               }
+           }
+
+       }
+
+
        QLOG_INFO() << "Devices Initialize Over";
        lineEditCodeIn->setToolTip("请在此录入PHU二维码");
        lineEditCodeIn->setFocus();
@@ -5794,10 +5922,10 @@ void QtCanPlatform::on_pbStartAutoTest_clicked(bool b)
        QToolTip::showText(pPos, "请在此录入二维码", lineEditCodeIn);
       
        runStep = 0;
-       QtConcurrent::run(this, &QtCanPlatform::workAutoTest);
+       QtConcurrent::run(this, &CanTestPlatform::workAutoTest);
     }
 }
-void QtCanPlatform::runOutMonitor()
+void CanTestPlatform::runOutMonitor()
 {
     int outTempture = currentTestModel.ats.m_iOutTempStop;
     QLOG_INFO() << "出口监控温度为：" << outTempture << "°C";
@@ -5812,7 +5940,7 @@ void QtCanPlatform::runOutMonitor()
         QThread::msleep(100);
     }
 }
-void QtCanPlatform::showAutoTestStep(int n, QString data, QString remake)
+void CanTestPlatform::showAutoTestStep(int n, QString data, QString remake)
 {
     int row = tableAutoResults->rowCount();
     QTableWidgetItem* item;
@@ -5838,7 +5966,7 @@ void QtCanPlatform::showAutoTestStep(int n, QString data, QString remake)
         tableAutoResults->setItem(n, 3, item2);
     }
 }
-void QtCanPlatform::on_processAutoTestSignal(int n, QString str)
+void CanTestPlatform::on_processAutoTestSignal(int n, QString str)
 {
     switch (n)
     {
@@ -6004,7 +6132,38 @@ void QtCanPlatform::on_processAutoTestSignal(int n, QString str)
             progress->setLabelText(tr("吹水完成，请关闭冷水阀,进行后续工作"));
             autoDevMan->on_pbBlowWater_clicked(false);
             autoDevMan->on_pbColdWater_2_clicked(false);
+            progress->close();
         }
+        break;
+
+    case 45:
+        serialport->senddata(OpenLowPwSerial);
+        QLOG_INFO() << "低压电源断开";
+        break;
+    case 46:
+        serialport->senddata(CloseLowPwSerial);
+        QLOG_INFO() << "低压电源导通";
+        break;
+    case 51:
+        autoDevMan->on_pbBlowWater_clicked(false);
+        autoDevMan->on_pbColdWater_2_clicked(false);
+        autoDevMan->on_pbPureWater_2_clicked(true);
+        serialport->senddata(OpenPureSerial);
+        QLOG_INFO() << "纯水机开启清洗……";
+        break;
+    case 52:
+        serialport->senddata(ClosePureSerial);
+        autoDevMan->on_pbPureWater_2_clicked(false);
+        QLOG_INFO() << "清洗完成";
+        break;
+    case 53:
+        autoDevMan->on_pbBlowWater_2_clicked(true);
+        QLOG_INFO() << "吹气开启……";
+        break;
+    case 54:
+        autoDevMan->on_pbBlowWater_2_clicked(false);
+        QLOG_INFO() << "吹气完成。";
+        QMessageBox::information(this, "Tips", "吹气完成！请取走");
         break;
     case -99:
         pbStartAutoTest->setChecked(false);
@@ -6023,7 +6182,7 @@ void QtCanPlatform::on_processAutoTestSignal(int n, QString str)
         break;
     }
 }
-bool QtCanPlatform::upMesOutData()
+bool CanTestPlatform::upMesOutData()
 {
     
     //移除第一个星号
@@ -6079,8 +6238,11 @@ void clear_up_mes_var(struct UpMesData* up_mes_var)
     up_mes_var->m_strOtherFault = "-1";
     up_mes_var->m_strTestResult = "N";
 }
-void QtCanPlatform::workAutoTest()
+void CanTestPlatform::workAutoTest()
 {
+    bool _NEEDCTRLPW_ = currentTestModel.ats.m_needSWLowPower;
+    m_iBlowAirTime = currentTestModel.ats.m_iBlowAirTime;
+    m_iWashTime = currentTestModel.ats.m_iWashTime;
     while (runStep != -1)
     {
 
@@ -6214,6 +6376,14 @@ void QtCanPlatform::workAutoTest()
                     break;
                 }
             }
+            
+            if (_NEEDCTRLPW_)
+            {
+                emit sigAutoTestSend(45, "低压电源断开");
+                QThread::msleep(4000);
+                emit sigAutoTestSend(46, "低压电源导通");
+                QThread::msleep(6000);
+            }
             up_mes_var.m_strLowProtected = QString::number(currentTestModel.ats.m_iLowVoltage);
             //检测退出
             if (runStep == -1) { up_mes_var.m_strTestResult = "N"; emit sigAutoTestSend(-99, "人工退出测试"); upMesOutData();  QLOG_INFO() << "退出测试"; return; }
@@ -6256,6 +6426,14 @@ void QtCanPlatform::workAutoTest()
                     up_mes_var.m_strTestResult = "N";
                     break;
                 }
+            }
+
+            if (_NEEDCTRLPW_)
+            {
+                emit sigAutoTestSend(45, "低压电源断开");
+                QThread::msleep(4000);
+                emit sigAutoTestSend(46, "低压电源导通");
+                QThread::msleep(6000);
             }
             up_mes_var.m_strLowProtectedRe = QString::number(currentTestModel.ats.m_iLowVoltageRe);
             //检测退出
@@ -6303,6 +6481,13 @@ void QtCanPlatform::workAutoTest()
                     up_mes_var.m_strTestResult = "N";
                     break;
                 }
+            }
+            if (_NEEDCTRLPW_)
+            {
+                emit sigAutoTestSend(45, "低压电源断开");
+                QThread::msleep(4000);
+                emit sigAutoTestSend(46, "低压电源导通");
+                QThread::msleep(6000);
             }
             up_mes_var.m_strHighProtected = QString::number(currentTestModel.ats.m_iOverVoltage);
             //检测退出
@@ -6499,6 +6684,13 @@ void QtCanPlatform::workAutoTest()
             QThread::msleep(500);
             emit sigAutoTestSend(14, "过温恢复测试中");
 
+            if (_NEEDCTRLPW_)
+            {
+                emit sigAutoTestSend(45, "低压电源断开");
+                QThread::msleep(4000);
+                emit sigAutoTestSend(46, "低压电源导通");
+                QThread::msleep(6000);
+            }
             //检测退出
             if (runStep == -1) { up_mes_var.m_strTestResult = "N"; emit sigAutoTestSend(-99, "人工退出测试"); upMesOutData();  QLOG_INFO() << "退出测试"; return; }
             QThread::msleep(2500);
@@ -6569,8 +6761,34 @@ void QtCanPlatform::workAutoTest()
                 }
                 emit sigAutoTestSend(37, "关水");
             }
-            QThread::msleep(500);
+            QThread::msleep(2000);
             emit sigAutoTestSend(-2, "冷水机开");
+
+            //这里要进行清洗
+            emit sigAutoTestSend(51, "纯水机开启，开始清洗PHU");
+            int sleep_count = 0;
+            while (runStep != -1)
+            {
+                QThread::msleep(1000);
+                sleep_count++;
+                if (sleep_count >= m_iWashTime/1000)
+                    break;
+
+            }
+            emit sigAutoTestSend(52, "清洗完成，纯水机关闭");
+            QThread::msleep(2000);
+            emit sigAutoTestSend(53, "吹气开启，吹干PHU内部水分");
+            sleep_count = 0;
+            while (runStep != -1)
+            {
+                QThread::msleep(1000);
+                sleep_count++;
+                if (sleep_count >= m_iWashTime / 1000)
+                    break;
+
+            }
+            emit sigAutoTestSend(54, "吹气完成");
+            
             emit sigAutoTestSend(-100, "条码输入开");
             //break;
         }//end big while

@@ -36,6 +36,10 @@ struct AutoTestStruct
 	bool m_bNeedTempture;		//26 是否需要输入温度
 	int m_iTemptureProtect;		//27 最高加热温度
 	int m_iTemptureInLine;		//28 温度所在行
+	bool m_needSWLowPower;		//29 是否需要控制低压电源
+	int m_iWashTime;			//30 清洗时间
+	int m_iBlowAirTime;			//31 吹气时间
+	bool m_bOverTempOrDry;		//32 过温还是干烧
 	//bool isIndepandSend;
 
 };
