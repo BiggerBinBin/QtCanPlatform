@@ -40,6 +40,8 @@ struct AutoTestStruct
 	int m_iWashTime;			//30 清洗时间
 	int m_iBlowAirTime;			//31 吹气时间
 	bool m_bOverTempOrDry;		//32 过温还是干烧
+	bool m_bNeedPWFactor;		//33 功率需要乘因子？
+	float m_fPWFactor;			//34 功率因子
 	//bool isIndepandSend;
 
 };

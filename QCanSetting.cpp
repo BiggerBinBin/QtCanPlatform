@@ -1201,7 +1201,7 @@ void QCanSetting::on_modelView_Clicked(int row, int col)
 	int mc = paramView->rowCount();
 	for (int p = 0; p < paramView->rowCount(); p++)
 		paramView->removeRow(mc - p - 1);
-	paramView->setRowCount(34);
+	paramView->setRowCount(36);
 	paramView->setItem(0, 0, new QTableWidgetItem(QString("使能所在行")));
 	paramView->setItem(0, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_iEnableInLine)));
 	paramView->setItem(1, 0, new QTableWidgetItem(QString("使能操作")));
@@ -1290,6 +1290,12 @@ void QCanSetting::on_modelView_Clicked(int row, int col)
 
 	paramView->setItem(33, 0, new QTableWidgetItem(QString("测过温Or干烧")));
 	paramView->setItem(33, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_bOverTempOrDry)));
+
+	paramView->setItem(34, 0, new QTableWidgetItem(QString("需要功率因子？")));
+	paramView->setItem(34, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_bNeedPWFactor)));
+
+	paramView->setItem(35, 0, new QTableWidgetItem(QString("功率因子")));
+	paramView->setItem(35, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_fPWFactor)));
 }
 
 void QCanSetting::on_modelView_cbStandar(int bStandard)
@@ -1895,6 +1901,12 @@ void QCanSetting::on_paramView_cellChanged(int row, int col)
 		break;
 	case 33:
 		qGb->pGboleData.at(n).ats.m_bOverTempOrDry = paramView->item(row, col)->text().toInt();
+		break;
+	case 34:
+		qGb->pGboleData.at(n).ats.m_bNeedPWFactor = paramView->item(row, col)->text().toInt();
+		break;
+	case 35:
+		qGb->pGboleData.at(n).ats.m_fPWFactor = paramView->item(row, col)->text().toFloat();
 		break;
 	default:
 		break;

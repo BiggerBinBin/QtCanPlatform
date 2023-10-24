@@ -84,6 +84,8 @@ void qGboleData::save()
 		mItem.insert("m_iWashTime", pGboleData.at(i).ats.m_iWashTime);
 		mItem.insert("m_iBlowAirTime", pGboleData.at(i).ats.m_iBlowAirTime);
 		mItem.insert("m_bOverTempOrDry", pGboleData.at(i).ats.m_bOverTempOrDry);
+		mItem.insert("m_bNeedPWFactor", pGboleData.at(i).ats.m_bNeedPWFactor);
+		mItem.insert("m_fPWFactor", pGboleData.at(i).ats.m_fPWFactor);
 
 
 
@@ -248,6 +250,8 @@ void qGboleData::read()
 		ptem.ats.m_iWashTime = rootSecond["m_iWashTime"].toInt(120000);
 		ptem.ats.m_iBlowAirTime = rootSecond["m_iBlowAirTime"].toInt(120000);
 		ptem.ats.m_bOverTempOrDry = rootSecond["m_bOverTempOrDry"].toBool(false);
+		ptem.ats.m_bNeedPWFactor = rootSecond["m_bNeedPWFactor"].toBool(false);
+		ptem.ats.m_fPWFactor = rootSecond["m_fPWFactor"].toDouble(1.0);
 
 
 		//如果还有嵌套对象

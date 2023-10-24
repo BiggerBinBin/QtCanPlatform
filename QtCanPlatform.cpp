@@ -243,13 +243,7 @@ void CanTestPlatform::initUi()
         HashArr.push_back(i);
         
     }
-    if (qGb->pGboleData.size() > 0)
-    {
-        currentModel = 0;
-        cbSelectModel->setCurrentIndex(0);
-    }
-       
-    connect(cbSelectModel, SIGNAL(currentIndexChanged(int)), this, SLOT(on_CurrentModelChanged(int)));
+   
     //添加个按钮
     QPushButton* pbAddModel = new QPushButton(tr("协议管理"));
     connect(pbAddModel, &QPushButton::clicked, this, &CanTestPlatform::qCanSettingShow);
@@ -385,7 +379,7 @@ void CanTestPlatform::initUi()
     hLayout->addWidget(cbPlatform);
     hLayout->addWidget(mLabel);
     hLayout->addWidget(cbSelectModel);
-    connect(cbPlatform, SIGNAL(currentIndexChanged(int)), this, SLOT(on_CurrentPlatformChanged(int)));
+    
     tableRecView = new QTableWidget();
     //设置表格为10列，不加这个内容不会显示的
     tableRecView->setColumnCount(10);
@@ -673,13 +667,23 @@ void CanTestPlatform::initUi()
 
     connect(ui.actionChinese, &QAction::triggered, this, &CanTestPlatform::actionChinese_triggered);
     connect(ui.actionEnglish, &QAction::triggered, this, &CanTestPlatform::actionEnglish_triggered);
+    if (qGb->pGboleData.size() > 0)
+    {
+        currentModel = 0;
+        cbSelectModel->setCurrentIndex(0);
+    }
+    connect(cbPlatform, SIGNAL(currentIndexChanged(int)), this, SLOT(on_CurrentPlatformChanged(int)));
+    connect(cbSelectModel, SIGNAL(currentIndexChanged(int)), this, SLOT(on_CurrentModelChanged(int)));
 
 }
 void CanTestPlatform::initAutoResTableWidget()
 {
     tableAutoResults->clearContents();
     testItemList.clear();
-    testItemList << "MES允许入站" << "通信测试" << "软件版本号" << "欠压保护" << "过压保护" << "额定功率" << "过温保护" << "过温恢复" << "其它故障" << "测试结果";
+    if(!currentTestModel.ats.m_bOverTempOrDry)
+        testItemList << "MES允许入站" << "通信测试" << "软件版本号" << "欠压保护" << "过压保护" << "额定功率" << "过温保护" << "过温恢复" << "其它故障" << "测试结果";
+    else
+        testItemList << "MES允许入站" << "通信测试" << "软件版本号" << "欠压保护" << "过压保护" << "额定功率" << "干烧保护" << "干烧恢复" << "其它故障" << "测试结果";
     tableAutoResults->setRowCount(testItemList.size());
     for (int m = 0; m < testItemList.size(); m++)
     {
@@ -787,6 +791,7 @@ bool CanTestPlatform::sendDataIntoTab()
     
     const protoData pTemp = qGb->pGboleData.at(currentModel);
     currentTestModel = qGb->pGboleData.at(currentModel);
+    
     bStandard = pTemp.bStandardId;
     //canIdData cTemp;
     cbBitRate->setCurrentIndex(pTemp.bundRate);
@@ -3504,11 +3509,11 @@ void CanTestPlatform::getByteInfo(const std::vector<parseData>& parseArr,int ch)
             {
                 realHVErr[ch] = "正常";
             }
-            if (x.toWord == "过温保护" || x.toWord == "过温故障" || x.toWord == "过温" || x.toWord == "出水口过温")
+            if (x.toWord == "过温保护" || x.toWord == "过温故障" || x.toWord == "过温" || x.toWord == "出水口过温" || x.toWord == "低流量" || x.toWord == "干烧")
             {
                 realOTPro[ch] = x.toWord;
             }
-            else if (x.toWord != "过温保护" && x.toWord != "过温故障" && x.toWord != "过温" && x.toWord != "出水口过温")
+            else if (x.toWord != "过温保护" && x.toWord != "过温故障" && x.toWord != "过温" && x.toWord != "出水口过温" && x.toWord != "低流量" && x.toWord != "干烧")
             {
                 realOTPro[ch] = "正常";
             }
@@ -3557,6 +3562,7 @@ void CanTestPlatform::on_CurrentModelChanged(int index)
     RollShowData.clear();
     sendDataIntoTab();
     recDataIntoTab();
+
 }
 void CanTestPlatform::on_CurrentPlatformChanged(int index)
 {
@@ -5408,7 +5414,12 @@ void CanTestPlatform::setCancelHeatint(const AutoTestStruct& at, float value)
 
     QComboBox* cb = dynamic_cast<QComboBox*> (tableView->cellWidget(en_row, 1));
     if (!cb) { return; }
-    cb->setCurrentIndex(0);
+    if((int)value==0)
+        cb->setCurrentIndex(0);
+    else
+    {
+        cb->setCurrentIndex(3);
+    }
 
     //设置加热温度
     if (temp_SW)
@@ -5425,6 +5436,8 @@ void CanTestPlatform::getAveragePW(const AutoTestStruct& at)
     PowerArr[0].clear();
     int tempture = currentTestModel.ats.m_usRatedPWTemp;
     ushort outOrin= currentTestModel.ats.m_usOutOrInTemp;
+    bool neeFactor = currentTestModel.ats.m_bNeedPWFactor;
+    float factor = currentTestModel.ats.m_fPWFactor;
     if (outOrin)
     {
         while (runStep != -1)
@@ -5489,6 +5502,12 @@ void CanTestPlatform::getAveragePW(const AutoTestStruct& at)
         postive = tolerance.at(0).mid(1).toFloat() / 100.0;
         nagetive = tolerance.at(1).mid(1).toFloat() / 100.0;
     }
+    if (neeFactor)
+    {
+        QLOG_INFO() << "Power = " << factor << "*" << sum;
+        sum = factor * sum;
+    }
+
     if (sum < at.m_fRatedPW)
     {
         if (sum >= (at.m_fRatedPW - at.m_fRatedPW * nagetive))
@@ -5517,6 +5536,7 @@ void CanTestPlatform::getAveragePW(const AutoTestStruct& at)
             up_mes_var.m_strTestResult = "N";
         }
     }
+   
     up_mes_var.m_strRatedPW = QString::number(sum);
 }
 void CanTestPlatform::on_pbMESConnect(bool b)
@@ -5818,7 +5838,7 @@ void CanTestPlatform::on_sigFroMesNewData(QString data)
 void CanTestPlatform::on_pbStartAutoTest_clicked(bool b)
 {
     
-   
+    initAutoResTableWidget();
     if (!b)
     {
         runStep = -1;
@@ -6079,6 +6099,9 @@ void CanTestPlatform::on_processAutoTestSignal(int n, QString str)
     case 23:
         setCancelHeatint(currentTestModel.ats, 0);
         break;
+    case 24:
+        setCancelHeatint(currentTestModel.ats, 3);
+        break;
     case 30:
         showAutoTestStep(0, str, "NG");
         QMessageBox::information(this, "入站失败", "检测该产品的二维是否在系统？", QMessageBox::Ok | QMessageBox::No);
@@ -6117,8 +6140,9 @@ void CanTestPlatform::on_processAutoTestSignal(int n, QString str)
         {
             progress = new QProgressDialog(this);
             progress->setModal(true);
-            progress->setRange(0, 120);
+           
         }
+        progress->setRange(0, 120);
         progress->setLabelText(tr("吹水功能正在进行中"));
         progress->reset();
         progress->setAutoClose(false);
@@ -6165,11 +6189,56 @@ void CanTestPlatform::on_processAutoTestSignal(int n, QString str)
         QLOG_INFO() << "吹气完成。";
         QMessageBox::information(this, "Tips", "吹气完成！请取走");
         break;
+    case 60:
+    {
+        if (!progress)
+        {
+            progress = new QProgressDialog(this);
+            progress->setModal(true);
+            
+        }
+        progress->setRange(0, currentTestModel.ats.m_iWashTime / 1000);
+        progress->setLabelText(tr("清洗功能正在进行中"));
+        progress->reset();
+    }
+    break;
+    case 61:
+    {
+        progress->setValue(str.toInt());
+        if (str.toInt() >= currentTestModel.ats.m_iWashTime / 1000)
+        {
+            progress->close();
+        }
+    }
+    break;
+    case 62:
+    {
+        if (!progress)
+        {
+            progress = new QProgressDialog(this);
+            progress->setModal(true);
+            
+        }
+        progress->setRange(0, currentTestModel.ats.m_iBlowAirTime / 1000);
+        progress->setLabelText(tr("吹干功能正在进行中"));
+        progress->reset();
+    }
+        break;
+    case 63:
+    {
+        progress->setValue(str.toInt());
+        if (str.toInt() >= currentTestModel.ats.m_iBlowAirTime / 1000)
+        {
+            progress->close();
+        }
+    }
+    break;
     case -99:
         pbStartAutoTest->setChecked(false);
         lineEditCodeIn->setEnabled(true);
         setCancelHeatint(currentTestModel.ats, 0);
         setPowerSupply(currentTestModel.ats, -99);
+        autoDevMan->setCoolantTemp(currentTestModel.ats.m_usCoolTemp, currentTestModel.ats.m_usRatedPWFlow, false, false);
         break;
     case -100:
         lineEditCodeIn->setEnabled(true);
@@ -6639,7 +6708,10 @@ void CanTestPlatform::workAutoTest()
             if (runStep == -1) { up_mes_var.m_strTestResult = "N"; emit sigAutoTestSend(-99, "人工退出测试"); upMesOutData();  QLOG_INFO() << "退出测试"; return; }
             //Step7
             //关闭冷水机循环，测试过温保护
-            emit sigAutoTestSend(12, "过温保护测试中");
+            if(!currentTestModel.ats.m_bOverTempOrDry)
+                emit sigAutoTestSend(12, "过温保护测试中");
+            else
+                emit sigAutoTestSend(12, "干烧保护测试中");
             QThread::msleep(500);
             Error[0].clear();
             isRecordError = true;
@@ -6647,29 +6719,59 @@ void CanTestPlatform::workAutoTest()
             {
 
                 bool b = false;
-                if (realOTPro[0] == "过温" || realOTPro[0] == "出水口过温" || realOTPro[0] == "过温故障" || realOTPro[0] == "过温保护" || realOTPro[0] == "冷却液过热")
+                if (!currentTestModel.ats.m_bOverTempOrDry)
                 {
-                    b = true;
+                    if (realOTPro[0] == "过温" || realOTPro[0] == "出水口过温" || realOTPro[0] == "过温故障" || realOTPro[0] == "过温保护" || realOTPro[0] == "冷却液过热")
+                    {
+                        b = true;
+                    }
+                    float outTemp = realWTemp[0];
+                    if (b)
+                    {
+                        up_mes_var.m_strOverTempProtected = QString::number(outTemp);
+                        if (abs(currentTestModel.ats.m_iOverTemperature - outTemp) > currentTestModel.ats.m_iOverTempTolerance)
+                        {
+                            emit sigAutoTestSend(13, QString::number(outTemp) + "NG");
+                            up_mes_var.m_strTestResult = "N";
+                        }
+                        break;
+                    }
+                    if (outTemp - currentTestModel.ats.m_iOverTemperature > currentTestModel.ats.m_iOverTempTolerance + 2)
+                    {
+                        emit sigAutoTestSend(13, QString::number(outTemp) + "过温无保护NG");
+                        up_mes_var.m_strOtherFault = "*过温无保护NG";
+                        up_mes_var.m_strOverTempProtected = QString::number(outTemp);
+                        up_mes_var.m_strTestResult = "N";
+                        break;
+                    }
                 }
-                float outTemp = realWTemp[0];
-                if (b)
+                else
                 {
-                    up_mes_var.m_strOverTempProtected = QString::number(outTemp);
-                    break;
+                    if (realOTPro[0] == "低流量" || realOTPro[0] == "干烧")
+                    {
+                        b = true;
+                    }
+                    float outTemp = realWTemp[0];
+                    if (b)
+                    {
+                        up_mes_var.m_strOverTempProtected = QString::number(outTemp);
+                        break;
+                    }
+                    if (outTemp - currentTestModel.ats.m_iOverTemperature > currentTestModel.ats.m_iOverTempTolerance + 2)
+                    {
+                        emit sigAutoTestSend(13, QString::number(outTemp) + "干烧无保护NG");
+                        up_mes_var.m_strOtherFault = "*干烧无保护NG";
+                        up_mes_var.m_strOverTempProtected = QString::number(outTemp);
+                        up_mes_var.m_strTestResult = "N";
+                        break;
+                    }
                 }
-                if (outTemp - currentTestModel.ats.m_iOverTemperature > currentTestModel.ats.m_iOverTempTolerance + 2)
-                {
-                    emit sigAutoTestSend(13, QString::number(outTemp) + "过温无保护NG");
-                    up_mes_var.m_strOtherFault = "*过温无保护NG";
-                    up_mes_var.m_strOverTempProtected = QString::number(outTemp);
-                    up_mes_var.m_strTestResult = "N";
-                    break;
-                }
+                
                 QThread::msleep(500);
             }
 
             emit sigAutoTestSend(23, "关闭加热");
-            if (!up_mes_var.m_strOtherFault.contains("过温无保护NG"))
+            if (!up_mes_var.m_strOtherFault.contains("过温无保护NG") || !up_mes_var.m_strOtherFault.contains("干烧无保护NG"))
             {
                 emit sigAutoTestSend(13, up_mes_var.m_strOverTempProtected);
             }
@@ -6691,6 +6793,13 @@ void CanTestPlatform::workAutoTest()
                 emit sigAutoTestSend(46, "低压电源导通");
                 QThread::msleep(6000);
             }
+            if (currentTestModel.ats.m_bOverTempOrDry)
+            {
+                QThread::msleep(5000);
+                emit sigAutoTestSend(24, "故障清除");
+                QThread::msleep(4000);
+                emit sigAutoTestSend(23, "关闭使能");
+            }
             //检测退出
             if (runStep == -1) { up_mes_var.m_strTestResult = "N"; emit sigAutoTestSend(-99, "人工退出测试"); upMesOutData();  QLOG_INFO() << "退出测试"; return; }
             QThread::msleep(2500);
@@ -6698,7 +6807,7 @@ void CanTestPlatform::workAutoTest()
             while (runStep != -1)
             {
                 bool b = false;
-                if (realOTPro[0]=="正常"||(realOTPro[0] != "过温" && realOTPro[0] != "出水口过温" && realOTPro[0] != "过温故障" && realOTPro[0] != "过温保护" && realOTPro[0] != "冷却液过热"))
+                if (realOTPro[0]=="正常"||(realOTPro[0] != "过温" && realOTPro[0] != "出水口过温" && realOTPro[0] != "过温故障" && realOTPro[0] != "过温保护" && realOTPro[0] != "冷却液过热" && realOTPro[0] != "低流量" && realOTPro[0] != "干烧"))
                 {
                     b = true;
                 }
@@ -6709,29 +6818,40 @@ void CanTestPlatform::workAutoTest()
                     break;
                 }
                 //如果当前温度小于我设定的恢复温度，退出
-                if (realWTemp[0] < currentTestModel.ats.m_iOverTempRe - currentTestModel.ats.m_iOverTempTolerance)
+                if (!currentTestModel.ats.m_bOverTempOrDry)
                 {
-                    up_mes_var.m_strOverTempProtectedRe = QString::number(realWTemp[0]);
-                    break;
+                    if (realWTemp[0] < currentTestModel.ats.m_iOverTempRe - currentTestModel.ats.m_iOverTempTolerance)
+                    {
+                        up_mes_var.m_strOverTempProtectedRe = QString::number(realWTemp[0]);
+                        break;
+                    }
                 }
                 //QThread::msleep(500);
             }
-            if (abs(currentTestModel.ats.m_iOverTempRe - realWTemp[0]) > currentTestModel.ats.m_iOverTempTolerance)
+            if (!currentTestModel.ats.m_bOverTempOrDry)
             {
-                emit sigAutoTestSend(15, up_mes_var.m_strOverTempProtectedRe + "NG");
-                up_mes_var.m_strTestResult = "N";
+                if (abs(currentTestModel.ats.m_iOverTempRe - realWTemp[0]) > currentTestModel.ats.m_iOverTempTolerance)
+                {
+                    emit sigAutoTestSend(15, up_mes_var.m_strOverTempProtectedRe + "NG");
+                    up_mes_var.m_strTestResult = "N";
+                }
+                else
+                {
+                    emit sigAutoTestSend(15, up_mes_var.m_strOverTempProtectedRe);
+                }
             }
             else
             {
                 emit sigAutoTestSend(15, up_mes_var.m_strOverTempProtectedRe);
             }
+            
 
             //检测退出
             if (runStep == -1) { up_mes_var.m_strTestResult = "N"; emit sigAutoTestSend(-99, "人工退出测试"); upMesOutData();  QLOG_INFO() << "退出测试"; return; }
             //Step9
             //关闭使能，查看有无功率
             emit sigAutoTestSend(23, "关闭使能");
-            QThread::msleep(2000);
+            QThread::msleep(6000);
             if (realPower[0] != 0.0)
             {
                 emit sigAutoTestSend(11, "IGBT短路");
@@ -6744,7 +6864,7 @@ void CanTestPlatform::workAutoTest()
             //保存测试结果,上传MES
             upMesOutData();
             //延时一下，让冷却液再降温一下
-            QThread::msleep(5000);
+            QThread::msleep(10000);
             //正常测试完成的
             if (runStep != -1)
             {
@@ -6766,11 +6886,13 @@ void CanTestPlatform::workAutoTest()
 
             //这里要进行清洗
             emit sigAutoTestSend(51, "纯水机开启，开始清洗PHU");
+            emit sigAutoTestSend(60, "进度条");
             int sleep_count = 0;
             while (runStep != -1)
             {
                 QThread::msleep(1000);
                 sleep_count++;
+                emit sigAutoTestSend(61, QString::number(sleep_count));
                 if (sleep_count >= m_iWashTime/1000)
                     break;
 
@@ -6778,12 +6900,14 @@ void CanTestPlatform::workAutoTest()
             emit sigAutoTestSend(52, "清洗完成，纯水机关闭");
             QThread::msleep(2000);
             emit sigAutoTestSend(53, "吹气开启，吹干PHU内部水分");
+            emit sigAutoTestSend(62, "进度条");
             sleep_count = 0;
             while (runStep != -1)
             {
                 QThread::msleep(1000);
                 sleep_count++;
-                if (sleep_count >= m_iWashTime / 1000)
+                emit sigAutoTestSend(63, QString::number(sleep_count));
+                if (sleep_count >= m_iBlowAirTime / 1000)
                     break;
 
             }
