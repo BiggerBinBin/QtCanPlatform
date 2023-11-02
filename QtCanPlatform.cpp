@@ -6142,7 +6142,7 @@ void CanTestPlatform::on_processAutoTestSignal(int n, QString str)
             progress->setModal(true);
            
         }
-        progress->setRange(0, 120);
+        progress->setRange(0, m_iBackWaterTime/1000);
         progress->setLabelText(tr("吹水功能正在进行中"));
         progress->reset();
         progress->setAutoClose(false);
@@ -6151,7 +6151,7 @@ void CanTestPlatform::on_processAutoTestSignal(int n, QString str)
         break;
     case 39:
         progress->setValue(str.toInt());
-        if (str.toInt() >= 120)
+        if (str.toInt() >= m_iBackWaterTime / 1000)
         {
             progress->setLabelText(tr("吹水完成，请关闭冷水阀,进行后续工作"));
             autoDevMan->on_pbBlowWater_clicked(false);
@@ -6312,6 +6312,7 @@ void CanTestPlatform::workAutoTest()
     bool _NEEDCTRLPW_ = currentTestModel.ats.m_needSWLowPower;
     m_iBlowAirTime = currentTestModel.ats.m_iBlowAirTime;
     m_iWashTime = currentTestModel.ats.m_iWashTime;
+    m_iBackWaterTime = currentTestModel.ats.m_iBackWaterTime;
     while (runStep != -1)
     {
 
@@ -6715,26 +6716,46 @@ void CanTestPlatform::workAutoTest()
             QThread::msleep(500);
             Error[0].clear();
             isRecordError = true;
+            int failtype = 0;
             while (runStep != -1)
             {
 
                 bool b = false;
-                if (!currentTestModel.ats.m_bOverTempOrDry)
+                
+                //if (!currentTestModel.ats.m_bOverTempOrDry)
                 {
                     if (realOTPro[0] == "过温" || realOTPro[0] == "出水口过温" || realOTPro[0] == "过温故障" || realOTPro[0] == "过温保护" || realOTPro[0] == "冷却液过热")
                     {
                         b = true;
+                        failtype = 1;
                     }
+                    else if (realOTPro[0] == "低流量" || realOTPro[0] == "干烧")
+                    {
+                        b = true;
+                        failtype = 2;
+                    }
+
+                    
                     float outTemp = realWTemp[0];
+
+
                     if (b)
                     {
-                        up_mes_var.m_strOverTempProtected = QString::number(outTemp);
-                        if (abs(currentTestModel.ats.m_iOverTemperature - outTemp) > currentTestModel.ats.m_iOverTempTolerance)
+                        if(failtype==1)
                         {
-                            emit sigAutoTestSend(13, QString::number(outTemp) + "NG");
-                            up_mes_var.m_strTestResult = "N";
+                            up_mes_var.m_strOverTempProtected = QString::number(outTemp);
+                            if (abs(currentTestModel.ats.m_iOverTemperature - outTemp) > currentTestModel.ats.m_iOverTempTolerance)
+                            {
+                                emit sigAutoTestSend(13, QString::number(outTemp) + "NG");
+                                up_mes_var.m_strTestResult = "N";
+                            }
+                            break;
                         }
-                        break;
+                        else if (failtype == 2)
+                        {
+                            up_mes_var.m_strOverTempProtected = QString::number(outTemp);
+                            break;
+                        }
                     }
                     if (outTemp - currentTestModel.ats.m_iOverTemperature > currentTestModel.ats.m_iOverTempTolerance + 2)
                     {
@@ -6745,8 +6766,8 @@ void CanTestPlatform::workAutoTest()
                         break;
                     }
                 }
-                else
-                {
+                //else
+               /* {
                     if (realOTPro[0] == "低流量" || realOTPro[0] == "干烧")
                     {
                         b = true;
@@ -6765,7 +6786,7 @@ void CanTestPlatform::workAutoTest()
                         up_mes_var.m_strTestResult = "N";
                         break;
                     }
-                }
+                }*/
                 
                 QThread::msleep(500);
             }
@@ -6828,7 +6849,7 @@ void CanTestPlatform::workAutoTest()
                 }
                 //QThread::msleep(500);
             }
-            if (!currentTestModel.ats.m_bOverTempOrDry)
+            if (failtype==1)
             {
                 if (abs(currentTestModel.ats.m_iOverTempRe - realWTemp[0]) > currentTestModel.ats.m_iOverTempTolerance)
                 {
@@ -6872,7 +6893,7 @@ void CanTestPlatform::workAutoTest()
                 emit sigAutoTestSend(38, "开启进度条");
                 int inp = 0;
                 //开启进度条
-                while (runStep != -1 && inp < 120)
+                while (runStep != -1 && inp < m_iBackWaterTime/1000)
                 {
                     inp++;
                     //更新进度条

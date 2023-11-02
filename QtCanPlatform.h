@@ -421,6 +421,7 @@ private:
     QByteArray ClosePureSerial;     //纯水机继电器关
     int m_iBlowAirTime = 120000;    //吹气时间(ms)
     int m_iWashTime = 120000;       //纯水清洗时间(ms)
+    int m_iBackWaterTime = 120000;       //纯水清洗时间(ms)
  
 
 private slots:

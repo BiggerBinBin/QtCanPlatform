@@ -66,9 +66,20 @@ float MsgParser::intel_Parser(const protoItem& pItem, const QByteArray& data, bo
                     temp = (binaryStr[startByte + 1].mid(8 - (startLenght - (8 - startBit % 8)), startLenght - (8 - startBit % 8)) + binaryStr[startByte].mid(0, 8 - (startBit % 8))).toInt(NULL, 2) * precision + offset;;
                 }
             }
+            else if (len <= 24)
             {
-                //跨三个字节的，应该没有
+                if (octHex)
+                {
+                    int nn = (binaryStr[startByte + 2].mid(8 - (startLenght - (8 - startBit % 8)), startLenght - (8 - startBit % 8)) + binaryStr[startByte + 1] + binaryStr[startByte].mid(0, 8 - (startBit % 8))).toInt(NULL, 2);
+                    QString ss = QString("%1").arg(nn, 0, 16, QLatin1Char('0'));
+                    temp = ss.toInt() * precision + offset;
+                }
+                else
+                {
+                    temp = (binaryStr[startByte + 2].mid(8 - (startLenght - (8 - startBit % 8)), startLenght - (8 - startBit % 8))+ binaryStr[startByte + 1] + binaryStr[startByte].mid(0, 8 - (startBit % 8))).toInt(NULL, 2) * precision + offset;;
+                }
             }
+            
         }
         return temp;
 }
@@ -135,8 +146,20 @@ float MsgParser::moto_Msb_Parser(const protoItem& pItem, const QByteArray& data,
             }
 
         }
+        else if (len <= 24)
         {
-            //跨三个字节的，应该没有
+
+            if (octHex)
+            {
+                int nn = (binaryStr[startByte].mid(0, 8 - (startBit % 8)) + binaryStr[startByte + 1] + binaryStr[startByte + 2].mid(startBit % 8, startLenght - (8 - startBit % 8))).toInt(NULL, 2);
+                QString ss = QString("%1").arg(nn, 0, 16, QLatin1Char('0'));
+                temp = ss.toInt() * precision + offset;
+            }
+            else
+            {
+                temp = (binaryStr[startByte].mid(0, 8 - (startBit % 8)) + binaryStr[startByte+1] +binaryStr[startByte + 2].mid(startBit % 8, startLenght - (8 - startBit % 8))).toInt(NULL, 2) * precision + offset;
+            }
+
         }
     }
     return temp;
@@ -201,9 +224,20 @@ float MsgParser::moto_Lsb_Parser(const protoItem& pItem, const QByteArray& data,
             {
                 temp = (binaryStr[startByte - 1].mid(16 + (startBit % 8) - startLenght, startLenght - 8 + (startBit % 8)) + binaryStr[startByte].mid(0, 8 - (startBit % 8))).toInt(NULL, 2) * precision + offset;
             }
-        }
+        }else if(len <= 24)
         {
-            //跨三个字节的，应该没有
+            //跨三个字节的，应该没有.放屁，他吖的就有
+            if (octHex)
+            {
+                int nn = (binaryStr[startByte - 2].mid(16 + (startBit % 8) - startLenght, startLenght - 8 + (startBit % 8)) + binaryStr[startByte - 1] + binaryStr[startByte].mid(0, 8 - (startBit % 8))).toInt(NULL, 2);
+                QString ss = QString("%1").arg(nn, 0, 16, QLatin1Char('0'));
+                temp = ss.toInt() * precision + offset;
+            }
+            else
+            {
+                temp = (binaryStr[startByte - 2].mid(16 + (startBit % 8) - startLenght, startLenght - 8 + (startBit % 8)) + binaryStr[startByte-1] + binaryStr[startByte].mid(0, 8 - (startBit % 8))).toInt(NULL, 2) * precision + offset;
+                
+            }
         }
     }
     return temp;
