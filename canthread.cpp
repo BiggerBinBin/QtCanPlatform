@@ -506,10 +506,10 @@ void CANThread::sendData(UINT ID, uchar qbt[],bool bStandard)
         for (int i = 0; i < i_CAN_NUM; i++)
         {
             dwRel = VCI_Transmit(deviceType, j, i, vco, count);
-            if (dwRel <= 0U)
+            /*if (dwRel <= 0U)
             {
                 QLOG_INFO() << "CANayst Send fail:" << QString::number(dwRel);
-            }
+            }*/
             msleep(10);
         }
 

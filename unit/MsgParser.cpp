@@ -127,7 +127,9 @@ float MsgParser::moto_Msb_Parser(const protoItem& pItem, const QByteArray& data,
             }
             else
             {
-                temp = binaryStr[startByte].mid(startBit % 8, startLenght).toInt(NULL, 2) * precision + offset;
+                //2023 12.21
+                //temp = binaryStr[startByte].mid(startBit % 8, startLenght).toInt(NULL, 2) * precision + offset;
+                temp = binaryStr[startByte].mid(8 - (startLenght + (startBit % 8)), startLenght).toInt(NULL, 2) * precision + offset;
             }
 
         }

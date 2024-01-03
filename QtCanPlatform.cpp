@@ -1463,6 +1463,7 @@ bool CanTestPlatform::intelProtocol(canIdData& cdata,uchar data[], unsigned int&
             crcTemp = cdata.pItem.at(i);
             crc = true;
         }
+        //保证范围在0-7内
         startbyte = YB::InRang(0, 7, startbyte);
         if (itemp.dataFrom.contains("++"))
         {
@@ -1472,12 +1473,59 @@ bool CanTestPlatform::intelProtocol(canIdData& cdata,uchar data[], unsigned int&
             data[startbyte] += (m_usRoll++)<< pos;
             continue;
         }
-        
         if (lengght <= 8)
         {
             int pos = startbit % 8;             //起止位，模8，1字节8位，uchar是1节长度的
-            uchar m_send = senddd << pos &0xff; //左移起止位，再&0xff，保证数据是不超过255
-            data[startbyte] += m_send;                  //加上去，有可能其它的数据也在这个字节里
+            uchar m_send = senddd; //<< pos &0xff; //左移起止位，再&0xff，保证数据是不超过255
+            //data[startbyte] += m_send;                  //加上去，有可能其它的数据也在这个字节里
+            //*(data+ startbit) += m_send; 
+            // 这里处理跨字节的情况                 
+            if (startbit % 8 + lengght > 8)
+            {
+                int bit = 8 - (startbit % 8);
+                switch (bit)
+                {
+                case 1:
+                    data[startbyte] += (senddd & 0x1) << 7;
+                    break;
+                case 2:
+                    data[startbyte] += (senddd & 0x3) << 6;
+                    break;
+                case 3:
+                    data[startbyte] += (senddd & 0x7) << 5;
+                    break;
+                case 4:
+                    data[startbyte] += (senddd & 0xF) << 4;
+                    break;
+                case 5:
+                    data[startbyte] += (senddd & 0x1F) << 3;
+                    break;
+                case 6:
+                    data[startbyte] += (senddd & 0x3F)<<2;
+                    break;
+                case 7:
+                    data[startbyte] += (senddd & 0x7F)<<1;
+                    break;
+                case 8:
+                    data[startbyte] = (senddd & 0xFF);
+                    break;
+                default:
+                    break;
+                }
+                if (startbyte < 7)
+                {
+                    data[startbyte + 1] += senddd >> (8 - (startbit % 8));
+                }
+                else
+                {
+                    //出错处理
+                }
+            }
+            else
+            {
+                uchar m_send2 = senddd << pos & 0xff;
+                data[startbyte] += m_send2;
+            }
         }
         else if(lengght<=16)
         {
@@ -1485,7 +1533,8 @@ bool CanTestPlatform::intelProtocol(canIdData& cdata,uchar data[], unsigned int&
             uchar m_send = senddd << pos & 0xff; //低8位
             data[startbyte] += m_send;
             m_send = senddd >> 8 & 0xff;         //高8位
-            data[startbyte+1] += m_send;
+            if(startbyte<7)
+                data[startbyte+1] += m_send;
         }
     }
     //目前就只有博士的有CRC
@@ -1507,11 +1556,73 @@ bool CanTestPlatform::motoProtocol(canIdData& cdata,uchar data[], unsigned int& 
         int lengght = itemp.bitLeng;
         int senddd = itemp.send * itemp.precision + itemp.offset;
         startbyte = YB::InRang(0, 7, startbyte);
+        //if (lengght <= 8)
+        //{
+        //    int pos = startbit % 8;             //起止位，模8，1字节8位，uchar是1节长度的
+        //    uchar m_send = senddd << pos & 0xff; //左移起止位，再&0xff，保证数据是不超过255
+        //    data[startbyte] += m_send;                  //加上去，有可能其它的数据也在这个字节里
+        //}
+        if (itemp.dataFrom.contains("++"))
+        {
+            int iTemp = itemp.dataFrom.mid(2).toInt();
+            if (m_usRoll > iTemp)m_usRoll = 0;
+            int pos = startbit % 8;
+            data[startbyte] += (m_usRoll++) << pos;
+            continue;
+        }
         if (lengght <= 8)
         {
             int pos = startbit % 8;             //起止位，模8，1字节8位，uchar是1节长度的
-            uchar m_send = senddd << pos & 0xff; //左移起止位，再&0xff，保证数据是不超过255
-            data[startbyte] += m_send;                  //加上去，有可能其它的数据也在这个字节里
+            uchar m_send = senddd; //<< pos &0xff; //左移起止位，再&0xff，保证数据是不超过255
+            //data[startbyte] += m_send;                  //加上去，有可能其它的数据也在这个字节里
+            //*(data+ startbit) += m_send; 
+            // 这里处理跨字节的情况                 
+            if (startbit % 8 + lengght > 8)
+            {
+                int bit = 8 - (startbit % 8);
+                switch (bit)
+                {
+                case 1:
+                    data[startbyte] += (senddd & 0x1) << 7;
+                    break;
+                case 2:
+                    data[startbyte] += (senddd & 0x3) << 6;
+                    break;
+                case 3:
+                    data[startbyte] += (senddd & 0x7) << 5;
+                    break;
+                case 4:
+                    data[startbyte] += (senddd & 0xF) << 4;
+                    break;
+                case 5:
+                    data[startbyte] += (senddd & 0x1F) << 3;
+                    break;
+                case 6:
+                    data[startbyte] += (senddd & 0x3F) << 2;
+                    break;
+                case 7:
+                    data[startbyte] += (senddd & 0x7F) << 1;
+                    break;
+                case 8:
+                    data[startbyte] = (senddd & 0xFF);
+                    break;
+                default:
+                    break;
+                }
+                if (startbyte < 7)
+                {
+                    data[startbyte + 1] += senddd >> (8 - (startbit % 8));
+                }
+                else
+                {
+                    //出错处理
+                }
+            }
+            else
+            {
+                uchar m_send2 = senddd << pos & 0xff;
+                data[startbyte] += m_send2;
+            }
         }
         else if (lengght <= 16)
         {
@@ -3472,6 +3583,10 @@ void CanTestPlatform::recAnalyseMotoLSB(int ch, unsigned int fream_id, QByteArra
 }
 void CanTestPlatform::getByteInfo(const std::vector<parseData>& parseArr,int ch)
 {
+    //德创未来的请把下面的注释关掉
+    /*isCANTestTempetrue = false;
+    realHVErr[ch] = "正常";
+    realOTPro[ch] = "正常";*/
     for (auto& x : parseArr)
     {
 
@@ -3495,11 +3610,11 @@ void CanTestPlatform::getByteInfo(const std::vector<parseData>& parseArr,int ch)
         {
             realHVErr[ch] = x.toWord;
         }
-        else if (x.name == "过温保护" || x.name == "过温故障" || x.name=="过温报警")
+        else if (x.name == "过温保护" || x.name == "过温故障" || x.name=="过温报警" || x.name == "出水口过温")
         {
             realOTPro[ch] = x.toWord;
         }
-        else if (x.name == "故障代码")
+        else if (x.name == "故障代码" || x.name == "PTC故障状态")
         {
             if (x.toWord == "高压过压" || x.toWord == "高压欠压" || x.toWord == "欠压" || x.toWord == "过压"|| x.toWord == "高压异常" || x.toWord == "高压故障")
             {
@@ -3518,7 +3633,9 @@ void CanTestPlatform::getByteInfo(const std::vector<parseData>& parseArr,int ch)
                 realOTPro[ch] = "正常";
             }
         }
+        
     }
+    isCANTestTempetrue = true;
 }
 unsigned char CanTestPlatform::crc_high_first(const uchar data[], unsigned char len)
 {
@@ -5134,8 +5251,8 @@ void CanTestPlatform::readSetFile()
     m_bShowAutoTest = at.m_bShowAutoTest;
     m_uiElspseTotalTime = at.m_iEnableCount;
 
-    if (saveListNum < 600)
-        saveListNum = 600;
+   /* if (saveListNum < 600)
+        saveListNum = 600;*/
 
 }
 void CanTestPlatform::saveSetFile()
@@ -5209,6 +5326,17 @@ void CanTestPlatform::getVerAuto(const AutoTestStruct& at)
     int startBit = at.m_usIDByteStartbit;
     int verLen = at.m_usIDBytelen;
     QString std_ver = at.m_strVer;
+
+    if (NoVersionSet.find(currentTestModel.modelName) != NoVersionSet.end())
+    {
+        QString ver;
+        if (verLen == 1)
+        {
+            up_mes_var.m_strVer = std_ver;
+        }
+        emit sigAutoTestSend(2, std_ver);
+        return;
+    }
     m_bGetVer = true;
     m_bParseVer = true;
     while (runStep != -1)
@@ -6366,7 +6494,7 @@ void CanTestPlatform::workAutoTest()
                 up_mes_var.m_strBundrate = strBundRate[currentTestModel.bundRate];
             else
                 up_mes_var.m_strBundrate = "0";
-            up_mes_var.m_strLowVoltage = QString::number(24.0);
+            up_mes_var.m_strLowVoltage = QString::number(currentTestModel.ats.m_iRateLowVoltage);
             up_mes_var.m_strRatedVoltage = QString::number(currentTestModel.ats.m_iRatedVolt);
             up_mes_var.m_strRatedTemp = QString::number(currentTestModel.ats.m_usRatedPWTemp);
             up_mes_var.m_strRatedFlow = QString::number(currentTestModel.ats.m_usRatedPWFlow);
@@ -6723,6 +6851,7 @@ void CanTestPlatform::workAutoTest()
                 bool b = false;
                 
                 //if (!currentTestModel.ats.m_bOverTempOrDry)
+                
                 {
                     if (realOTPro[0] == "过温" || realOTPro[0] == "出水口过温" || realOTPro[0] == "过温故障" || realOTPro[0] == "过温保护" || realOTPro[0] == "冷却液过热")
                     {
@@ -6788,7 +6917,7 @@ void CanTestPlatform::workAutoTest()
                     }
                 }*/
                 
-                QThread::msleep(500);
+                QThread::msleep(100);
             }
 
             emit sigAutoTestSend(23, "关闭加热");
@@ -6828,6 +6957,11 @@ void CanTestPlatform::workAutoTest()
             while (runStep != -1)
             {
                 bool b = false;
+                if (!isCANTestTempetrue)
+                {
+                    QThread::msleep(100);
+                    continue;
+                }
                 if (realOTPro[0]=="正常"||(realOTPro[0] != "过温" && realOTPro[0] != "出水口过温" && realOTPro[0] != "过温故障" && realOTPro[0] != "过温保护" && realOTPro[0] != "冷却液过热" && realOTPro[0] != "低流量" && realOTPro[0] != "干烧"))
                 {
                     b = true;
@@ -6847,7 +6981,7 @@ void CanTestPlatform::workAutoTest()
                         break;
                     }
                 }
-                //QThread::msleep(500);
+                QThread::msleep(500);
             }
             if (failtype==1)
             {

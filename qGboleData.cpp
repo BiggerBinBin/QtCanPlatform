@@ -87,6 +87,7 @@ void qGboleData::save()
 		mItem.insert("m_bNeedPWFactor", pGboleData.at(i).ats.m_bNeedPWFactor);
 		mItem.insert("m_fPWFactor", pGboleData.at(i).ats.m_fPWFactor);
 		mItem.insert("m_iBackWaterTime", pGboleData.at(i).ats.m_iBackWaterTime);
+		mItem.insert("m_iRateLowVoltage", pGboleData.at(i).ats.m_iRateLowVoltage);
 
 
 
@@ -254,6 +255,7 @@ void qGboleData::read()
 		ptem.ats.m_bNeedPWFactor = rootSecond["m_bNeedPWFactor"].toBool(false);
 		ptem.ats.m_fPWFactor = rootSecond["m_fPWFactor"].toDouble(1.0);
 		ptem.ats.m_iBackWaterTime = rootSecond["m_iBackWaterTime"].toInt(120000);
+		ptem.ats.m_iRateLowVoltage = rootSecond["m_iRateLowVoltage"].toInt(24);
 
 
 		//如果还有嵌套对象

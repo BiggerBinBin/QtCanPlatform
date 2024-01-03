@@ -422,7 +422,8 @@ private:
     int m_iBlowAirTime = 120000;    //吹气时间(ms)
     int m_iWashTime = 120000;       //纯水清洗时间(ms)
     int m_iBackWaterTime = 120000;       //纯水清洗时间(ms)
- 
+    std::set<QString>NoVersionSet{"联合卡车"};
+    bool isCANTestTempetrue = false;
 
 private slots:
       void on_CapturePower();

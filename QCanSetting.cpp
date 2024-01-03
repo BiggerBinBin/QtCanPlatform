@@ -383,6 +383,22 @@ void QCanSetting::SetTableData()
 	{
 		modelView->setEditTriggers(QAbstractItemView::DoubleClicked);
 	}
+	if (canIdView)
+	{
+		//canIdView->clear();
+		int row = canIdView->rowCount();
+		for (int i = 0; i < row; i++)
+			canIdView->removeRow(row - i - 1);
+
+	}
+	if (tableView)
+	{
+		int row = tableView->rowCount();
+		for (int i = 0; i < row; i++)
+			tableView->removeRow(row - i - 1);
+	}
+	
+
 	for (int i = 0; i < qGb->pGboleData.size(); ++i)
 	{
 
@@ -1201,7 +1217,7 @@ void QCanSetting::on_modelView_Clicked(int row, int col)
 	int mc = paramView->rowCount();
 	for (int p = 0; p < paramView->rowCount(); p++)
 		paramView->removeRow(mc - p - 1);
-	paramView->setRowCount(37);
+	paramView->setRowCount(38);
 	paramView->setItem(0, 0, new QTableWidgetItem(QString("使能所在行")));
 	paramView->setItem(0, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_iEnableInLine)));
 	paramView->setItem(1, 0, new QTableWidgetItem(QString("使能操作")));
@@ -1299,6 +1315,9 @@ void QCanSetting::on_modelView_Clicked(int row, int col)
 
 	paramView->setItem(36, 0, new QTableWidgetItem(QString("冷水机回吹时间ms")));
 	paramView->setItem(36, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_iBackWaterTime)));
+
+	paramView->setItem(37, 0, new QTableWidgetItem(QString("低压电压(仅上传用)")));
+	paramView->setItem(37, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_iRateLowVoltage)));
 }
 
 void QCanSetting::on_modelView_cbStandar(int bStandard)
@@ -1913,6 +1932,9 @@ void QCanSetting::on_paramView_cellChanged(int row, int col)
 		break;
 	case 36:
 		qGb->pGboleData.at(n).ats.m_iBackWaterTime = paramView->item(row, col)->text().toInt();
+		break;
+	case 37:
+		qGb->pGboleData.at(n).ats.m_iRateLowVoltage = paramView->item(row, col)->text().toInt();
 		break;
 	default:
 		break;

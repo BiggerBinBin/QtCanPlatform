@@ -43,6 +43,7 @@ struct AutoTestStruct
 	bool m_bNeedPWFactor;		//33 功率需要乘因子？
 	float m_fPWFactor;			//34 功率因子
 	int m_iBackWaterTime;		//35 回吹冷水机介质时间
+	int m_iRateLowVoltage;			//   低压电压
 	//bool isIndepandSend;
 
 };

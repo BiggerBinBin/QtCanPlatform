@@ -776,7 +776,7 @@
               <item>
                <widget class="QLineEdit" name="lineEdit_inTemp">
                 <property name="text">
-                 <string>-20</string>
+                 <string>18</string>
                 </property>
                 <property name="maxLength">
                  <number>3</number>
