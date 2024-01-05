@@ -24,6 +24,7 @@ public:
 	void requireTcpPLC(QString data);
 	void requireCanWater(uint id, uchar data[8]);
 	bool setCoolantTemp(int temp, int flow,bool cooling, bool out);
+	bool setCoolantTemp2(int temp, int flow,bool cooling, bool out);
 	bool setCoolantBlow() { on_pbBlowWater_clicked(true); return true; }
 	bool isMesInit() { return m_bMesMacInit; }
 	bool isAvailableMes() { return m_bIsRecMES; }
@@ -118,7 +119,9 @@ private slots:
 public slots:
 	//冷水机
 	void on_pbBlowWater_clicked(bool isCheck);		//吹水
+	void on_pbStartOutCricle_clicked2(bool isCheck);		//外循环（开阀门）
 	void on_pbStartOutCricle_clicked(bool isCheck);		//外循环（开阀门）
+	void on_pbStartInCricle_clicked2(bool isCheck);		//内循环（制冷）
 	void on_pbStartInCricle_clicked(bool isCheck);		//内循环（制冷）
 	void onReceiveData(int ch , quint32 fream_id, QByteArray data);
 

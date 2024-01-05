@@ -363,7 +363,7 @@ void AutoDeviceManage::on_waterCAN_readlyRecived(int ch, quint32 id, QByteArray 
 {
 
 }
-bool AutoDeviceManage::setCoolantTemp(int temp2, int flow2,bool cooling, bool out)
+bool AutoDeviceManage::setCoolantTemp2(int temp2, int flow2,bool cooling, bool out)
 {
 	
 	uchar data[8];
@@ -397,6 +397,43 @@ bool AutoDeviceManage::setCoolantTemp(int temp2, int flow2,bool cooling, bool ou
 	data[3] = h8bit;
 	data[2] = l8bit;
 	m_pWaterCAN->sendData(0x01, data,false);
+	return true;
+}
+bool AutoDeviceManage::setCoolantTemp(int temp2, int flow2, bool cooling, bool out)
+{
+
+	uchar data[8];
+	memset(data, 0, 8 * sizeof(uchar));
+	//外循环开关在第6个字节的第1位（从0开始）
+
+	//第6个字节，第0位+第1位
+	uchar bOnorOff = 0x00;
+	uchar b = out;
+	bOnorOff |= uchar(cooling);
+	bOnorOff |= b << 1;
+	data[6] = bOnorOff;
+	int temp = temp2;
+	int var = 0;
+
+	//若温度小于0，则用FFFF+温度
+	//if (temp < 0)
+	//	var = 0xFFFF + temp * 10;	//要乘10，这样才能有小数
+	//else
+	//	var = temp * 10;
+	//低8位
+	var = temp * 10 + 500;
+	uchar l8bit = 0xFF & var;
+	//高8位
+	uchar h8bit = var >> 8;
+	data[0] = h8bit;
+	data[1] = l8bit;
+
+	int flow = flow2 * 10;
+	l8bit = 0xFF & flow;
+	h8bit = flow >> 8;
+	data[2] = h8bit;
+	data[3] = l8bit;
+	m_pWaterCAN->sendData(0x01, data, false);
 	return true;
 }
 void AutoDeviceManage::onReceiveData(int ch , quint32 fream_id, QByteArray data)
@@ -475,7 +512,7 @@ void AutoDeviceManage::onReceiveData(int ch , quint32 fream_id, QByteArray data)
 
 	}
 }
-void AutoDeviceManage::on_pbStartInCricle_clicked(bool isCheck)
+void AutoDeviceManage::on_pbStartInCricle_clicked2(bool isCheck)
 {
 	ui.pbStartInCricle->setChecked(isCheck);
 	uchar data[8];
@@ -502,7 +539,32 @@ void AutoDeviceManage::on_pbStartInCricle_clicked(bool isCheck)
 	data[2] = l8bit;
 	m_pWaterCAN.data()->sendData(0x00000001, data, false);
 }
-void AutoDeviceManage::on_pbStartOutCricle_clicked(bool isCheck)
+void AutoDeviceManage::on_pbStartInCricle_clicked(bool isCheck)
+{
+	ui.pbStartInCricle->setChecked(isCheck);
+	uchar data[8];
+	memset(data, 0, 8 * sizeof(uchar));
+	bitInCircle = isCheck ? 1 : 0;
+	//第6个字节
+	uchar bOnorOff = bitInCircle + bitOutCircle;
+	data[6] = bOnorOff;
+	int temp = ui.lineEdit_inTemp->text().toInt();
+	int var = 0;
+	//温度要这个转换一下对方才能解析，发送温度=实际温度*10+500
+	var = temp * 10 + 500;
+	uchar l8bit = 0xFF & var;
+	uchar h8bit = var >> 8;
+	data[0] = h8bit;
+	data[1] = l8bit;
+	//流量是乘以10
+	int flow = ui.lineEdit_inFollow->text().toInt() * 10;
+	l8bit = 0xFF & flow;
+	h8bit = flow >> 8;
+	data[2] = h8bit;
+	data[3] = l8bit;
+	m_pWaterCAN.data()->sendData(0x003, data, true);
+}
+void AutoDeviceManage::on_pbStartOutCricle_clicked2(bool isCheck)
 {
 	ui.pbStartOutCricle->setChecked(isCheck);
 	uchar data[8];
@@ -533,20 +595,43 @@ void AutoDeviceManage::on_pbStartOutCricle_clicked(bool isCheck)
 	data[2] = l8bit;
 	m_pWaterCAN.data()->sendData(0x00000001, data,false);
 }
+void AutoDeviceManage::on_pbStartOutCricle_clicked(bool isCheck)
+{
+	ui.pbStartOutCricle->setChecked(isCheck);
+	uchar data[8];
+	memset(data, 0, 8 * sizeof(uchar));
+	//外循环开关在第6个字节的第1位（从0开始）
+	bitOutCircle = isCheck ? 2 : 0;
+	//第6个字节，第0位+第1位
+	uchar bOnorOff = bitInCircle + bitOutCircle;
+	data[6] = bOnorOff;
+	int temp = ui.lineEdit_inTemp->text().toInt();
+	int var = 0;
+
+	var = temp * 10 + 500;
+	//低8位
+	uchar l8bit = 0xFF & var;
+	uchar h8bit = var >> 8;
+	data[0] = h8bit;
+	data[1] = l8bit;
+
+	int flow = ui.lineEdit_inFollow->text().toInt() * 10;
+	l8bit = 0xFF & flow;
+	h8bit = flow >> 8;
+	data[2] = h8bit;
+	data[3] = l8bit;
+	m_pWaterCAN.data()->sendData(0x003, data, true);
+}
 void AutoDeviceManage::on_pbBlowWater_clicked(bool isCheck)
 {
 
 	uchar data[8];
 	memset(data, 0, 8 * sizeof(uchar));
 
-	int temp = -20;
+	//int temp = -20;
 	int var = 0;
-
-	//若温度小于0，则用FFFF+温度
-	if (temp < 0)
-		var = 0xFFFF + temp * 10;	//要乘10，这样才能有小数
-	else
-		var = temp * 10;
+	int temp = ui.lineEdit_inTemp->text().toInt();
+	var = temp * 10 + 500;
 	//低8位
 	uchar l8bit = 0xFF & var;
 	//高8位
@@ -560,7 +645,7 @@ void AutoDeviceManage::on_pbBlowWater_clicked(bool isCheck)
 	}
 	else
 		data[6] = 0x00;
-	m_pWaterCAN.data()->sendData(0x00000001, data,false);
+	m_pWaterCAN.data()->sendData(0x003, data,true);
 }
 void AutoDeviceManage::on_pbGrasp_clicked(bool isClicked)
 {
