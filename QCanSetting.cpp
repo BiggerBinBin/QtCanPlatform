@@ -1217,7 +1217,7 @@ void QCanSetting::on_modelView_Clicked(int row, int col)
 	int mc = paramView->rowCount();
 	for (int p = 0; p < paramView->rowCount(); p++)
 		paramView->removeRow(mc - p - 1);
-	paramView->setRowCount(38);
+	paramView->setRowCount(39);
 	paramView->setItem(0, 0, new QTableWidgetItem(QString("使能所在行")));
 	paramView->setItem(0, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_iEnableInLine)));
 	paramView->setItem(1, 0, new QTableWidgetItem(QString("使能操作")));
@@ -1318,6 +1318,9 @@ void QCanSetting::on_modelView_Clicked(int row, int col)
 
 	paramView->setItem(37, 0, new QTableWidgetItem(QString("低压电压(仅上传用)")));
 	paramView->setItem(37, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_iRateLowVoltage)));
+	
+	paramView->setItem(38, 0, new QTableWidgetItem(QString("GL校准")));
+	paramView->setItem(38, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_bPowerCalibration)));
 }
 
 void QCanSetting::on_modelView_cbStandar(int bStandard)
@@ -1935,6 +1938,9 @@ void QCanSetting::on_paramView_cellChanged(int row, int col)
 		break;
 	case 37:
 		qGb->pGboleData.at(n).ats.m_iRateLowVoltage = paramView->item(row, col)->text().toInt();
+		break;
+	case 38:
+		qGb->pGboleData.at(n).ats.m_bPowerCalibration = paramView->item(row, col)->text().toInt();
 		break;
 	default:
 		break;

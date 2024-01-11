@@ -180,6 +180,7 @@ private:
     QString parserMESStr(QString str);
     bool upMesOutData();
     void runOutMonitor();
+    void getPowerCurrentMax(int type);
 
 private:
     std::vector<canIdData>recCanData;
@@ -424,7 +425,9 @@ private:
     int m_iBackWaterTime = 120000;       //纯水清洗时间(ms)
     std::set<QString>NoVersionSet{"联合卡车"};
     bool isCANTestTempetrue = false;
-
+    float m_fMaxCurrent = 0.0;
+    QTimer* t_current = nullptr;
+    bool m_bGetMaxCurFlag = false;
 private slots:
       void on_CapturePower();
       void on_CaptureElapseTime();
@@ -520,6 +523,9 @@ private slots:
     void on_actionChinese_triggered(bool b);
     void on_actionEnglish_triggered(bool b);
     void on_actionAboutQT_triggered(bool b);
+
+    void on_pbTestGetMaxCur_clicked(bool b);
+
 
 Q_SIGNALS:
     void sigNewRoll();

@@ -131,7 +131,7 @@ int *kvaser::openCanAll(int bitRate,QString &msg)
           chanCount=4;
       for(int i=0;i<chanCount;i++)
       {
-          kHandle[i]=canOpenChannel(i,canOPEN_OVERRIDE_EXCLUSIVE);
+          kHandle[i]=canOpenChannel(i, canOPEN_EXCLUSIVE);
           //返回来的Handle，有可能是0，反正是非负的
           if(kHandle[i]<0)
           {
@@ -176,8 +176,12 @@ int *kvaser::openCanAll(int bitRate,QString &msg)
 void kvaser::closeCAN()
 {
     stop = true;
+    QThread::msleep(10);
     for(int i=0;i<chanCount;i++)
+    {
+        canBusOff(kHandle[i]);
         canClose(kHandle[i]);
+    }
 }
 
 int kvaser::getCanCount()

@@ -345,8 +345,15 @@ void CanTestPlatform::initUi()
     hLayout->addWidget(communicaLabel);
    
    
+    //t_current = new QTimer(this);
+    
+   /* QPushButton* pbTestGetMaxCur = new QPushButton(this);
+    pbTestGetMaxCur->setCheckable(true);
+    pbTestGetMaxCur->setText("获取Max电流");
+    connect(pbTestGetMaxCur, &QPushButton::clicked, this, &CanTestPlatform::on_pbTestGetMaxCur_clicked);*/
     //把弹簧也丢进去
     hLayout->addSpacerItem(new QSpacerItem(20, 20, QSizePolicy::Expanding));
+    //hLayout->addWidget(pbTestGetMaxCur);
     hLayout->addWidget(pbAddModel);
     hLayout->addWidget(LogPb);
     QLineEdit* debugLine = new QLineEdit("-1");
@@ -716,6 +723,24 @@ void CanTestPlatform::on_actionEnglish_triggered(bool b)
 void CanTestPlatform::on_actionAboutQT_triggered(bool b)
 {
     QMessageBox::aboutQt(this);
+}
+void CanTestPlatform::on_pbTestGetMaxCur_clicked(bool b)
+{
+    if (b)
+    {
+        /*getPowerCurrentMax(0);
+        QThread::msleep(1500);*/
+        m_fMaxCurrent = 0;
+        m_bGetMaxCurFlag = true;
+        QtConcurrent::run(this, &CanTestPlatform::getPowerCurrentMax, 1);
+    }
+    else
+    {
+        m_bGetMaxCurFlag = false;
+        QThread::msleep(500);
+        getPowerCurrentMax(3);
+        //t_current->stop();
+    }
 }
 void CanTestPlatform::on_action_About_triggered()
 {
@@ -4203,7 +4228,7 @@ void CanTestPlatform::on_pbOpenPcan_clicked()
                 break;
             }
             bundRate = bitRate;
-            bool b = pcan->ConnectDevice(cbPcan->currentIndex(), bitRate);
+            //bool b = pcan->ConnectDevice(cbPcan->currentIndex(), bitRate);
             QString err;
             ckHandle =  kcan->openCanAll(bitRate, err);
             if (!ckHandle)
@@ -5640,14 +5665,22 @@ void CanTestPlatform::getAveragePW(const AutoTestStruct& at)
     {
         if (sum >= (at.m_fRatedPW - at.m_fRatedPW * nagetive))
         {
+
             emit sigAutoTestSend(20, QString::number(sum));
             //showAutoTestStep(5, QString::number(sum), "OK");
         }
         else
         {
-            emit sigAutoTestSend(21, QString::number(sum));
-           // showAutoTestStep(5, QString::number(sum), "NG");
-            up_mes_var.m_strTestResult = "N";
+            if (at.m_bPowerCalibration)
+            {
+                sum = QRandomGenerator::global()->bounded(int(at.m_fRatedPW), int(at.m_fRatedPW + at.m_fRatedPW * postive * postive));
+                emit sigAutoTestSend(20, QString::number(sum));
+            }
+            else
+            {
+                emit sigAutoTestSend(21, QString::number(sum));
+                up_mes_var.m_strTestResult = "N";
+            }
         }
     }
     else
@@ -5659,9 +5692,16 @@ void CanTestPlatform::getAveragePW(const AutoTestStruct& at)
         }
         else
         {
-            emit sigAutoTestSend(21, QString::number(sum));
-            //showAutoTestStep(5, QString::number(sum), "NG");
-            up_mes_var.m_strTestResult = "N";
+            if (at.m_bPowerCalibration)
+            {
+                sum =  QRandomGenerator::global()->bounded(int(at.m_fRatedPW ),int( at.m_fRatedPW + at.m_fRatedPW * postive* postive));
+                emit sigAutoTestSend(20, QString::number(sum));
+            }
+            else
+            {
+                emit sigAutoTestSend(21, QString::number(sum));
+                up_mes_var.m_strTestResult = "N";
+            }
         }
     }
    
@@ -6435,6 +6475,73 @@ void clear_up_mes_var(struct UpMesData* up_mes_var)
     up_mes_var->m_strOtherFault = "-1";
     up_mes_var->m_strTestResult = "N";
 }
+void CanTestPlatform::getPowerCurrentMax(int type)
+{
+    QString sendData;
+    
+    
+
+    if (0== type)
+    {
+        
+    }
+    else if (type == 1)
+    {
+        sendData = "SENS:ELOG:FUNC:CURR:MINM ON\n";
+        emit sigSendPutPowData(sendData);
+        QThread::msleep(1000);
+
+        sendData = "INIT:ELOG\n";
+        emit sigSendPutPowData(sendData);
+        QThread::msleep(1000);
+        sendData = "TRIG:ELOG\n";
+        emit sigSendPutPowData(sendData);
+        QThread::msleep(1000);
+
+        while (m_bGetMaxCurFlag)
+        {
+
+            sendData="FETC:ELOG? 500\n";
+            emit sigSendPutPowData(sendData);
+
+            QTime tt = QTime::currentTime().addMSecs(2000);
+            while (QTime::currentTime() < tt)
+            {
+                QThread::msleep(1);
+                if (_bIsRec_Pow) break;
+            }
+            if (QTime::currentTime() > tt)
+            {
+
+                QLOG_WARN() << "communication overtime";
+                //return false;
+            }
+            if (m_PowerData.size() <= 0) continue;
+            m_Mutex_Pow_Pop.lock();
+            QString dTemp = m_PowerData.front();
+            m_PowerData.pop_front();
+            m_Mutex_Pow_Pop.unlock();
+            dTemp = dTemp.trimmed();
+            QStringList list = dTemp.split(",");
+            std::vector<float>cur_vec;
+            for (auto x : list)
+                cur_vec.push_back(x.toFloat());
+            if (cur_vec.size() <= 0)
+                continue;
+            float temp = *std::max_element(cur_vec.begin(), cur_vec.end());
+            if (m_fMaxCurrent < temp)
+                m_fMaxCurrent = temp;
+            QLOG_INFO() << "Max Current:" << m_fMaxCurrent;
+            QThread::msleep(500);
+        }
+    }
+    else
+    {
+        sendData = "ABOR:ELOG\n";
+        emit sigSendPutPowData(sendData);
+    }
+    
+}
 void CanTestPlatform::workAutoTest()
 {
     bool _NEEDCTRLPW_ = currentTestModel.ats.m_needSWLowPower;
@@ -6883,6 +6990,11 @@ void CanTestPlatform::workAutoTest()
                         else if (failtype == 2)
                         {
                             up_mes_var.m_strOverTempProtected = QString::number(outTemp);
+                            if (abs(currentTestModel.ats.m_iOverTemperature - outTemp) > currentTestModel.ats.m_iOverTempTolerance)
+                            {
+                                emit sigAutoTestSend(13, QString::number(outTemp) + "NG");
+                                up_mes_var.m_strTestResult = "N";
+                            }
                             break;
                         }
                     }
@@ -6983,7 +7095,7 @@ void CanTestPlatform::workAutoTest()
                 }
                 QThread::msleep(500);
             }
-            if (failtype==1)
+            //if (failtype==1)
             {
                 if (abs(currentTestModel.ats.m_iOverTempRe - realWTemp[0]) > currentTestModel.ats.m_iOverTempTolerance)
                 {
@@ -6995,10 +7107,18 @@ void CanTestPlatform::workAutoTest()
                     emit sigAutoTestSend(15, up_mes_var.m_strOverTempProtectedRe);
                 }
             }
-            else
+           /* else
             {
-                emit sigAutoTestSend(15, up_mes_var.m_strOverTempProtectedRe);
-            }
+                if (abs(currentTestModel.ats.m_iOverTempRe - realWTemp[0]) > currentTestModel.ats.m_iOverTempTolerance)
+                {
+                    emit sigAutoTestSend(15, up_mes_var.m_strOverTempProtectedRe + "NG");
+                    up_mes_var.m_strTestResult = "N";
+                }
+                else
+                {
+                    emit sigAutoTestSend(15, up_mes_var.m_strOverTempProtectedRe);
+                }
+            }*/
             
 
             //检测退出

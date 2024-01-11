@@ -147,6 +147,7 @@ void AutoDeviceManage::on_powerTCP_readlyRecvied()
 	{
 		QByteArray res = m_pPowerTCP->readAll();
 		QString data(res);
+		QLOG_INFO() << res;
 		emit sigPowerNewData(data);
 	}
 	else if (tcp == m_pMesUpTCP.data())
