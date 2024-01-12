@@ -166,6 +166,10 @@ CanTestPlatform::~CanTestPlatform()
     {
         delete progress; progress = nullptr;
     }
+    if (pZLG_CAN)
+    {
+        delete pZLG_CAN; pZLG_CAN = nullptr;
+    }
     
     destroyLogger();   //释放
     
@@ -260,6 +264,8 @@ void CanTestPlatform::initUi()
     cbCanType->addItem(tr("选择PLIN"));
     cbCanType->addItem(tr("选择Toomoss"));
     cbCanType->addItem(tr("选择TLIN"));
+    cbCanType->addItem(tr("选择ZLG-2EU"));
+    cbCanType->addItem(tr("选择ZLGCAN-II"));
     connect(cbCanType, SIGNAL(currentIndexChanged(int)), this, SLOT(on_cbCanType_currentIndexChanged(int)));
     cbPcan = new QComboBox();
    
@@ -1367,6 +1373,10 @@ void CanTestPlatform::sendData()
                     other[1] = 1;
                     pHardTlin->SendMessage(currentTestModel.ats.m_strVerRecID.toInt(NULL, 16), s_Data, other);
                 }
+            }
+            else if (cbCanType->currentIndex() == 6 || cbCanType->currentIndex() == 7)
+            {
+                pZLG_CAN->sendData(fream_id, s_Data);
             }
             //_sleep(20);
             QByteArray bydd;
@@ -4078,6 +4088,20 @@ void CanTestPlatform::on_pbRefreshDevice_clicked()
             cbPcan->addItem(n.at(m));
         }
     }
+    else if (cbCanType->currentIndex() == 6|| cbCanType->currentIndex() == 7)
+    {
+        if (!pZLG_CAN)
+        {
+            pZLG_CAN = new zlgcanmanage();
+            connect(pZLG_CAN, &zlgcanmanage::getProtocolData2, this, &CanTestPlatform::on_ReceiveDataZLG);
+        }
+        
+       
+        {
+            cbPcan->addItem("0");
+            cbPcan->addItem("1");
+        }
+    }
     
 }
 void CanTestPlatform::on_pbOpenPcan_clicked()
@@ -4465,70 +4489,132 @@ void CanTestPlatform::on_pbOpenPcan_clicked()
     }
     else if (cbCanType->currentIndex() == 5)
     {
-    if (pcanIsOpen)
-    {
-        pHardTlin->CloseHardWare();
-        pbOpen->setText(tr("打开设备"));
-        cbBitRate->setEnabled(true);
-        cbPcan->setEnabled(true);
-        pbSend->setChecked(false);
-        pbSend->setEnabled(false);
-        pbSend->setStyleSheet("");
-        pcanIsOpen = false;
-        sendTimer->stop();
-        reFresh->setEnabled(true);
-        communicaLabel->setText(tr("待机中..."));
-        cbSelectModel->setEnabled(true);
+        if (pcanIsOpen)
+        {
+            pHardTlin->CloseHardWare();
+            pbOpen->setText(tr("打开设备"));
+            cbBitRate->setEnabled(true);
+            cbPcan->setEnabled(true);
+            pbSend->setChecked(false);
+            pbSend->setEnabled(false);
+            pbSend->setStyleSheet("");
+            pcanIsOpen = false;
+            sendTimer->stop();
+            reFresh->setEnabled(true);
+            communicaLabel->setText(tr("待机中..."));
+            cbSelectModel->setEnabled(true);
         
+        }
+        else
+        {
+            std::vector<int>idvec;
+            qGboleData* qGb = qGboleData::getInstance();
+            if (!qGb)return;
+            int index = cbSelectModel->currentIndex();
+
+            if (index > qGb->pGboleData.size() - 1)
+                return;
+            int real = HashArr[index];
+            for (int k = 0; k < qGb->pGboleData.at(real).cItem.size(); k++)
+            {
+                if (!qGb->pGboleData.at(real).cItem.at(k).opt)
+                    idvec.push_back(qGb->pGboleData.at(real).cItem.at(k).strCanId.toInt(nullptr, 16));
+            }
+            pHardTlin->setRespondID(idvec);
+            int curindex = cbBitRate->currentIndex();
+            int bitRate = 19200;
+             switch (curindex)
+            {
+            case 0:
+                bitRate = 200; break;
+            case 1:
+                bitRate = 250; break;
+            case 2:
+                bitRate = 500; break;
+            case 3:
+                bitRate = 800; break;
+            default:
+                bitRate = 250;
+                break;
+            }
+            bundRate = bitRate;
+            QString dev = QString::number(cbPcan->currentIndex());
+            bool b = pHardTlin->OpenHardWare(dev, bitRate, 0);
+
+            if (!b)
+            {
+                QMessageBox::warning(NULL, tr("错误"), tr("打开TLIN失败,请检测设备是否被占用或者已经连接？\n或者重新拔插一下"));
+                return;
+            }
+            pbOpen->setText(tr("关闭设备"));
+            cbBitRate->setEnabled(false);
+            cbPcan->setEnabled(false);
+            pbSend->setEnabled(true);
+            pcanIsOpen = true;
+            cbSelectModel->setEnabled(false);
+        }
     }
-    else
+    else if (cbCanType->currentIndex() == 6 || cbCanType->currentIndex()==7)
     {
-        std::vector<int>idvec;
-        qGboleData* qGb = qGboleData::getInstance();
-        if (!qGb)return;
-        int index = cbSelectModel->currentIndex();
+        
+        if (pcanIsOpen)
+        {
+            //pHardTlin->CloseHardWare();
+            if (pZLG_CAN)
+                pZLG_CAN->closeCAN();
+            pbOpen->setText(tr("打开设备"));
+            cbBitRate->setEnabled(true);
+            cbPcan->setEnabled(true);
+            pbSend->setChecked(false);
+            pbSend->setEnabled(false);
+            pbSend->setStyleSheet("");
+            pcanIsOpen = false;
+            sendTimer->stop();
+            reFresh->setEnabled(true);
+            communicaLabel->setText(tr("待机中..."));
+            cbSelectModel->setEnabled(true);
 
-        if (index > qGb->pGboleData.size() - 1)
-            return;
-        int real = HashArr[index];
-        for (int k = 0; k < qGb->pGboleData.at(real).cItem.size(); k++)
-        {
-            if (!qGb->pGboleData.at(real).cItem.at(k).opt)
-                idvec.push_back(qGb->pGboleData.at(real).cItem.at(k).strCanId.toInt(nullptr, 16));
         }
-        pHardTlin->setRespondID(idvec);
-        int curindex = cbBitRate->currentIndex();
-        int bitRate = 19200;
-        switch (curindex)
+        else
         {
-        case 4:
-            bitRate = 2400; break;
-        case 5:
-            bitRate = 9600; break;
-        case 6:
-            bitRate = 10400; break;
-        case 7:
-            bitRate = 19200; break;
-        default:
-            bitRate = 19200;
-            break;
+            if (!pZLG_CAN)
+            {
+                pZLG_CAN = new zlgcanmanage();
+                connect(pZLG_CAN, &zlgcanmanage::getProtocolData2, this, &CanTestPlatform::on_ReceiveDataZLG);
+            }
+            int curindex = cbBitRate->currentIndex();
+            int bitRate = 250;
+            switch (curindex)
+            {
+            case 0:
+                bitRate = 200; break;
+            case 1:
+                bitRate = 250; break;
+            case 2:
+                bitRate = 500; break;
+            case 3:
+                bitRate = 800; break;
+            default:
+                bitRate = 250;
+                break;
+            }
+            bundRate = bitRate;
+            //QString dev = QString::number(cbPcan->currentIndex());
+            //bool b = pHardTlin->OpenHardWare(dev, bitRate, 0);
+            bool b = pZLG_CAN->openCAN(cbCanType->currentIndex()-3, cbPcan->currentIndex(), bitRate);
+            if (!b)
+            {
+                QMessageBox::warning(NULL, tr("错误"), tr("打开ZLG失败,请检测设备是否被占用或者已经连接？\n或者重新拔插一下"));
+                return;
+            }
+            pbOpen->setText(tr("关闭设备"));
+            cbBitRate->setEnabled(false);
+            cbPcan->setEnabled(false);
+            pbSend->setEnabled(true);
+            pcanIsOpen = true;
+            cbSelectModel->setEnabled(false);
         }
-        bundRate = bitRate;
-        QString dev = QString::number(cbPcan->currentIndex());
-        bool b = pHardTlin->OpenHardWare(dev, bitRate, 0);
-
-        if (!b)
-        {
-            QMessageBox::warning(NULL, tr("错误"), tr("打开TLIN失败,请检测设备是否被占用或者已经连接？\n或者重新拔插一下"));
-            return;
-        }
-        pbOpen->setText(tr("关闭设备"));
-        cbBitRate->setEnabled(false);
-        cbPcan->setEnabled(false);
-        pbSend->setEnabled(true);
-        pcanIsOpen = true;
-        cbSelectModel->setEnabled(false);
-    }
+        
     }
     /*if (dCtrl) {
         dCtrl->on_dCanRefresh_clicked();
@@ -4792,6 +4878,10 @@ void CanTestPlatform::on_ReceiveData(const int ch, uint fream_id, QByteArray dat
         recAnalyseMotoLSB(ch, fream_id, data);
     }
 }
+void CanTestPlatform::on_ReceiveDataZLG(QByteArray data, int ch, uint frame_id)
+{
+    on_ReceiveData(frame_id, data);
+}
 /*
 * @brief: 设置窗口关闭时，不管三七二十一，刷新一下显示的数据
 * @parm: 无
@@ -4901,6 +4991,12 @@ void CanTestPlatform::on_recTimeout()
 {
     communicaLabel->setText(tr("通信超时"));
     communicaLabel->setStyleSheet("background-color:red");
+    if (cbCanType->currentIndex() == 6 || cbCanType->currentIndex() == 7)
+    {
+        this->on_pbSend_clicked(false);
+        this->pbSend->setChecked(false);
+        QMessageBox::warning(this, "警告", "发送失败，请检查连接线");
+    }
 }
 void CanTestPlatform::on_recTimeoutMutil()
 {
@@ -5673,8 +5769,10 @@ void CanTestPlatform::getAveragePW(const AutoTestStruct& at)
         {
             if (at.m_bPowerCalibration)
             {
+                QLOG_INFO() << m_strPHUCode << "," << sum;
                 sum = QRandomGenerator::global()->bounded(int(at.m_fRatedPW), int(at.m_fRatedPW + at.m_fRatedPW * postive * postive));
                 emit sigAutoTestSend(20, QString::number(sum));
+                
             }
             else
             {
@@ -5694,6 +5792,7 @@ void CanTestPlatform::getAveragePW(const AutoTestStruct& at)
         {
             if (at.m_bPowerCalibration)
             {
+                QLOG_INFO() << m_strPHUCode << "," << sum;
                 sum =  QRandomGenerator::global()->bounded(int(at.m_fRatedPW ),int( at.m_fRatedPW + at.m_fRatedPW * postive* postive));
                 emit sigAutoTestSend(20, QString::number(sum));
             }

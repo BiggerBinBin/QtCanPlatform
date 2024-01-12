@@ -106,12 +106,12 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>./Qslog/include;./kvaserX64/INC;./ControlCAN;./zdbc_lib;./PLIN-API/Include;./BLF/Include;./Toomoss/include;$(_LIB_)/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>./Qslog/include;./kvaserX64/INC;./ControlCAN;./zdbc_lib;./PLIN-API/Include;./BLF/Include;./Toomoss/include;$(_LIB_)/;F:\Lyb-file\Code\QtCanPlatform-Multiple-Dev\QtCanPlatform\zlgcan;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>./QsLog/bin;./kvaserX64/lib/X64;./ControlCAN/x64;./zdbc_lib/windows/x64;./PLIN-API/x64/VC_LIB;./BLF/LIB/x64_Release;./Toomoss/libs/x86_64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>QsLog2.lib;canlib32.lib;ControlCAN.lib;zdbc.lib;PLinApi.lib;binlog.lib;odbc32.lib;odbccp32.lib;USB2XXX.lib;E:\AppInstall\VS_MSVP_Complier\5.15.2\msvc2019_64\lib\qtmain.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>./QsLog/bin;./kvaserX64/lib/X64;./ControlCAN/x64;./zdbc_lib/windows/x64;./PLIN-API/x64/VC_LIB;./BLF/LIB/x64_Release;./Toomoss/libs/x86_64;F:\Lyb-file\Code\QtCanPlatform-Multiple-Dev\QtCanPlatform\zlgcan;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>QsLog2.lib;canlib32.lib;ControlCAN.lib;zdbc.lib;PLinApi.lib;binlog.lib;odbc32.lib;odbccp32.lib;USB2XXX.lib;E:\AppInstall\VS_MSVP_Complier\5.15.2\msvc2019_64\lib\qtmain.lib;F:\Lyb-file\Code\QtCanPlatform-Multiple-Dev\QtCanPlatform\zlgcan\zlgcan.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -205,6 +205,7 @@
     <ClCompile Include="unit\ImplementPower.cpp" />
     <ClCompile Include="unit\MsgParser.cpp" />
     <ClCompile Include="unit\msgSaveInf.cpp" />
+    <ClCompile Include="zlgcanmanage.cpp" />
     <QtRcc Include="QtCanPlatform.qrc" />
     <QtUic Include="AutoDeviceManage.ui" />
     <QtUic Include="Login.ui" />
@@ -249,6 +250,8 @@
     <QtMoc Include="QCanSetting.h" />
   </ItemGroup>
   <ItemGroup>
+    <QtMoc Include="zlgcanmanage.h" />
+    <ClInclude Include="zlgcan\zlgcan.h" />
     <QtMoc Include="Abstract\LogAbstract.h" />
     <QtMoc Include="Abstract\AbstractPower.h" />
     <ClInclude Include="AlgorithmSet.h" />

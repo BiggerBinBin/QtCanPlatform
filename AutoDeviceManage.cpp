@@ -364,7 +364,8 @@ void AutoDeviceManage::on_waterCAN_readlyRecived(int ch, quint32 id, QByteArray 
 {
 
 }
-bool AutoDeviceManage::setCoolantTemp2(int temp2, int flow2,bool cooling, bool out)
+//产线旧冷水机
+bool AutoDeviceManage::setCoolantTemp(int temp2, int flow2,bool cooling, bool out)
 {
 	
 	uchar data[8];
@@ -400,7 +401,7 @@ bool AutoDeviceManage::setCoolantTemp2(int temp2, int flow2,bool cooling, bool o
 	m_pWaterCAN->sendData(0x01, data,false);
 	return true;
 }
-bool AutoDeviceManage::setCoolantTemp(int temp2, int flow2, bool cooling, bool out)
+bool AutoDeviceManage::setCoolantTemp2(int temp2, int flow2, bool cooling, bool out)
 {
 
 	uchar data[8];
@@ -513,7 +514,8 @@ void AutoDeviceManage::onReceiveData(int ch , quint32 fream_id, QByteArray data)
 
 	}
 }
-void AutoDeviceManage::on_pbStartInCricle_clicked2(bool isCheck)
+//产线旧冷水机
+void AutoDeviceManage::on_pbStartInCricle_clicked(bool isCheck)
 {
 	ui.pbStartInCricle->setChecked(isCheck);
 	uchar data[8];
@@ -540,7 +542,7 @@ void AutoDeviceManage::on_pbStartInCricle_clicked2(bool isCheck)
 	data[2] = l8bit;
 	m_pWaterCAN.data()->sendData(0x00000001, data, false);
 }
-void AutoDeviceManage::on_pbStartInCricle_clicked(bool isCheck)
+void AutoDeviceManage::on_pbStartInCricle_clicked2(bool isCheck)
 {
 	ui.pbStartInCricle->setChecked(isCheck);
 	uchar data[8];
@@ -565,7 +567,8 @@ void AutoDeviceManage::on_pbStartInCricle_clicked(bool isCheck)
 	data[3] = l8bit;
 	m_pWaterCAN.data()->sendData(0x003, data, true);
 }
-void AutoDeviceManage::on_pbStartOutCricle_clicked2(bool isCheck)
+//产线旧冷水机
+void AutoDeviceManage::on_pbStartOutCricle_clicked(bool isCheck)
 {
 	ui.pbStartOutCricle->setChecked(isCheck);
 	uchar data[8];
@@ -596,7 +599,7 @@ void AutoDeviceManage::on_pbStartOutCricle_clicked2(bool isCheck)
 	data[2] = l8bit;
 	m_pWaterCAN.data()->sendData(0x00000001, data,false);
 }
-void AutoDeviceManage::on_pbStartOutCricle_clicked(bool isCheck)
+void AutoDeviceManage::on_pbStartOutCricle_clicked2(bool isCheck)
 {
 	ui.pbStartOutCricle->setChecked(isCheck);
 	uchar data[8];

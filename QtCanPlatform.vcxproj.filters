@@ -145,6 +145,9 @@
     <ClCompile Include="SerialportManage.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="zlgcanmanage.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="QCanSetting.h">
@@ -237,6 +240,9 @@
     <QtMoc Include="SerialportManage.h">
       <Filter>Header Files</Filter>
     </QtMoc>
+    <QtMoc Include="zlgcanmanage.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
   </ItemGroup>
   <ItemGroup>
     <QtUic Include="QCanSetting.ui">
@@ -287,6 +293,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="unit\msgSaveInf.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="zlgcan\zlgcan.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -53,6 +53,7 @@
 #include "Login.h"
 #include "HardWareTlin.h"
 #include "SerialportManage.h"
+#include "zlgcanmanage.h"
 #pragma execution_character_set("utf-8")  
 
 struct UpMesData {
@@ -199,6 +200,8 @@ private:
     kvaser* kcan = nullptr;
     //保存kcan的打开状态
     const int* ckHandle = nullptr;
+
+    zlgcanmanage* pZLG_CAN = nullptr;
 
     //PLIN硬件接口，未来会扩充到其它硬件，以实现多态
     HardWareBase* pHardWare = nullptr;
@@ -454,6 +457,7 @@ private slots:
     void on_ReceiveDataLIN(uint frame_id, QByteArray data,int reserve);
     void on_ReceiveDataMulti(uint frame_id, QByteArray data);
     void on_ReceiveData(int ch,uint frame_id, QByteArray data);
+    void on_ReceiveDataZLG(QByteArray data,int ch,uint frame_id);
     //void on_ReceiveData2(ushort ch,uint frame_id, uchar data[8]);
     //CAN协议设置的窗口关闭响应，用来刷新设置的数据
     void on_SettingWidowsClose();
