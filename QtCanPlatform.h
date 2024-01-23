@@ -72,6 +72,7 @@ struct UpMesData {
     QString m_strOverTempProtectedRe;   //过温保护恢复
     QString m_strOtherFault;            //其它错误
     QString m_strTestResult;            //测试结果
+    QString m_strMaxCurrent;            //测试结果
 };
 
 class CanTestPlatform : public QMainWindow
@@ -174,13 +175,13 @@ private:
     void on_pbMESConnect(bool);
     void on_TCPStateChanged(QAbstractSocket::SocketState state);
     void on_TCPDataReadyRec();
-    void on_TCPDataSend_MES(QByteArray data);
+    void on_TCPDataSend_MES(QByteArray data);//MES数据接收槽
     void runPostMes(QString str);
-    bool getMesResponed(QString str);
-    float getPowerResponed(QString str);
-    QString parserMESStr(QString str);
-    bool upMesOutData();
-    void runOutMonitor();
+    bool getMesResponed(QString str);   //MES数据交互
+    float getPowerResponed(QString str);//高压电源交互
+    QString parserMESStr(QString str);//MES返回数据解析
+    bool upMesOutData(); //MES数据上传
+    void runOutMonitor();//出口温度监控
     void getPowerCurrentMax(int type);
 
 private:
@@ -270,16 +271,7 @@ private:
     QColor recFontColor = QColor(255, 250, 255);
     QDateTime lastTime;
 
-    //自动判断的条件与判断值
-    //int lowVolt = 330;      //V,这个电压下开始测低压保护
-    //int highVolt = 740;     //V,这个电压下开始测高压保护
-    //int avgPower = 7000;    //平均功率,未用到
-    //int m_iHeatTempture = -15;                 //°C，进水口这个温度下开始测加热
-    //int m_iPowerTempture = 0;              //°C，这个温度下的额定功率
-    //int m_iOverTime = 300;                //秒，超过这个时间，这个测试部分就要跳过了
-    //int m_iVoltError = 8;                //电压误差
-    //int m_iVoltStep = 4;                 //电压步进
-    //int rmFirstFream = 3;               //测功率时，到达指定条件后延迟帧数
+
     int agvPowerFream = 10;             //测功率时的平均帧数;
     //int m_iPowerVolt = 600;
     int bundRate = 250;

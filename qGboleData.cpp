@@ -89,6 +89,7 @@ void qGboleData::save()
 		mItem.insert("m_iBackWaterTime", pGboleData.at(i).ats.m_iBackWaterTime);
 		mItem.insert("m_iRateLowVoltage", pGboleData.at(i).ats.m_iRateLowVoltage);
 		mItem.insert("m_bPowerCalibration", pGboleData.at(i).ats.m_bPowerCalibration);
+		mItem.insert("m_fMaxCurrent", pGboleData.at(i).ats.m_fMaxCurrent);
 
 
 
@@ -258,6 +259,7 @@ void qGboleData::read()
 		ptem.ats.m_iBackWaterTime = rootSecond["m_iBackWaterTime"].toInt(120000);
 		ptem.ats.m_iRateLowVoltage = rootSecond["m_iRateLowVoltage"].toInt(24);
 		ptem.ats.m_bPowerCalibration = rootSecond["m_bPowerCalibration"].toBool(0);
+		ptem.ats.m_fMaxCurrent = rootSecond["m_fMaxCurrent"].toDouble();
 
 
 		//如果还有嵌套对象

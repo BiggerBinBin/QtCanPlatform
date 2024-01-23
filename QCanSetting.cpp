@@ -1217,7 +1217,7 @@ void QCanSetting::on_modelView_Clicked(int row, int col)
 	int mc = paramView->rowCount();
 	for (int p = 0; p < paramView->rowCount(); p++)
 		paramView->removeRow(mc - p - 1);
-	paramView->setRowCount(39);
+	paramView->setRowCount(40);
 	paramView->setItem(0, 0, new QTableWidgetItem(QString("使能所在行")));
 	paramView->setItem(0, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_iEnableInLine)));
 	paramView->setItem(1, 0, new QTableWidgetItem(QString("使能操作")));
@@ -1321,6 +1321,9 @@ void QCanSetting::on_modelView_Clicked(int row, int col)
 	
 	paramView->setItem(38, 0, new QTableWidgetItem(QString("GL校准")));
 	paramView->setItem(38, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_bPowerCalibration)));
+
+	paramView->setItem(39, 0, new QTableWidgetItem(QString("最大电流")));
+	paramView->setItem(39, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_fMaxCurrent)));
 }
 
 void QCanSetting::on_modelView_cbStandar(int bStandard)
@@ -1941,6 +1944,9 @@ void QCanSetting::on_paramView_cellChanged(int row, int col)
 		break;
 	case 38:
 		qGb->pGboleData.at(n).ats.m_bPowerCalibration = paramView->item(row, col)->text().toInt();
+		break;
+	case 39:
+		qGb->pGboleData.at(n).ats.m_fMaxCurrent = paramView->item(row, col)->text().toDouble();
 		break;
 	default:
 		break;

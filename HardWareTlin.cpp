@@ -38,6 +38,8 @@ bool HardWareTlin::OpenHardWare(QString dev, int bundrate, int attach)
 bool HardWareTlin::CloseHardWare()
 {
 	bRunRead = false;
+	condition.wakeAll();
+	
 	return true;
 }
 bool HardWareTlin::SendMessage(uint id, uchar data[], int resever[])
@@ -79,11 +81,12 @@ bool HardWareTlin::ReadMessage()
 				}
 				emit newMessage(x, sdata, 0);
 			}
-			QThread::msleep(5);
+			QThread::msleep(50);
 		}
 		qmutex.unlock();
 		QThread::msleep(m_cycle);
 	}
+	USB_CloseDevice(m_curHandle);
 	return true;
 }
 

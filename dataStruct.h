@@ -45,6 +45,7 @@ struct AutoTestStruct
 	int m_iBackWaterTime;		//35 回吹冷水机介质时间
 	int m_iRateLowVoltage;		//36   低压电压
 	bool m_bPowerCalibration;	//37 功率校准
+	float m_fMaxCurrent;		//38 最大电流
 	//bool isIndepandSend;
 
 };

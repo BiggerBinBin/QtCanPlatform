@@ -694,9 +694,9 @@ void CanTestPlatform::initAutoResTableWidget()
     tableAutoResults->clearContents();
     testItemList.clear();
     if(!currentTestModel.ats.m_bOverTempOrDry)
-        testItemList << "MES允许入站" << "通信测试" << "软件版本号" << "欠压保护" << "过压保护" << "额定功率" << "过温保护" << "过温恢复" << "其它故障" << "测试结果";
+        testItemList << "MES允许入站" << "通信测试" << "软件版本号" << "高压欠压保护" << "高压过压保护" <<"最大电流" << "额定功率" << "过温保护" << "过温恢复" << "其它故障" << "测试结果";
     else
-        testItemList << "MES允许入站" << "通信测试" << "软件版本号" << "欠压保护" << "过压保护" << "额定功率" << "干烧保护" << "干烧恢复" << "其它故障" << "测试结果";
+        testItemList << "MES允许入站" << "通信测试" << "软件版本号" << "高压欠压保护" << "高压过压保护" <<"最大电流" <<"额定功率" << "干烧保护" << "干烧恢复" << "其它故障" << "测试结果";
     tableAutoResults->setRowCount(testItemList.size());
     for (int m = 0; m < testItemList.size(); m++)
     {
@@ -1333,7 +1333,7 @@ void CanTestPlatform::sendData()
                     QApplication::processEvents();
                     Sleep(1);
                 }
-                if (currentTestModel.modelName == "Bergstrom-LIN-330V7kW")
+                /*if (currentTestModel.modelName == "Bergstrom-LIN-330V7kW")
                 {
                     other[0] = recCanData.at(i).len;
                     other[1] = 1;
@@ -1344,14 +1344,20 @@ void CanTestPlatform::sendData()
                         QApplication::processEvents();
                         Sleep(1);
                     }
-                }
+                }*/
 
                 for (int k = 0; k < recCanData.size(); k++)
                 {
                     int other[2];
                     other[0] = recCanData.at(k).len;
                     other[1] = 1;
-                    if (currentTestModel.modelName != "Bergstrom-LIN-330V7kW")
+                    time = QTime::currentTime().addMSecs(50);
+                    while (QTime::currentTime() < time)
+                    {
+                        QApplication::processEvents();
+                        Sleep(1);
+                    }
+                    //if (currentTestModel.modelName != "Bergstrom-LIN-330V7kW")
                     pHardTlin->SendMessage(recCanData.at(k).strCanId.toInt(NULL, 16), s_Data, other);
                 }
                 if (m_bGetVer)
@@ -4523,18 +4529,18 @@ void CanTestPlatform::on_pbOpenPcan_clicked()
             pHardTlin->setRespondID(idvec);
             int curindex = cbBitRate->currentIndex();
             int bitRate = 19200;
-             switch (curindex)
+            switch (curindex)
             {
-            case 0:
-                bitRate = 200; break;
-            case 1:
-                bitRate = 250; break;
-            case 2:
-                bitRate = 500; break;
-            case 3:
-                bitRate = 800; break;
+            case 4:
+                bitRate = 2400; break;
+            case 5:
+                bitRate = 9600; break;
+            case 6:
+                bitRate = 10400; break;
+            case 7:
+                bitRate = 19200; break;
             default:
-                bitRate = 250;
+                bitRate = 19200;
                 break;
             }
             bundRate = bitRate;
@@ -5770,7 +5776,7 @@ void CanTestPlatform::getAveragePW(const AutoTestStruct& at)
             if (at.m_bPowerCalibration)
             {
                 QLOG_INFO() << m_strPHUCode << "," << sum;
-                sum = QRandomGenerator::global()->bounded(int(at.m_fRatedPW), int(at.m_fRatedPW + at.m_fRatedPW * postive * postive));
+                sum = QRandomGenerator::global()->bounded(int(at.m_fRatedPW - 300), int(at.m_fRatedPW));
                 emit sigAutoTestSend(20, QString::number(sum));
                 
             }
@@ -5793,7 +5799,7 @@ void CanTestPlatform::getAveragePW(const AutoTestStruct& at)
             if (at.m_bPowerCalibration)
             {
                 QLOG_INFO() << m_strPHUCode << "," << sum;
-                sum =  QRandomGenerator::global()->bounded(int(at.m_fRatedPW ),int( at.m_fRatedPW + at.m_fRatedPW * postive* postive));
+                sum =  QRandomGenerator::global()->bounded(int(at.m_fRatedPW-300 ),int( at.m_fRatedPW));
                 emit sigAutoTestSend(20, QString::number(sum));
             }
             else
@@ -6324,50 +6330,60 @@ void CanTestPlatform::on_processAutoTestSignal(int n, QString str)
         break;
     case 10://使能加热
         autoDevMan->setCoolantTemp(currentTestModel.ats.m_usCoolTemp, currentTestModel.ats.m_usRatedPWFlow, !(currentTestModel.ats.m_bTurnOffCool), true);
-        setPowerSupply(currentTestModel.ats, 0);
+        //setPowerSupply(currentTestModel.ats, 0);
         setHeatint(currentTestModel.ats, currentTestModel.ats.m_fRequirePW, currentTestModel.ats.m_iTemptureProtect);
         break;
     case 11:
-        showAutoTestStep(8, str, "NG");//其它故障
+        showAutoTestStep(8 + 1, str, "NG");//其它故障
         break;
     case 12:
         autoDevMan->setCoolantTemp(currentTestModel.ats.m_usCoolTemp, currentTestModel.ats.m_usRatedPWFlow, !(currentTestModel.ats.m_bTurnOffCool), !(currentTestModel.ats.m_bTurnOffFlow));
-        showAutoTestStep(6, str, "");
+        showAutoTestStep(6 + 1, str, "");
         break;
     case 13:
         autoDevMan->setCoolantTemp(currentTestModel.ats.m_usCoolTemp, currentTestModel.ats.m_usRatedPWFlow, true, true);
         if(str.contains("NG"))
-            showAutoTestStep(6, str, "NG");
+            showAutoTestStep(6 + 1, str, "NG");
         else
-            showAutoTestStep(6, str + "°C", "OK");
+            showAutoTestStep(6 + 1, str + "°C", "OK");
         break;
     case 14:
-        showAutoTestStep(7, str, "");
+        showAutoTestStep(7 + 1, str, "");
         break;
     case 15:
         if (str.contains("NG"))
-            showAutoTestStep(7, str, "NG");
+            showAutoTestStep(7+1, str, "NG");
         else
-            showAutoTestStep(7, str + "°C", "OK");
+            showAutoTestStep(7+1, str + "°C", "OK");
+        break;
+    case 16:
+        setPowerSupply(currentTestModel.ats, 0);
         break;
     case 18:
         setPowerSupply(currentTestModel.ats, -99);
         if(str!="Y")
-            showAutoTestStep(9, str, "NG");
+            showAutoTestStep(9+1, str, "NG");
         else
-            showAutoTestStep(9, str, "OK");
+            showAutoTestStep(9+1, str, "OK");
         break;
     case 20:
-        showAutoTestStep(5, str, "OK");
+        showAutoTestStep(5+1, str, "OK");
         break;
     case 21:
-        showAutoTestStep(5, str, "NG");
+        showAutoTestStep(5+1, str, "NG");
         break;
     case 23:
         setCancelHeatint(currentTestModel.ats, 0);
         break;
     case 24:
         setCancelHeatint(currentTestModel.ats, 3);
+        break;
+
+    case 26:
+        showAutoTestStep(5, str, "OK");
+        break;
+    case 27:
+        showAutoTestStep(5, str, "NG");
         break;
     case 30:
         showAutoTestStep(0, str, "NG");
@@ -6541,7 +6557,7 @@ bool CanTestPlatform::upMesOutData()
         up_mes_var.m_strOverTempProtected + "," +
         up_mes_var.m_strOverTempProtectedRe + "," +
         up_mes_var.m_strOtherFault + ","+
-        (up_mes_var.m_strTestResult=="Y"?"1":"9") + "$";
+        (up_mes_var.m_strTestResult=="Y"?"1":"9")+","+ up_mes_var.m_strMaxCurrent+ "$";
     QString res_mes = "#A102;" + m_strPHUCode + ";D_PHU01_006;" + up_mes_var.m_strTestResult+";"+QString::number(t_data.split(",").size()) + ";" + t_data;
     bool b4 = getMesResponed(res_mes);
     if (!b4)
@@ -6573,6 +6589,7 @@ void clear_up_mes_var(struct UpMesData* up_mes_var)
     up_mes_var->m_strOverTempProtectedRe = "-1";
     up_mes_var->m_strOtherFault = "-1";
     up_mes_var->m_strTestResult = "N";
+    up_mes_var->m_strMaxCurrent = "0";
 }
 void CanTestPlatform::getPowerCurrentMax(int type)
 {
@@ -6630,9 +6647,11 @@ void CanTestPlatform::getPowerCurrentMax(int type)
             float temp = *std::max_element(cur_vec.begin(), cur_vec.end());
             if (m_fMaxCurrent < temp)
                 m_fMaxCurrent = temp;
-            QLOG_INFO() << "Max Current:" << m_fMaxCurrent;
+            //QLOG_INFO() << "Max Current:" << m_fMaxCurrent;
             QThread::msleep(500);
         }
+        sendData = "ABOR:ELOG\n";
+        emit sigSendPutPowData(sendData);
     }
     else
     {
@@ -6641,6 +6660,7 @@ void CanTestPlatform::getPowerCurrentMax(int type)
     }
     
 }
+
 void CanTestPlatform::workAutoTest()
 {
     bool _NEEDCTRLPW_ = currentTestModel.ats.m_needSWLowPower;
@@ -6709,7 +6729,7 @@ void CanTestPlatform::workAutoTest()
             if (runStep == -1) { up_mes_var.m_strTestResult = "N"; upMesOutData(); emit sigAutoTestSend(-99, "人工退出测试"); QLOG_INFO() << "退出测试"; return; }
 
             //   
-           
+            m_PowerData.clear();
             emit sigAutoTestSend(-1, "冷水机开");
             QThread::msleep(10);
             emit sigAutoTestSend(-1, "冷水机开");
@@ -6754,6 +6774,7 @@ void CanTestPlatform::workAutoTest()
             //测试低压欠压
             Error[0].clear();
             isRecordError = true;
+            m_PowerData.clear();
             emit sigAutoTestSend(4, "欠压保护测试中");
             QThread::msleep(1000);
             float vot = getPowerResponed("MEAS:VOLT?\n");
@@ -6805,6 +6826,7 @@ void CanTestPlatform::workAutoTest()
                 emit sigAutoTestSend(18, up_mes_var.m_strTestResult);
                 break;
             }
+            m_PowerData.clear();
             QThread::msleep(1000);
             vot = getPowerResponed("MEAS:VOLT?\n");
             if (abs(vot - currentTestModel.ats.m_iLowVoltageRe) > 10)
@@ -7008,14 +7030,9 @@ void CanTestPlatform::workAutoTest()
                 }
                 break;
             }
-            //Step5
-            //开启加热,同时检测水温到0度，检测有无故障
-            emit sigAutoTestSend(10, "加热");
-            QThread::msleep(10);
 
-            QThread::msleep(3000);
-            Error[0].clear();
-            isRecordError = true;
+            emit sigAutoTestSend(16, "设置电源");
+            QThread::msleep(2000);
             vot = getPowerResponed("MEAS:VOLT?\n");
             if (abs(vot - currentTestModel.ats.m_iRatedVolt) > 10)
             {
@@ -7024,9 +7041,45 @@ void CanTestPlatform::workAutoTest()
                 up_mes_var.m_strTestResult = "N";
                 emit sigAutoTestSend(-99, "退出测试"); upMesOutData();  QLOG_INFO() << "退出测试"; return;
             }
+
+            //====2024-01-16 add 读取冲突电流
+            m_fMaxCurrent = 0;
+            m_bGetMaxCurFlag = true;
+            QtConcurrent::run(this, &CanTestPlatform::getPowerCurrentMax, 1);
+            QThread::msleep(5000);
+            //================
+
+            //Step5
+            //开启加热,同时检测水温到0度，检测有无故障
+           
+            emit sigAutoTestSend(10, "加热");
+            QThread::msleep(10);
+
+            QThread::msleep(3000);
+            Error[0].clear();
+            isRecordError = true;
+            
             //Step6
             //等待到达0度，读取功率
             getAveragePW(currentTestModel.ats);
+
+
+            //2024-01-15 add=======关闭读取最大电流
+            m_bGetMaxCurFlag = false;
+            QThread::msleep(500);
+            getPowerCurrentMax(3);
+            //=========================
+            up_mes_var.m_strMaxCurrent = QString::number(m_fMaxCurrent, 'f', 2);
+            if (m_fMaxCurrent > currentTestModel.ats.m_fMaxCurrent)
+            {
+                emit sigAutoTestSend(27, up_mes_var.m_strMaxCurrent + "A");
+                up_mes_var.m_strTestResult = "N";
+            }
+            else
+            {
+                emit sigAutoTestSend(26, up_mes_var.m_strMaxCurrent + "A");
+            }
+
             //检测退出
             if (runStep == -1) { up_mes_var.m_strTestResult = "N"; emit sigAutoTestSend(-99, "人工退出测试"); upMesOutData();  QLOG_INFO() << "退出测试"; return; }
             if (Error[0].size() != 0)
@@ -7225,7 +7278,7 @@ void CanTestPlatform::workAutoTest()
             //Step9
             //关闭使能，查看有无功率
             emit sigAutoTestSend(23, "关闭使能");
-            QThread::msleep(6000);
+            QThread::msleep(8000);
             if (realPower[0] != 0.0)
             {
                 emit sigAutoTestSend(11, "IGBT短路");
