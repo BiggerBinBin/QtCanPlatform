@@ -74,6 +74,7 @@ void zlgcanmanage::sendData(UINT ID,uchar qbt[])
 //    if(ID>0x7ff)
 //        send.transmit_type = 1;
 //    else
+    //
     send.transmit_type = 0;
     ZCAN_Transmit(channel_handle_,&send,1);
 

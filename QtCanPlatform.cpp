@@ -6776,7 +6776,7 @@ void CanTestPlatform::workAutoTest()
             isRecordError = true;
             m_PowerData.clear();
             emit sigAutoTestSend(4, "欠压保护测试中");
-            QThread::msleep(1000);
+            QThread::msleep(3000);
             float vot = getPowerResponed("MEAS:VOLT?\n");
             if (abs(vot - currentTestModel.ats.m_iLowVoltage) > 10)
             {
@@ -6827,7 +6827,7 @@ void CanTestPlatform::workAutoTest()
                 break;
             }
             m_PowerData.clear();
-            QThread::msleep(1000);
+            QThread::msleep(3000);
             vot = getPowerResponed("MEAS:VOLT?\n");
             if (abs(vot - currentTestModel.ats.m_iLowVoltageRe) > 10)
             {
@@ -6882,7 +6882,7 @@ void CanTestPlatform::workAutoTest()
             isRecordError = true;
             //Step3
 
-            QThread::msleep(500);
+            QThread::msleep(3000);
             vot = getPowerResponed("MEAS:VOLT?\n");
             if (abs(vot - currentTestModel.ats.m_iOverVoltage) > 10)
             {
@@ -6932,7 +6932,7 @@ void CanTestPlatform::workAutoTest()
                 break;
 
             }
-            QThread::msleep(1000);
+            QThread::msleep(3000);
             vot = getPowerResponed("MEAS:VOLT?\n");
             if (abs(vot - currentTestModel.ats.m_iOverVoltageRe) > 10)
             {

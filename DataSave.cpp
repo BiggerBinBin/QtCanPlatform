@@ -2,6 +2,10 @@
 #include <windows.h>
 #include <QFileDialog>
 #include "QsLog.h"
+QString chart[] = { "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z",
+"AA", "AB", "AC", "AD", "AE", "AF", "AG", "AH", "AI", "AJ", "AK", "AL", "AM", "AN", "AO", "AP", "AQ", "AR", "AS", "AT", "AU", "AV", "AW", "AX", "AY", "AZ",
+"BA", "BB", "BC", "BD", "BE", "BF", "BG", "BH", "BI", "BJ", "BK", "BL", "BM", "BN", "BO", "BP", "BQ", "BR", "BS", "BT", "BU", "BV", "BW", "BX", "BY", "BZ" ,
+"CA", "CB", "CC", "CD", "CE", "CF", "CG", "CH", "CI", "CJ", "CK", "CL", "CM", "CN", "CO", "CP", "CQ", "CR", "CS", "CT", "CU", "CV", "CW", "CX", "CY", "CZ" };
 DataSave::DataSave(QObject *parent)
 	: QThread(parent)
 {}
@@ -209,10 +213,15 @@ void DataSave::writeExcelFast(QString fileName, QList<QList<QVariant>>& x_y)
     int row = x_y.size();//行数
     int col = x_y.at(x_y.size()-1).size();//列数
     /*将列数转换成EXCEL中列的字母形式*/
-    QString rangStr;
-    convert2ColName(col, rangStr);
-    rangStr += QString::number(row);
-    rangStr = "A1:" + rangStr;
+    /*QString rangStr="";
+    convert2ColName(col, rangStr);*/
+    //rangStr += QString::number(row);
+    if (col > 104 || col < 1)
+    {
+        QLOG_WARN() << "信号量超出范围：" << col << "列";
+        return;
+    }
+    QString rangStr = "A1:" + chart[col-1] + QString::number(row);
     //QLOG_INFO() << "rangStr:" << rangStr;
     QAxObject*  usedrange_Write = worksheet->querySubObject("Range(const QString&)", rangStr);
 
@@ -252,7 +261,7 @@ void DataSave::convert2ColName(int data, QString& res)
 {
     Q_ASSERT(data > 0 && data < 65535);
     int tempData = data / 26;
-    if (tempData > 0)
+    if (tempData > 1)
     {
         int mode = data % 26;
         convert2ColName(mode, res);
