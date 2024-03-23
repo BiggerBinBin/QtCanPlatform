@@ -447,6 +447,7 @@ bool CANThread::openCANAll(int bundRate)
 }
 void CANThread::closeCAN()
 {
+    stopped = true;
     for(int i=0;i<i_DEVICE_NUM;i++)
         VCI_CloseDevice((DWORD)VCI_USBCAN2A, (DWORD)i);
     QLOG_INFO() << "关闭CANayst";
@@ -517,11 +518,12 @@ void CANThread::sendData(UINT ID, uchar qbt[],bool bStandard)
 
 void CANThread::run()
 {
+    int dwRel;
+    int Common = 0;
+    VCI_CAN_OBJ vco[2500];
     while(!stopped)
     {
-        int dwRel;
-        int Common = 0;
-        VCI_CAN_OBJ vco[2500];
+        
         for(int j=0;j<i_DEVICE_NUM;j++)
             for (int ch = 0; ch < i_CAN_NUM; ch++)
             {
@@ -545,9 +547,9 @@ void CANThread::run()
                     stop();
                     closeCAN();
                 }
-                msleep(5);
+                msleep(1);
             }
-        msleep(30);
+           msleep(10);
         
         
     }

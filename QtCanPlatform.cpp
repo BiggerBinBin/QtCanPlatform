@@ -3193,30 +3193,130 @@ void CanTestPlatform::recAnalyseMoto(int ch,unsigned int fream_id, QByteArray da
     std::vector<showTableData>::iterator iBeginV = showTableVec.begin();
     std::vector<showTableData>::iterator iEndV = showTableVec.end();
     int cr = 0;
+    //while (iBeginV != iEndV)
+    //{
+    //    int num = iBeginV->Pdata.size();
+    //    int idex = 0;
+    //    for (int j = 0; j < num; j++, idex++)
+    //    {
+    //        if (idex > 9)   //每行10列
+    //        {
+    //            idex = 0;
+    //            cr += 2;
+    //        }
+
+    //        QString tnamp = iBeginV->Pdata.at(j).name;
+    //        QString toword = iBeginV->Pdata.at(j).toWord;
+    //        tableArray[ch]->setItem(cr, idex, new QTableWidgetItem(tnamp));
+    //        QFont ff;
+    //        ff.setBold(true);
+    //        tableArray[ch]->item(cr, idex)->setFont(ff);
+    //        tableArray[ch]->item(cr, idex)->setTextAlignment(Qt::AlignCenter);
+    //        tableArray[ch]->item(cr, idex)->setBackgroundColor(recBackgroudColor);
+    //        tableArray[ch]->item(cr, idex)->setForeground(QBrush(recFontColor));
+    //        tableArray[ch]->setItem(cr + 1, idex, new QTableWidgetItem(toword));
+    //        tableArray[ch]->item(cr + 1, idex)->setBackgroundColor(QColor(iBeginV->Pdata.at(j).color.r, iBeginV->Pdata.at(j).color.g, iBeginV->Pdata.at(j).color.b));
+    //        tableArray[ch]->item(cr + 1, idex)->setTextAlignment(Qt::AlignCenter);
+    //        dTemp += toword + ",";
+    //    }
+    //    if (idex < 9)
+    //    {
+    //        QString tnamp = "";
+    //        QString toword = "";
+    //        for (; idex <= 9; idex++)
+    //        {
+    //            try
+    //            {
+    //                tableArray[ch]->setItem(cr, idex, new QTableWidgetItem(tnamp));
+    //                QFont ff;
+    //                ff.setBold(true);
+    //                QTableWidgetItem* b = tableArray[ch]->item(cr, idex);
+    //                if (!b)
+    //                    continue;
+    //                b->setFont(ff);
+    //                b = tableArray[ch]->item(cr, idex);
+    //                if (!b)
+    //                    continue;
+    //                b->setTextAlignment(Qt::AlignCenter);
+    //                b = tableArray[ch]->item(cr, idex);
+    //                if (!b)
+    //                    continue;
+    //                b->setBackgroundColor(recBackgroudColor);
+    //                b = tableArray[ch]->item(cr, idex);
+    //                if (!b)
+    //                    continue;
+    //                b->setForeground(QBrush(recFontColor));
+    //                tableArray[ch]->setItem(cr + 1, idex, new QTableWidgetItem(toword));
+    //                b = tableArray[ch]->item(cr + 1, idex);
+    //                if (!b)
+    //                    continue;
+
+    //            }
+    //            catch (const std::exception& e)
+    //            {
+    //                QLOG_INFO() << "Error:" << e.what();
+    //            }
+    //        }
+    //    }
+    //    cr += 2;
+    //    iBeginV++;
+
+    //}
     while (iBeginV != iEndV)
     {
+
+        //每加一行就要设置到表格去
         int num = iBeginV->Pdata.size();
         int idex = 0;
         for (int j = 0; j < num; j++, idex++)
         {
-            if (idex > 9)   //每行10列
+            if (idex > 9)   //一行最多放10个数据
             {
+                //满10个，从头开始
                 idex = 0;
+                //下一行的下一行，也就是隔一行，要加2；
                 cr += 2;
             }
-
+            tableArray[ch]->setRowCount(cr + 2);
             QString tnamp = iBeginV->Pdata.at(j).name;
             QString toword = iBeginV->Pdata.at(j).toWord;
-            tableArray[ch]->setItem(cr, idex, new QTableWidgetItem(tnamp));
-            QFont ff;
-            ff.setBold(true);
-            tableArray[ch]->item(cr, idex)->setFont(ff);
-            tableArray[ch]->item(cr, idex)->setTextAlignment(Qt::AlignCenter);
-            tableArray[ch]->item(cr, idex)->setBackgroundColor(recBackgroudColor);
-            tableArray[ch]->item(cr, idex)->setForeground(QBrush(recFontColor));
-            tableArray[ch]->setItem(cr + 1, idex, new QTableWidgetItem(toword));
-            tableArray[ch]->item(cr + 1, idex)->setBackgroundColor(QColor(iBeginV->Pdata.at(j).color.r, iBeginV->Pdata.at(j).color.g, iBeginV->Pdata.at(j).color.b));
-            tableArray[ch]->item(cr + 1, idex)->setTextAlignment(Qt::AlignCenter);
+            try
+            {
+                tableArray[ch]->setItem(cr, idex, new QTableWidgetItem(tnamp));
+                QFont ff;
+                ff.setBold(true);
+                QTableWidgetItem* b = tableArray[ch]->item(cr, idex);
+                if (!b)
+                    continue;
+                b->setFont(ff);
+                b = tableArray[ch]->item(cr, idex);
+                if (!b)
+                    continue;
+                b->setTextAlignment(Qt::AlignCenter);
+                b = tableArray[ch]->item(cr, idex);
+                if (!b)
+                    continue;
+                b->setBackgroundColor(recBackgroudColor);
+                b = tableArray[ch]->item(cr, idex);
+                if (!b)
+                    continue;
+                b->setForeground(QBrush(recFontColor));
+                tableArray[ch]->setItem(cr + 1, idex, new QTableWidgetItem(toword));
+                b = tableArray[ch]->item(cr + 1, idex);
+                if (!b)
+                    continue;
+                b->setBackgroundColor(QColor(iBeginV->Pdata.at(j).color.r, iBeginV->Pdata.at(j).color.g, iBeginV->Pdata.at(j).color.b));
+                b = tableArray[ch]->item(cr + 1, idex);
+                if (!b)
+                    continue;
+                b->setTextAlignment(Qt::AlignCenter);
+            }
+            catch (const std::exception& e)
+            {
+                QLOG_INFO() << "Error:" << e.what();
+            }
+
+
             dTemp += toword + ",";
         }
         if (idex < 9)
@@ -4857,8 +4957,9 @@ void CanTestPlatform::on_ReceiveData(const int ch, uint fream_id, QByteArray dat
     communicaLabel->setText(tr("通信正常"));
     communicaLabel->setStyleSheet("background-color:green");
     lostQTimer->start(lostTimeOut);
-    int index = cbSelectModel->currentIndex();
-
+    int realIndex = cbSelectModel->currentIndex();
+    //转换索引，转换后的才是vector中的正在索引
+    int index = HashArr.at(realIndex);
     qGboleData* qGb = qGboleData::getInstance();
     if (!qGb)return;
     if (index > qGb->pGboleData.size() - 1)
@@ -5454,6 +5555,7 @@ void CanTestPlatform::getVerAuto(const AutoTestStruct& at)
     int verLen = at.m_usIDBytelen;
     QString std_ver = at.m_strVer;
 
+    QTime time;
     if (NoVersionSet.find(currentTestModel.modelName) != NoVersionSet.end())
     {
         QString ver;
@@ -5466,6 +5568,7 @@ void CanTestPlatform::getVerAuto(const AutoTestStruct& at)
     }
     m_bGetVer = true;
     m_bParseVer = true;
+    time.start();
     while (runStep != -1)
     {
         QStringList list = ucharToBinay(m_arrVerCanMessage);
@@ -5482,18 +5585,17 @@ void CanTestPlatform::getVerAuto(const AutoTestStruct& at)
                     QString toVer = QString::number(vvf);
                     up_mes_var.m_strVer = toVer;
                     if (toVer == std_ver)
+                    {
                         emit sigAutoTestSend(2, toVer);
+                        break;
+                    }
                     else
-                        emit sigAutoTestSend(3, toVer);
-                    break;
+                        continue;
                 }
             }
             else
             {
-                QString toVer = "0.0";
-                up_mes_var.m_strVer = toVer;
-                emit sigAutoTestSend(3, toVer);
-                break;
+                continue;
             }
             QThread::msleep(100);
         }
@@ -5508,22 +5610,19 @@ void CanTestPlatform::getVerAuto(const AutoTestStruct& at)
                 if (toVer == std_ver)
                 {
                     emit sigAutoTestSend(2, toVer);
+                    break;
                 }
                 else
                 {
-                    emit sigAutoTestSend(3, toVer);
-                    up_mes_var.m_strTestResult = "N";
+                    continue;
                 }
-                break;
+                
             }
             else
             {
-                QString toVer = "0.0";
-                up_mes_var.m_strVer = toVer;
-                up_mes_var.m_strTestResult = "N";
-                emit sigAutoTestSend(3, toVer);
-                break;
+                continue;
             }
+            QThread::msleep(200);
         }
         else if (verLen == 4)
         {
@@ -5540,24 +5639,40 @@ void CanTestPlatform::getVerAuto(const AutoTestStruct& at)
                     if(verser==std_ver)
                     {
                         emit sigAutoTestSend(2, verser);
+                        break;
                     }
                     else
                     {
-                        emit sigAutoTestSend(3, verser);
-                        up_mes_var.m_strTestResult = "N";
+                        continue;
                     }
-                    break;
+                   
                 }
             }
             else
             {
-                QString verser = "M:0.0-S:0.0";
-                up_mes_var.m_strVer = verser;
-                up_mes_var.m_strTestResult = "N";
-                emit sigAutoTestSend(3, verser);
-                break;
+                continue;
             }
             QThread::msleep(200);
+        }
+        if (time.elapsed() > 15000)
+        {
+            QString verser;
+            if (verLen == 1)
+            {
+                verser = "0.0";
+            }
+            else if (verLen == 2)
+            {
+                verser = "0.0";
+            }
+            else
+            {
+                verser = "M:0.0-S:0.0";
+            }
+            up_mes_var.m_strVer = verser;
+            up_mes_var.m_strTestResult = "N";
+            emit sigAutoTestSend(3, verser);
+            break;
         }
     }
     m_bGetVer = false;
@@ -7055,7 +7170,7 @@ void CanTestPlatform::workAutoTest()
             emit sigAutoTestSend(10, "加热");
             QThread::msleep(10);
 
-            QThread::msleep(3000);
+            QThread::msleep(15000);
             Error[0].clear();
             isRecordError = true;
             
@@ -7216,7 +7331,7 @@ void CanTestPlatform::workAutoTest()
             }
             //检测退出
             if (runStep == -1) { up_mes_var.m_strTestResult = "N"; emit sigAutoTestSend(-99, "人工退出测试"); upMesOutData();  QLOG_INFO() << "退出测试"; return; }
-            QThread::msleep(2500);
+            QThread::msleep(100);
             //过温恢复
             while (runStep != -1)
             {

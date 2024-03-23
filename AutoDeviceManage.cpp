@@ -649,7 +649,7 @@ void AutoDeviceManage::on_pbBlowWater_clicked(bool isCheck)
 	}
 	else
 		data[6] = 0x00;
-	m_pWaterCAN.data()->sendData(0x003, data,true);
+	m_pWaterCAN.data()->sendData(0x00000001, data,false);
 }
 void AutoDeviceManage::on_pbGrasp_clicked(bool isClicked)
 {
