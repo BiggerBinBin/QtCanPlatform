@@ -694,9 +694,9 @@ void CanTestPlatform::initAutoResTableWidget()
     tableAutoResults->clearContents();
     testItemList.clear();
     if(!currentTestModel.ats.m_bOverTempOrDry)
-        testItemList << "MES允许入站" << "通信测试" << "软件版本号" << "高压欠压保护" << "高压过压保护" <<"最大电流" << "额定功率" << "过温保护" << "过温恢复" << "其它故障" << "测试结果";
+        testItemList << "MES允许入站" <<"高压互锁" << "通信测试" << "软件版本号" << "高压欠压保护" << "高压过压保护" << "最大电流" << "额定功率" << "过温保护" << "过温恢复" << "其它故障" << "测试结果";
     else
-        testItemList << "MES允许入站" << "通信测试" << "软件版本号" << "高压欠压保护" << "高压过压保护" <<"最大电流" <<"额定功率" << "干烧保护" << "干烧恢复" << "其它故障" << "测试结果";
+        testItemList << "MES允许入站" << "高压互锁" << "通信测试" << "软件版本号" << "高压欠压保护" << "高压过压保护" <<"最大电流" <<"额定功率" << "干烧保护" << "干烧恢复" << "其它故障" << "测试结果";
     tableAutoResults->setRowCount(testItemList.size());
     for (int m = 0; m < testItemList.size(); m++)
     {
@@ -5525,6 +5525,7 @@ void CanTestPlatform::on_pbDevicesManage_clicked()
         autoDevMan->setWindowFlags(autoDevMan->windowFlags()|Qt::Tool);
         
         connect(autoDevMan, &AutoDeviceManage::sigMesNewData, this, &CanTestPlatform::on_sigFroMesNewData);
+        connect(autoDevMan, &AutoDeviceManage::sigMeterNewData, this, &CanTestPlatform::on_sigFromMeterNewData);
         connect(autoDevMan, &AutoDeviceManage::sigPowerNewData, this, &CanTestPlatform::on_sigFromPowerNewData);
         connect(autoDevMan, &AutoDeviceManage::sigFlowCool, this, &CanTestPlatform::on_RecFlowCool);
     }
@@ -5987,6 +5988,11 @@ void CanTestPlatform::on_sigFromThisPowerSet(QString data)
 {
     autoDevMan->requireTcpPower(data);
 }
+void CanTestPlatform::on_sigFromMeterNewData(QString data)
+{
+    m_MeterData = data;
+    _bIsRec_Meter = true;
+}
 void CanTestPlatform::on_savePeriodCheck_Changed(int n)
 {
     if (n == 0)
@@ -6259,6 +6265,7 @@ void CanTestPlatform::on_pbStartAutoTest_clicked(bool b)
            autoDevMan->setWindowFlags(autoDevMan->windowFlags() | Qt::Tool);
            connect(this, &CanTestPlatform::sigAutoTestSend, this, &CanTestPlatform::on_processAutoTestSignal);
            connect(autoDevMan, &AutoDeviceManage::sigMesNewData, this, &CanTestPlatform::on_sigFroMesNewData);
+           connect(autoDevMan, &AutoDeviceManage::sigMeterNewData, this, &CanTestPlatform::on_sigFromMeterNewData);
            connect(autoDevMan, &AutoDeviceManage::sigPowerNewData, this, &CanTestPlatform::on_sigFromPowerNewData);
            connect(autoDevMan, &AutoDeviceManage::sigFlowCool, this, &CanTestPlatform::on_RecFlowCool);
        }
@@ -6394,52 +6401,52 @@ void CanTestPlatform::on_processAutoTestSignal(int n, QString str)
         break;
     case 1:
         if(str=="通信正常")
-            showAutoTestStep(1, str, "OK");     //通信OK
+            showAutoTestStep(1+1, str, "OK");     //通信OK
         else
-            showAutoTestStep(1, str, "NG");     //通信OK
+            showAutoTestStep(1 + 1, str, "NG");     //通信OK
         break;
     case 2:
         if(str.contains("版本号"))
-            showAutoTestStep(2, str, "");       //版本号？
+            showAutoTestStep(2 + 1, str, "");       //版本号？
         else
-            showAutoTestStep(2, str, "OK");       //版本号？
+            showAutoTestStep(2 + 1, str, "OK");       //版本号？
         break;
     case 3:
-        showAutoTestStep(2, str, "NG");
+        showAutoTestStep(2 + 1, str, "NG");
         break;
     case 4:
-        showAutoTestStep(3, str, "");
+        showAutoTestStep(3 + 1, str, "");
         setPowerSupply(currentTestModel.ats, -1);   //设置电压，极限电流
         setHeatint(currentTestModel.ats, 0,0);        //设置使能但功率为0
         //QLOG_INFO() << "case 4";
         break;
     case 5:
-        showAutoTestStep(3, str, "");
+        showAutoTestStep(3 + 1, str, "");
         setPowerSupply(currentTestModel.ats, -2);   //设置电压，极限电流
         setHeatint(currentTestModel.ats, 0,0);        //设置使能但功率为0
         //QLOG_INFO() << "case 5";
         break;
     case 6:
         if(str.contains("NG"))
-            showAutoTestStep(3, str, "NG");
+            showAutoTestStep(3 + 1, str, "NG");
         else
-            showAutoTestStep(3, QString::number(currentTestModel.ats.m_iLowVoltage)+"/"+ QString::number(currentTestModel.ats.m_iLowVoltageRe), "OK");
+            showAutoTestStep(3 + 1, QString::number(currentTestModel.ats.m_iLowVoltage)+"/"+ QString::number(currentTestModel.ats.m_iLowVoltageRe), "OK");
         break;
     case 7://过压保护测试
-        showAutoTestStep(4, str, "");
+        showAutoTestStep(4 + 1, str, "");
         setPowerSupply(currentTestModel.ats, 1);
        
         break;
     case 8://过压恢复测试
-        showAutoTestStep(4, str, "");
+        showAutoTestStep(4 + 1, str, "");
         setPowerSupply(currentTestModel.ats, 2);
         
         break;
     case 9:
         if (str.contains("NG"))
-            showAutoTestStep(4, str, "NG");
+            showAutoTestStep(4 + 1, str, "NG");
         else
-            showAutoTestStep(4, QString::number(currentTestModel.ats.m_iOverVoltage)+"/"+ QString::number(currentTestModel.ats.m_iOverVoltageRe), "OK");
+            showAutoTestStep(4 + 1, QString::number(currentTestModel.ats.m_iOverVoltage)+"/"+ QString::number(currentTestModel.ats.m_iOverVoltageRe), "OK");
         setPowerSupply(currentTestModel.ats, 0);
         setCancelHeatint(currentTestModel.ats, 0);        //设置不使能，中华汽车只要使能就立马加热
         break;
@@ -6449,27 +6456,27 @@ void CanTestPlatform::on_processAutoTestSignal(int n, QString str)
         setHeatint(currentTestModel.ats, currentTestModel.ats.m_fRequirePW, currentTestModel.ats.m_iTemptureProtect);
         break;
     case 11:
-        showAutoTestStep(8 + 1, str, "NG");//其它故障
+        showAutoTestStep(8 + 1 + 1, str, "NG");//其它故障
         break;
     case 12:
         autoDevMan->setCoolantTemp(currentTestModel.ats.m_usCoolTemp, currentTestModel.ats.m_usRatedPWFlow, !(currentTestModel.ats.m_bTurnOffCool), !(currentTestModel.ats.m_bTurnOffFlow));
-        showAutoTestStep(6 + 1, str, "");
+        showAutoTestStep(6 + 1 + 1, str, "");
         break;
     case 13:
         autoDevMan->setCoolantTemp(currentTestModel.ats.m_usCoolTemp, currentTestModel.ats.m_usRatedPWFlow, true, true);
         if(str.contains("NG"))
-            showAutoTestStep(6 + 1, str, "NG");
+            showAutoTestStep(6 + 1 + 1, str, "NG");
         else
-            showAutoTestStep(6 + 1, str + "°C", "OK");
+            showAutoTestStep(6 + 1 + 1, str + "°C", "OK");
         break;
     case 14:
-        showAutoTestStep(7 + 1, str, "");
+        showAutoTestStep(7 + 1 + 1, str, "");
         break;
     case 15:
         if (str.contains("NG"))
-            showAutoTestStep(7+1, str, "NG");
+            showAutoTestStep(7+1 + 1, str, "NG");
         else
-            showAutoTestStep(7+1, str + "°C", "OK");
+            showAutoTestStep(7+1 + 1, str + "°C", "OK");
         break;
     case 16:
         setPowerSupply(currentTestModel.ats, 0);
@@ -6477,15 +6484,15 @@ void CanTestPlatform::on_processAutoTestSignal(int n, QString str)
     case 18:
         setPowerSupply(currentTestModel.ats, -99);
         if(str!="Y")
-            showAutoTestStep(9+1, str, "NG");
+            showAutoTestStep(9+1 + 1, str, "NG");
         else
-            showAutoTestStep(9+1, str, "OK");
+            showAutoTestStep(9+1 + 1, str, "OK");
         break;
     case 20:
-        showAutoTestStep(5+1, str, "OK");
+        showAutoTestStep(5+1 + 1, str, "OK");
         break;
     case 21:
-        showAutoTestStep(5+1, str, "NG");
+        showAutoTestStep(5+1 + 1, str, "NG");
         break;
     case 23:
         setCancelHeatint(currentTestModel.ats, 0);
@@ -6495,10 +6502,10 @@ void CanTestPlatform::on_processAutoTestSignal(int n, QString str)
         break;
 
     case 26:
-        showAutoTestStep(5, str, "OK");
+        showAutoTestStep(5 + 1, str, "OK");
         break;
     case 27:
-        showAutoTestStep(5, str, "NG");
+        showAutoTestStep(5 + 1, str, "NG");
         break;
     case 30:
         showAutoTestStep(0, str, "NG");
@@ -6631,6 +6638,22 @@ void CanTestPlatform::on_processAutoTestSignal(int n, QString str)
         }
     }
     break;
+
+    case 70:
+        autoDevMan->on_pbHVLockResistance_clicked(true);
+        break;
+    case 71:
+        autoDevMan->on_pbHVLockVoltage_clicked(true);
+        break;
+    case 72:
+        autoDevMan->on_pbHVLockCurr_clicked(true);
+        break;
+    case 75:
+        if (str.contains("NG"))
+            showAutoTestStep(1, str, "NG");
+        else
+            showAutoTestStep(1, str, "OK");
+        break;
     case -99:
         pbStartAutoTest->setChecked(false);
         lineEditCodeIn->setEnabled(true);
@@ -6705,6 +6728,7 @@ void clear_up_mes_var(struct UpMesData* up_mes_var)
     up_mes_var->m_strOtherFault = "-1";
     up_mes_var->m_strTestResult = "N";
     up_mes_var->m_strMaxCurrent = "0";
+    up_mes_var->m_strHVLock = "99999";
 }
 void CanTestPlatform::getPowerCurrentMax(int type)
 {
@@ -6842,6 +6866,38 @@ void CanTestPlatform::workAutoTest()
             up_mes_var.m_strTestResult = "Y";
             //检测退出
             if (runStep == -1) { up_mes_var.m_strTestResult = "N"; upMesOutData(); emit sigAutoTestSend(-99, "人工退出测试"); QLOG_INFO() << "退出测试"; return; }
+
+            //=====2024-03-24增加
+            if (currentTestModel.ats.m_bHVLockTest)
+            {
+                _bIsRec_Meter = false;
+                emit sigAutoTestSend(70, "测高压互锁");
+
+                while (!_bIsRec_Meter)
+                {
+                    if (runStep != -1)
+                    {
+                        up_mes_var.m_strTestResult = "N"; upMesOutData(); emit sigAutoTestSend(-99, "人工退出测试"); QLOG_INFO() << "退出测试"; return;
+                    }
+                    QThread::msleep(5);
+                }
+                float resistance = m_MeterData.toFloat();
+                up_mes_var.m_strHVLock = QString::number(resistance);
+                if (resistance > currentTestModel.ats.m_iHVLockResistanceTolerance)
+                {
+                    emit sigAutoTestSend(75, up_mes_var.m_strHVLock+"Ω NG");
+                    up_mes_var.m_strTestResult = "N";
+                    up_mes_var.m_strOtherFault = "*高压互锁异常";
+                    emit sigAutoTestSend(18, up_mes_var.m_strTestResult); upMesOutData();  QLOG_INFO() << "退出测试";;
+                    break;
+                }
+                else
+                {
+                    emit sigAutoTestSend(75, up_mes_var.m_strHVLock + "Ω");
+                }
+            }
+
+
 
             //   
             m_PowerData.clear();

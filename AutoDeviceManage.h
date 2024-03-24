@@ -49,6 +49,7 @@ protected:
 	QScopedPointer<QTcpSocket> m_pPowerTCP;
 	QScopedPointer<QTcpSocket> m_pMesUpTCP;
 	QScopedPointer<QTcpSocket> m_pPLCCtrTCP;
+	QScopedPointer<QTcpSocket> m_pMeterCtrTCP;
 	QScopedPointer<CANThread> m_pWaterCAN;
 	QScopedPointer<mHttp> m_pHttpMES;
 	std::atomic_bool m_bIsRecMES;
@@ -58,6 +59,13 @@ protected:
 	QString strGreen = "background-color:green";
 	QString strRed = "background-color:red";
 
+	enum MeterType
+	{
+		LOCKTEST = 0x1,
+		VOLTTEST = 0x2,
+		CURRTEST = 0x4
+	};
+	MeterType m_metertype= LOCKTEST;
 	//
 	/*****************************************************
 * 控制IO_OUT,共有18个IO输出点
@@ -101,6 +109,7 @@ protected:
 	QString InNum = "001E";
 signals:
 	void sigMesNewData(QString str);
+	void sigMeterNewData(QString str);
 	void sigPowerNewData(QString str);
 	void sigFlowCool(float flow);
 private slots:
@@ -117,6 +126,12 @@ private slots:
 	void on_pbCanRefresh_clicked();
 	void on_waterCAN_readlyRecived(int, quint32, QByteArray);
 public slots:
+
+	void on_pb_HVLock_connect_clicked(bool isCheck);
+	void on_pbHVLockResistance_clicked(bool isCheck);
+	void on_pbHVLockVoltage_clicked(bool isCheck);
+	void on_pbHVLockCurr_clicked(bool isCheck);
+
 	//冷水机
 	void on_pbBlowWater_clicked(bool isCheck);		//吹水
 	void on_pbStartOutCricle_clicked2(bool isCheck);		//外循环（开阀门）

@@ -46,6 +46,8 @@ struct AutoTestStruct
 	int m_iRateLowVoltage;		//36   低压电压
 	bool m_bPowerCalibration;	//37 功率校准
 	float m_fMaxCurrent;		//38 最大电流
+	bool m_bHVLockTest;			//39 测高压互锁？
+	int m_iHVLockResistanceTolerance;//误差
 	//bool isIndepandSend;
 
 };

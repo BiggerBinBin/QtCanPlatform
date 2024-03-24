@@ -1217,7 +1217,7 @@ void QCanSetting::on_modelView_Clicked(int row, int col)
 	int mc = paramView->rowCount();
 	for (int p = 0; p < paramView->rowCount(); p++)
 		paramView->removeRow(mc - p - 1);
-	paramView->setRowCount(40);
+	paramView->setRowCount(42);
 	paramView->setItem(0, 0, new QTableWidgetItem(QString("使能所在行")));
 	paramView->setItem(0, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_iEnableInLine)));
 	paramView->setItem(1, 0, new QTableWidgetItem(QString("使能操作")));
@@ -1324,6 +1324,12 @@ void QCanSetting::on_modelView_Clicked(int row, int col)
 
 	paramView->setItem(39, 0, new QTableWidgetItem(QString("最大电流")));
 	paramView->setItem(39, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_fMaxCurrent)));
+
+	paramView->setItem(40, 0, new QTableWidgetItem(QString("测高压互锁?")));
+	paramView->setItem(40, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_bHVLockTest)));
+
+	paramView->setItem(41, 0, new QTableWidgetItem(QString("互锁阻值Ω")));
+	paramView->setItem(41, 1, new QTableWidgetItem(QString::number(qGb->pGboleData.at(row).ats.m_iHVLockResistanceTolerance)));
 }
 
 void QCanSetting::on_modelView_cbStandar(int bStandard)
@@ -1947,6 +1953,12 @@ void QCanSetting::on_paramView_cellChanged(int row, int col)
 		break;
 	case 39:
 		qGb->pGboleData.at(n).ats.m_fMaxCurrent = paramView->item(row, col)->text().toDouble();
+		break;
+	case 40:
+		qGb->pGboleData.at(n).ats.m_bHVLockTest = paramView->item(row, col)->text().toInt();
+		break;
+	case 41:
+		qGb->pGboleData.at(n).ats.m_iHVLockResistanceTolerance = paramView->item(row, col)->text().toInt();
 		break;
 	default:
 		break;

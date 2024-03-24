@@ -72,7 +72,8 @@ struct UpMesData {
     QString m_strOverTempProtectedRe;   //过温保护恢复
     QString m_strOtherFault;            //其它错误
     QString m_strTestResult;            //测试结果
-    QString m_strMaxCurrent;            //测试结果
+    QString m_strMaxCurrent;            //最大电流
+    QString m_strHVLock;                //高压互锁
 };
 
 class CanTestPlatform : public QMainWindow
@@ -335,10 +336,15 @@ private:
     QMutex m_Mutex_Mes_Pop;
     QMutex m_Mutex_Pow;
     QMutex m_Mutex_Pow_Pop;
+    //Mes返回的数据
     QQueue<QString>m_MESData;
+    //高压电源返回的数据
     QQueue<QString>m_PowerData;
+    //万用表返回的数据
+    QString m_MeterData;
     std::atomic_bool _bIsRec_Mes = false;
     std::atomic_bool _bIsRec_Pow = false;
+    std::atomic_bool _bIsRec_Meter = false;
     QString m_strPHUCode;
     UpMesData up_mes_var;
     QTimer* t_GetVer = nullptr;         //
@@ -507,6 +513,9 @@ private slots:
     void on_sigFroMesNewData(QString data);
     //电源返回槽函数
     void on_sigFromThisPowerSet(QString data);
+    //万用表数据接收
+    void on_sigFromMeterNewData(QString data);
+
     //数据保存周期开关
     void on_savePeriodCheck_Changed(int n);
     //出口温度监控monitor

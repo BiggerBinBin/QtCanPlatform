@@ -14,11 +14,14 @@ AutoDeviceManage::AutoDeviceManage(QWidget *parent)
 	m_pPowerTCP.reset(new QTcpSocket);
 	m_pMesUpTCP.reset(new QTcpSocket);
 	m_pPLCCtrTCP.reset(new QTcpSocket);
+	m_pMeterCtrTCP.reset(new QTcpSocket);
 	connect(m_pPowerTCP.data(), &QTcpSocket::stateChanged, this, &AutoDeviceManage::on_powerTCP_stateChanged);
 	connect(m_pMesUpTCP.data(), &QTcpSocket::stateChanged, this, &AutoDeviceManage::on_powerTCP_stateChanged);
 	connect(m_pPLCCtrTCP.data(), &QTcpSocket::stateChanged, this, &AutoDeviceManage::on_powerTCP_stateChanged);
+	connect(m_pMeterCtrTCP.data(), &QTcpSocket::stateChanged, this, &AutoDeviceManage::on_powerTCP_stateChanged);
 	connect(m_pPowerTCP.data(), &QTcpSocket::readyRead, this, &AutoDeviceManage::on_powerTCP_readlyRecvied);
 	connect(m_pMesUpTCP.data(), &QTcpSocket::readyRead, this, &AutoDeviceManage::on_powerTCP_readlyRecvied);
+	connect(m_pMeterCtrTCP.data(), &QTcpSocket::readyRead, this, &AutoDeviceManage::on_powerTCP_readlyRecvied);
 	connect(m_pPLCCtrTCP.data(), &QTcpSocket::readyRead, this, &AutoDeviceManage::on_PLCCtrTCP_readlyRecvied);
 	m_pWaterCAN.reset(new CANThread);
 	connect(m_pWaterCAN.data(), SIGNAL(getProtocolData(int, quint32, QByteArray)), this, SLOT(onReceiveData(int, quint32, QByteArray)));
@@ -160,6 +163,24 @@ void AutoDeviceManage::on_powerTCP_readlyRecvied()
 		emit sigMesNewData(m_strMesData);
 		
 	}
+	else if (tcp == m_pMeterCtrTCP.data())
+	{
+		QByteArray res = m_pMeterCtrTCP->readAll();
+		QString data(res);
+		emit sigMeterNewData(data);
+		if (m_metertype & LOCKTEST)
+		{
+			ui.lineEdit_Resistance->setText(QString::number(data.toDouble(), 'f', 3));
+		}
+		else if (m_metertype & VOLTTEST)
+		{
+			ui.lineEdit_MeterVolt->setText(QString::number(data.toDouble(), 'f', 3));
+		}
+		else if (m_metertype & CURRTEST)
+		{
+			ui.lineEdit_MeterCurr->setText(QString::number(data.toDouble(), 'f', 3));
+		}
+	}
 }
 void AutoDeviceManage::on_PLCCtrTCP_readlyRecvied()
 {
@@ -190,6 +211,12 @@ void AutoDeviceManage::on_powerTCP_stateChanged(QAbstractSocket::SocketState sta
 			QLOG_WARN() << "PLC System not connected!";
 			m_bPLCMacInit = false;
 		}
+		else if (tcp == m_pMeterCtrTCP.data())
+		{
+			ui.pb_HVLock_connect->setChecked(false);
+			QLOG_WARN() << "Meter System not connected!";
+			//m_bPLCMacInit = false;
+		}
 		
 	}
 	else if (state == QAbstractSocket::ConnectedState)
@@ -212,6 +239,12 @@ void AutoDeviceManage::on_powerTCP_stateChanged(QAbstractSocket::SocketState sta
 			ui.pbConnectPLC->setChecked(true);
 			QLOG_WARN() << "PLC System  connected!";
 			m_bPLCMacInit = true;
+		}
+		else if (tcp == m_pMeterCtrTCP.data())
+		{
+			ui.pb_HVLock_connect->setChecked(true);
+			QLOG_WARN() << "Meter System connected!";
+			//m_bPLCMacInit = false;
 		}
 	}
 }
@@ -363,6 +396,85 @@ void AutoDeviceManage::requireCanWater(uint id, uchar data[8])
 void AutoDeviceManage::on_waterCAN_readlyRecived(int ch, quint32 id, QByteArray data)
 {
 
+}
+void AutoDeviceManage::on_pb_HVLock_connect_clicked(bool isCheck)
+{
+	if (isCheck)
+	{
+		if (m_pMeterCtrTCP->state() != QAbstractSocket::ConnectedState)
+		{
+			QString ipadd = ui.lineEdit_HVLock_IP->text();
+			ushort port = ui.lineEdit_HVLock_port->text().toUShort();
+			m_pMeterCtrTCP->connectToHost(ipadd, port);
+		}
+	}
+	else
+	{
+		m_pMeterCtrTCP->disconnectFromHost();
+	}
+}
+void AutoDeviceManage::on_pbHVLockResistance_clicked(bool isCheck)
+{
+	if (m_pMeterCtrTCP->state() != QAbstractSocket::ConnectedState)
+	{
+		QLOG_WARN() << "万用表未连接";
+		return;
+	}
+	m_metertype = LOCKTEST;
+	QByteArray data = "CONF:CONT\n";
+	m_pMeterCtrTCP->write(data);
+	m_pMeterCtrTCP->flush();
+	QEventLoop loop;
+	QTimer time;
+	//connect(&time, &QTimer::timeout, &loop, &QEventLoop::quit);
+	time.singleShot(300, &loop, &QEventLoop::quit);
+	time.start();
+	loop.exec();
+	data = "MEAS:CONT?\n";
+	m_pMeterCtrTCP->write(data);
+	m_pMeterCtrTCP->flush();
+}
+void AutoDeviceManage::on_pbHVLockVoltage_clicked(bool isCheck)
+{
+	if (m_pMeterCtrTCP->state() != QAbstractSocket::ConnectedState)
+	{
+		QLOG_WARN() << "万用表未连接";
+		return;
+	}
+	m_metertype = VOLTTEST;
+	QByteArray data = "CONF:VOLT:DC\n";
+	m_pMeterCtrTCP->write(data);
+	m_pMeterCtrTCP->flush();
+	QEventLoop loop;
+	QTimer time;
+	//connect(&time, &QTimer::timeout, &loop, &QEventLoop::quit);
+	time.singleShot(300, &loop, &QEventLoop::quit);
+	time.start();
+	loop.exec();
+	data = "MEAS:VOLT:DC?\n";
+	m_pMeterCtrTCP->write(data);
+	m_pMeterCtrTCP->flush();
+}
+void AutoDeviceManage::on_pbHVLockCurr_clicked(bool isCheck)
+{
+	if (m_pMeterCtrTCP->state() != QAbstractSocket::ConnectedState)
+	{
+		QLOG_WARN() << "万用表未连接";
+		return;
+	}
+	m_metertype = CURRTEST;
+	QByteArray data = "CONF:VOLT:DC\n";
+	m_pMeterCtrTCP->write(data);
+	m_pMeterCtrTCP->flush();
+	QEventLoop loop;
+	QTimer time;
+	//connect(&time, &QTimer::timeout, &loop, &QEventLoop::quit);
+	time.singleShot(300, &loop, &QEventLoop::quit);
+	time.start();
+	loop.exec();
+	data = "MEAS:VOLT:DC?\n";
+	m_pMeterCtrTCP->write(data);
+	m_pMeterCtrTCP->flush();
 }
 //产线旧冷水机
 bool AutoDeviceManage::setCoolantTemp(int temp2, int flow2,bool cooling, bool out)
