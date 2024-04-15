@@ -8,7 +8,8 @@ Login::Login(QWidget *parent)
 	ui.setupUi(this);
 	this->setWindowModified(true);
 	ui.lineEdit->setEchoMode(QLineEdit::EchoMode::Password);
-	getInitPW("./appData/login.ini");
+	
+	getInitPW(QApplication::applicationDirPath()+"/Data/login.ini");
 }
 
 Login::~Login()
