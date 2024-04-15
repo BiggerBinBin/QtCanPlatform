@@ -90,6 +90,8 @@ void qGboleData::save()
 		mItem.insert("m_iRateLowVoltage", pGboleData.at(i).ats.m_iRateLowVoltage);
 		mItem.insert("m_bPowerCalibration", pGboleData.at(i).ats.m_bPowerCalibration);
 		mItem.insert("m_fMaxCurrent", pGboleData.at(i).ats.m_fMaxCurrent);
+		mItem.insert("m_bHVLockTest", pGboleData.at(i).ats.m_bHVLockTest);
+		mItem.insert("m_iHVLockResistanceTolerance", pGboleData.at(i).ats.m_iHVLockResistanceTolerance);
 
 
 
@@ -260,6 +262,8 @@ void qGboleData::read()
 		ptem.ats.m_iRateLowVoltage = rootSecond["m_iRateLowVoltage"].toInt(24);
 		ptem.ats.m_bPowerCalibration = rootSecond["m_bPowerCalibration"].toBool(0);
 		ptem.ats.m_fMaxCurrent = rootSecond["m_fMaxCurrent"].toDouble();
+		ptem.ats.m_bHVLockTest = rootSecond["m_bHVLockTest"].toBool(0);
+		ptem.ats.m_iHVLockResistanceTolerance = rootSecond["m_iHVLockResistanceTolerance"].toInt(5);
 
 
 		//如果还有嵌套对象

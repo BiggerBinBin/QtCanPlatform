@@ -264,6 +264,7 @@ int AutoDeviceManage::getDeviceState()
 }
 bool AutoDeviceManage::initializeDev()
 {
+	on_pb_HVLock_connect_clicked(true);
 	on_pbConnectMes_clicked(true);
 	on_pbConnectPower_clicked(true);
 	on_pbOpenCanayst_clicked(true);

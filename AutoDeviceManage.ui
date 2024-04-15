@@ -240,7 +240,7 @@
                 <item>
                  <widget class="QLineEdit" name="lineEdit_HVLock_IP">
                   <property name="text">
-                   <string>192.168.223.11</string>
+                   <string>192.168.13.146</string>
                   </property>
                  </widget>
                 </item>

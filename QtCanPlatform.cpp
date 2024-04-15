@@ -6397,7 +6397,7 @@ void CanTestPlatform::on_processAutoTestSignal(int n, QString str)
     case 0:
         m_bCommunication = 0;
         on_pbSend_clicked(true); pbSend->setChecked(true);
-        showAutoTestStep(1, str, "");
+        showAutoTestStep(1+1, str, "");
         break;
     case 1:
         if(str=="通信正常")
@@ -6695,7 +6695,7 @@ bool CanTestPlatform::upMesOutData()
         up_mes_var.m_strOverTempProtected + "," +
         up_mes_var.m_strOverTempProtectedRe + "," +
         up_mes_var.m_strOtherFault + ","+
-        (up_mes_var.m_strTestResult=="Y"?"1":"9")+","+ up_mes_var.m_strMaxCurrent+ "$";
+        (up_mes_var.m_strTestResult=="Y"?"1":"9")+","+ up_mes_var.m_strMaxCurrent+ "," + up_mes_var.m_strHVLock+"$";
     QString res_mes = "#A102;" + m_strPHUCode + ";D_PHU01_006;" + up_mes_var.m_strTestResult+";"+QString::number(t_data.split(",").size()) + ";" + t_data;
     bool b4 = getMesResponed(res_mes);
     if (!b4)
@@ -6875,7 +6875,7 @@ void CanTestPlatform::workAutoTest()
 
                 while (!_bIsRec_Meter)
                 {
-                    if (runStep != -1)
+                    if (runStep == -1)
                     {
                         up_mes_var.m_strTestResult = "N"; upMesOutData(); emit sigAutoTestSend(-99, "人工退出测试"); QLOG_INFO() << "退出测试"; return;
                     }
@@ -7374,9 +7374,9 @@ void CanTestPlatform::workAutoTest()
             if (_NEEDCTRLPW_)
             {
                 emit sigAutoTestSend(45, "低压电源断开");
-                QThread::msleep(4000);
+                QThread::msleep(2000);
                 emit sigAutoTestSend(46, "低压电源导通");
-                QThread::msleep(6000);
+                QThread::msleep(1000);
             }
             if (currentTestModel.ats.m_bOverTempOrDry)
             {
