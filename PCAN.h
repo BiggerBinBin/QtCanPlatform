@@ -34,26 +34,35 @@ public:
 	~PCAN();
     QStringList DetectDevice();
     bool ConnectDevice(int usb_index, int bitrate);
-    bool ConnectDevice(QString usb_name, int bitrate);
-    void Receive();
+    //bool ConnectDevice(QString usb_name, int bitrate);
+    
     void SendFrame(int FrameID, uchar Data[]);
     void SendFrame(int FrameID, uchar Data[],bool bStandard);
     void CloseCan();
-    bool isReceive;
-    QList<QCanBusDeviceInfo> m_interfaces;
-    QCanBusDevice* m_canDevice = nullptr;
-    const QString plugin = "peakcan";
+ 
+   
     QString errorString;
-    bool IsOpen() { return isOpen; };
+    bool IsOpen() { return m_bConnect; };
     bool readIsExtend() {
         return isExtendedFream
             ;
     }
     void setIsExtend(bool b) { isExtendedFream = b; }
+    bool setDeviceList(const  std::vector<ushort>& list);
+    std::vector<ushort> getDeviceList() {
+        return m_device_io_list;
+            
+    }
 private:
     void run();
-    bool isOpen = false;
     bool isExtendedFream = false;
+    //当前连接状态
+    bool m_bConnect;
+    ushort m_hCurHandle;
+    //可用的设备索引
+    std::vector<ushort> m_device_io_list;
+    //PCAN默认的设备句柄，这里初始化必须C++17及以上才能编译
+    void disConnectDev();
 signals:
     void getProtocolData(uint frame_id, QByteArray data);
 };

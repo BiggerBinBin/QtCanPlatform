@@ -964,7 +964,7 @@ void QDeviceCtrl::on_dOpenCan_clicked(bool isCheck)
 			bitRate = 250;
 			break;
 		}
-		bool b = waterCan->ConnectDevice(ui.dCanDevice->currentText(), bitRate);
+		bool b = waterCan->ConnectDevice(ui.dCanDevice->currentIndex(), bitRate);
 		
 		if (!b)
 		{

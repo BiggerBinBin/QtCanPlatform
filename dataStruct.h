@@ -48,6 +48,7 @@ struct AutoTestStruct
 	float m_fMaxCurrent;		//38 最大电流
 	bool m_bHVLockTest;			//39 测高压互锁？
 	int m_iHVLockResistanceTolerance;//误差
+	bool m_bVerInverter;		//40 版本号前后反转？
 	//bool isIndepandSend;
 
 };

@@ -4138,10 +4138,14 @@ void CanTestPlatform::on_pbRefreshDevice_clicked()
     if (cbCanType->currentIndex() == 0)
     {
         pcan->DetectDevice();
-        pcanArr[0]->DetectDevice();
+        pcanArr[0]->setDeviceList(pcan->getDeviceList());
+        pcanArr[1]->setDeviceList(pcan->getDeviceList());
+        pcanArr[2]->setDeviceList(pcan->getDeviceList());
+        pcanArr[3]->setDeviceList(pcan->getDeviceList());
+        /*pcanArr[0]->DetectDevice();
         pcanArr[1]->DetectDevice();
-        pcanArr[2]->DetectDevice();
-        QStringList canStr = pcanArr[3]->DetectDevice();
+        pcanArr[2]->DetectDevice();*/
+        QStringList canStr = pcan->DetectDevice();
         for (int i = 0; i < canStr.size(); ++i)
         {
             cbPcan->addItem(canStr.at(i));
@@ -4274,11 +4278,11 @@ void CanTestPlatform::on_pbOpenPcan_clicked()
             if (1 == cbIsMutil->currentIndex())
             {
                 for (int i = 0; i < 4 && i < cbPcan->count(); i++)
-                       b |= pcanArr[i]->ConnectDevice(pcanArr[i]->m_interfaces.at(i).name(), bitRate);
+                       b |= pcanArr[i]->ConnectDevice(i, bitRate);
             }
             else if (0 == cbIsMutil->currentIndex())
             {
-                b = pcan->ConnectDevice(cbPcan->currentText(), bitRate);
+                b = pcan->ConnectDevice(cbPcan->currentIndex(), bitRate);
                 
                 //b = p_dev_Handle->openDevice(json);
                
@@ -5604,9 +5608,20 @@ void CanTestPlatform::getVerAuto(const AutoTestStruct& at)
         {
             if (list.size() == 8 && startBit <= 48)
             {
+
+                
                 int ver1 = list[startBit / 8].mid(startBit % 8, 8).toInt(nullptr, 2);
                 int ver2 = list[startBit / 8 + 1].mid(startBit % 8, 8).toInt(nullptr, 2);
-                QString toVer = QString::number(ver1)+"."+ QString::number(ver2);
+                QString toVer;
+                if (at.m_bVerInverter)
+                {
+                    toVer = QString::number(ver2) + "." + QString::number(ver1);
+                }
+                else
+                {
+                    toVer = QString::number(ver1) + "." + QString::number(ver2);
+                }
+                //QString toVer = QString::number(ver1)+"."+ QString::number(ver2);
                 up_mes_var.m_strVer = toVer;
                 if (toVer == std_ver)
                 {
@@ -7376,7 +7391,7 @@ void CanTestPlatform::workAutoTest()
                 emit sigAutoTestSend(45, "低压电源断开");
                 QThread::msleep(2000);
                 emit sigAutoTestSend(46, "低压电源导通");
-                QThread::msleep(1000);
+                QThread::msleep(5000);
             }
             if (currentTestModel.ats.m_bOverTempOrDry)
             {

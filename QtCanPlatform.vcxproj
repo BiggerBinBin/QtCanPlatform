@@ -108,10 +108,11 @@
     <ClCompile>
       <AdditionalIncludeDirectories>./Qslog/include;./kvaserX64/INC;./ControlCAN;./zdbc_lib;./PLIN-API/Include;./BLF/Include;./Toomoss/include;$(_LIB_)/;F:\Lyb-file\Code\QtCanPlatform-Multiple-Dev\QtCanPlatform\zlgcan;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard_C>stdc17</LanguageStandard_C>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>./QsLog/bin;./kvaserX64/lib/X64;./ControlCAN/x64;./zdbc_lib/windows/x64;./PLIN-API/x64/VC_LIB;./BLF/LIB/x64_Release;./Toomoss/libs/x86_64;F:\Lyb-file\Code\QtCanPlatform-Multiple-Dev\QtCanPlatform\zlgcan;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>QsLog2.lib;canlib32.lib;ControlCAN.lib;zdbc.lib;PLinApi.lib;binlog.lib;odbc32.lib;odbccp32.lib;USB2XXX.lib;E:\AppInstall\VS_MSVP_Complier\5.15.2\msvc2019_64\lib\qtmain.lib;F:\Lyb-file\Code\QtCanPlatform-Multiple-Dev\QtCanPlatform\zlgcan\zlgcan.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>./QsLog/bin;./kvaserX64/lib/X64;./ControlCAN/x64;./zdbc_lib/windows/x64;./PLIN-API/x64/VC_LIB;./BLF/LIB/x64_Release;./Toomoss/libs/x86_64;F:\Lyb-file\Code\QtCanPlatform-Multiple-Dev\QtCanPlatform\zlgcan;./PCAN-Basic-API/x64/VC_LIB;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>QsLog2.lib;canlib32.lib;ControlCAN.lib;zdbc.lib;PLinApi.lib;binlog.lib;odbc32.lib;odbccp32.lib;USB2XXX.lib;E:\AppInstall\VS_MSVP_Complier\5.15.2\msvc2019_64\lib\qtmain.lib;F:\Lyb-file\Code\QtCanPlatform-Multiple-Dev\QtCanPlatform\zlgcan\zlgcan.lib;PCANBasic.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -126,8 +127,8 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Link>
-      <AdditionalLibraryDirectories>./QsLog/bin;./kvaserX64/lib/X64;./ControlCAN/x64;./zdbc_lib/windows/x64;./PLIN-API/x64/VC_LIB;./BLF/LIB/x64_Debug;./Toomoss/libs/x86_64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>E:\AppInstall\VS_MSVP_Complier\5.15.2\msvc2019_64\lib\qtmain.lib;QsLog2.lib;canlib32.lib;ControlCAN.lib;zdbc.lib;PLinApi.lib;binlog.lib;odbc32.lib;odbccp32.lib;USB2XXX.lib;gdi32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>./QsLog/bin;./kvaserX64/lib/X64;./ControlCAN/x64;./zdbc_lib/windows/x64;./PLIN-API/x64/VC_LIB;./BLF/LIB/x64_Debug;./Toomoss/libs/x86_64;./PCAN-Basic-API/x64/VC_LIB;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>E:\AppInstall\VS_MSVP_Complier\5.15.2\msvc2019_64\lib\qtmain.lib;QsLog2.lib;canlib32.lib;ControlCAN.lib;zdbc.lib;PLinApi.lib;binlog.lib;odbc32.lib;odbccp32.lib;USB2XXX.lib;gdi32.lib;PCANBasic.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <ClCompile>
       <AdditionalIncludeDirectories>./QsLog/include;./kvaserX64/INC;./ControlCAN;./zdbc_lib;./PLIN-API/Include;./BLF/Include;./QtSoap;./gSoapWeb;./Toomoss/include;$(_LIB_)/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
