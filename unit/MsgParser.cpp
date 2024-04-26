@@ -219,26 +219,63 @@ float MsgParser::moto_Lsb_Parser(const protoItem& pItem, const QByteArray& data,
         {
             if (octHex)
             {
-                int nn = (binaryStr[startByte - 1].mid(16 + (startBit % 8)- startLenght, startLenght - 8 + (startBit % 8)) + binaryStr[startByte].mid(0, 8 - (startBit % 8))).toInt(NULL, 2);
+                //int nn = (binaryStr[startByte - 1].mid(16 + (startBit % 8)- startLenght, startLenght - 8 + (startBit % 8)) + binaryStr[startByte].mid(0, 8 - (startBit % 8))).toInt(NULL, 2);
+                
+                 //前一个字节的长度
+                int preLeng = startLenght - (8 - startBit % 8);
+                //当前字节的长度
+                int nextLeng = 8 - startBit % 8;
+                //前一上字节的位数据
+                QString preStr = binaryStr[startByte - 1].mid(8 - preLeng);
+                //当前字节的位数据
+                QString nextStr = binaryStr[startByte].mid(0, nextLeng);
+                //高位在前，低位在后
+                int nn = (preStr + nextStr).toInt(NULL, 2);// *precision + offset;
+
                 QString ss = QString("%1").arg(nn, 0, 16, QLatin1Char('0'));
                 temp = ss.toInt() * precision + offset;
             }
             else
             {
-                temp = (binaryStr[startByte - 1].mid(16 + (startBit % 8) - startLenght, startLenght - 8 + (startBit % 8)) + binaryStr[startByte].mid(0, 8 - (startBit % 8))).toInt(NULL, 2) * precision + offset;
+                //前一个字节的长度
+                int preLeng = startLenght - (8 - startBit % 8);
+                //当前字节的长度
+                int nextLeng = 8 - startBit % 8;
+                //前一上字节的位数据
+                QString preStr = binaryStr[startByte - 1].mid(8 - preLeng);
+                //当前字节的位数据
+                QString nextStr = binaryStr[startByte].mid(0, nextLeng);
+                //高位在前，低位在后
+                temp = (preStr+ nextStr).toInt(NULL, 2) * precision + offset;
+                //temp = (binaryStr[startByte - 1].mid(16 + (startBit % 8) - startLenght, startLenght - 8 + (startBit % 8)) + binaryStr[startByte].mid(0, 8 - (startBit % 8))).toInt(NULL, 2) * precision + offset;
             }
         }else if(len <= 24)
         {
             //跨三个字节的，应该没有.放屁，他吖的就有
             if (octHex)
             {
-                int nn = (binaryStr[startByte - 2].mid(16 + (startBit % 8) - startLenght, startLenght - 8 + (startBit % 8)) + binaryStr[startByte - 1] + binaryStr[startByte].mid(0, 8 - (startBit % 8))).toInt(NULL, 2);
+                //int nn = (binaryStr[startByte - 2].mid(16 + (startBit % 8) - startLenght, startLenght - 8 + (startBit % 8)) + binaryStr[startByte - 1] + binaryStr[startByte].mid(0, 8 - (startBit % 8))).toInt(NULL, 2);
+                
+                int last_leng = 8 - (startBit % 8);
+                int mid_leng = 8;
+                int first_leng = startLenght - (8 + last_leng);
+                QString lastStr = binaryStr[startByte].mid(0, last_leng);
+                QString midStr = binaryStr[startByte - 1];
+                QString first_leng = binaryStr[startByte - 2].mid(8 - first_leng);
+                int nn = (first_leng + midStr + lastStr).toInt(NULL, 2);
                 QString ss = QString("%1").arg(nn, 0, 16, QLatin1Char('0'));
                 temp = ss.toInt() * precision + offset;
             }
             else
             {
-                temp = (binaryStr[startByte - 2].mid(16 + (startBit % 8) - startLenght, startLenght - 8 + (startBit % 8)) + binaryStr[startByte-1] + binaryStr[startByte].mid(0, 8 - (startBit % 8))).toInt(NULL, 2) * precision + offset;
+                int last_leng = 8 - (startBit % 8);
+                int mid_leng = 8;
+                int first_leng = startLenght - (8 + last_leng);
+                QString lastStr = binaryStr[startByte].mid(0, last_leng);
+                QString midStr = binaryStr[startByte-1];
+                QString first_leng = binaryStr[startByte-2].mid(8- first_leng);
+                temp = (first_leng+ midStr+ lastStr).toInt(NULL, 2) * precision + offset;
+                //temp = (binaryStr[startByte - 2].mid(16 + (startBit % 8) - startLenght, startLenght - 8 + (startBit % 8)) + binaryStr[startByte-1] + binaryStr[startByte].mid(0, 8 - (startBit % 8))).toInt(NULL, 2) * precision + offset;
                 
             }
         }

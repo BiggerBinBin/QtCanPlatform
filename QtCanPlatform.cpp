@@ -1245,7 +1245,11 @@ void CanTestPlatform::sendData()
                 
             memset(s_Data, 0, 8 * sizeof(uchar));
             unsigned int fream_id;
-            bool b= intelProtocol(sendCanData.at(i), s_Data, fream_id);
+            bool b;
+            if(0==currentTestModel.agreement)
+                b= intelProtocol(sendCanData.at(i), s_Data, fream_id);
+            else
+                b = motoProtocol(sendCanData.at(i), s_Data, fream_id);
             if (!b)
                 continue;
             if(isTrace)
@@ -1589,6 +1593,7 @@ bool CanTestPlatform::motoProtocol(canIdData& cdata,uchar data[], unsigned int& 
     if (cdata.pItem.size() <= 0)
         return false;
     fream_id = cdata.strCanId.toUInt(NULL, 16);
+    memset(data, 0x0, 8);
     for (int i = 0; i < cdata.pItem.size(); i++)
     {
         const protoItem& itemp = cdata.pItem.at(i);
@@ -1624,35 +1629,35 @@ bool CanTestPlatform::motoProtocol(canIdData& cdata,uchar data[], unsigned int& 
                 switch (bit)
                 {
                 case 1:
-                    data[startbyte] += (senddd & 0x1) << 7;
+                    data[startbyte+1] += (senddd & 0x1) << 7;
                     break;
                 case 2:
-                    data[startbyte] += (senddd & 0x3) << 6;
+                    data[startbyte+1] += (senddd & 0x3) << 6;
                     break;
                 case 3:
-                    data[startbyte] += (senddd & 0x7) << 5;
+                    data[startbyte+1] += (senddd & 0x7) << 5;
                     break;
                 case 4:
-                    data[startbyte] += (senddd & 0xF) << 4;
+                    data[startbyte + 1] += (senddd & 0xF) << 4;
                     break;
                 case 5:
-                    data[startbyte] += (senddd & 0x1F) << 3;
+                    data[startbyte + 1] += (senddd & 0x1F) << 3;
                     break;
                 case 6:
-                    data[startbyte] += (senddd & 0x3F) << 2;
+                    data[startbyte + 1] += (senddd & 0x3F) << 2;
                     break;
                 case 7:
-                    data[startbyte] += (senddd & 0x7F) << 1;
+                    data[startbyte + 1] += (senddd & 0x7F) << 1;
                     break;
                 case 8:
-                    data[startbyte] = (senddd & 0xFF);
+                    data[startbyte + 1] = (senddd & 0xFF);
                     break;
                 default:
                     break;
                 }
                 if (startbyte < 7)
                 {
-                    data[startbyte + 1] += senddd >> (8 - (startbit % 8));
+                    data[startbyte] += senddd >> (8 - (startbit % 8));
                 }
                 else
                 {
@@ -1669,9 +1674,9 @@ bool CanTestPlatform::motoProtocol(canIdData& cdata,uchar data[], unsigned int& 
         {
             int pos = startbit % 8;
             uchar m_send = senddd << pos & 0xff; //低8位
-            data[startbyte] += m_send;
+            data[startbyte+1] += m_send;
             m_send = senddd >> 8 & 0xff;         //高8位
-            data[startbyte + 1] += m_send;
+            data[startbyte] += m_send;
         }
     }
     return true;
