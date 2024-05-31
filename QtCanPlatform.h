@@ -55,7 +55,7 @@
 #include "SerialportManage.h"
 #include "zlgcanmanage.h"
 #pragma execution_character_set("utf-8")  
-
+class TP700TemperatureModel;
 struct UpMesData {
     QString m_strRatedTemp;             //测额定功率冷却液的温度
     QString m_strRatedVoltage;          //测额定功率高压电源的电压
@@ -415,8 +415,9 @@ private:
     bool m_bShowAutoTest;
     //使能时间
     //uint m_iEnableCount;
-
-    SerialportManage* serialport = nullptr;
+    TP700TemperatureModel* tp700 = nullptr;
+   
+    SerialportManage* serialport = nullptr; //低压电源控制器
     QByteArray OpenLowPwSerial;     //低压电压继电器开启，即断开（常开）
     QByteArray CloseLowPwSerial;    //低压电源继电器关闭，即导通
     QByteArray OpenPureSerial;      //纯水机继电器开（常闭）
@@ -531,6 +532,7 @@ private slots:
 
     void on_pbTestGetMaxCur_clicked(bool b);
 
+    void on_tp700_clciked();
 
 Q_SIGNALS:
     void sigNewRoll();

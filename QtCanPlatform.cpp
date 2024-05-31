@@ -24,6 +24,7 @@
 #include <WinBase.h>
 #include "./unit/MsgParser.h"
 #include <qlist.h>
+#include "TP700TemperatureModel.h"
 using namespace QsLogging;
 
 QString qmyss = "QComboBox{height:25px;border: 1px solid gray;border-radius: 5px;padding:1px 2px 1px 2px;}\
@@ -71,6 +72,7 @@ CanTestPlatform::CanTestPlatform(QWidget *parent)
     ui.menu->setEnabled(true);
     isLogin = false;
     
+    tp700 = new TP700TemperatureModel(this);
 
     OpenLowPwSerial.resize(8);
     OpenLowPwSerial[0] = 0xFF;
@@ -170,7 +172,11 @@ CanTestPlatform::~CanTestPlatform()
     {
         delete pZLG_CAN; pZLG_CAN = nullptr;
     }
-    
+    if (tp700)
+    {
+        tp700->close();
+        delete tp700;
+    }
     destroyLogger();   //释放
     
 }
@@ -578,11 +584,14 @@ void CanTestPlatform::initUi()
     m_cbSavePeriod->setText(tr("保存周期->"));
     m_lePeroid->setText(tr("1"));
     connect(m_cbSavePeriod, &QCheckBox::stateChanged, this, &CanTestPlatform::on_savePeriodCheck_Changed);
+    QPushButton* tp700 = new QPushButton(tr("温度采集设置"));
+    connect(tp700, &QPushButton::clicked, this, &CanTestPlatform::on_tp700_clciked);
     QHBoxLayout* clay = new QHBoxLayout(this);
     clay->addWidget(pbClearText);
     clay->addWidget(checkTrace);
     clay->addWidget(m_cbSavePeriod);
     clay->addWidget(m_lePeroid);
+    clay->addWidget(tp700);
     //clay->addSpacerItem(new QSpacerItem(20, 10));
     //topRightUI->addLayout(clay);
     QWidget *ctx = new QWidget(this);
@@ -747,6 +756,14 @@ void CanTestPlatform::on_pbTestGetMaxCur_clicked(bool b)
         getPowerCurrentMax(3);
         //t_current->stop();
     }
+}
+void CanTestPlatform::on_tp700_clciked()
+{
+    if (!tp700)
+    {
+        tp700 = new TP700TemperatureModel(this);
+    }
+    tp700->show();
 }
 void CanTestPlatform::on_action_About_triggered()
 {
@@ -961,83 +978,7 @@ bool CanTestPlatform::sendDataIntoTab_up()
         return false;
     }
 
-    //for (int i = 0; i < sendCanData.size(); i++)
-    //{
-    //    int num = sendCanData.at(i).pItem.size();
-
-    //    for (int j = 0; j < num; j++)
-    //    {
-    //        int cr = tableView->rowCount();
-    //        tableView->setRowCount(cr + 1);
-    //        QCheckBox* cbSend = new QCheckBox();
-    //        cbSend->setBaseSize(15, 15);
-    //        if (sendCanData.at(i).isSend)
-    //        {
-    //            cbSend->setChecked(true);
-    //        }
-    //        //控件居中，就是让各方边距为相等
-    //        QWidget* widget = new QWidget;
-    //        QHBoxLayout* layout = new QHBoxLayout;
-    //        layout->setSpacing(0);
-    //        layout->setMargin(0);
-    //        layout->setAlignment(Qt::AlignCenter);
-    //        layout->addWidget(cbSend);
-    //        widget->setLayout(layout);
-    //        connect(cbSend, &QCheckBox::stateChanged, this, &QtCanPlatform::on_checkSendChanged);
-    //        tableView->setCellWidget(cr, 0, cbSend);
-
-    //        //发送操作的下拉框
-    //        QComboBox* cb = new QComboBox();
-    //        for (int k = 0; k < sendCanData.at(i).pItem.at(j).stl_itemProperty.size(); ++k)
-    //        {
-    //            QString name = sendCanData.at(i).pItem.at(j).stl_itemProperty.at(k).toWord;
-    //            QColor bc = QColor(sendCanData.at(i).pItem.at(j).stl_itemProperty.at(k).r, sendCanData.at(i).pItem.at(j).stl_itemProperty.at(k).g, sendCanData.at(i).pItem.at(j).stl_itemProperty.at(k).b);
-    //            cb->addItem(name);
-    //            //设置Item的数据，使用Qt::BackgroundColorRole声明
-    //            cb->setItemData(cb->count() - 1, bc, Qt::BackgroundColorRole);
-    //        }
-    //        int sendValue = 0;
-    //        if (cb->count() > 0)
-    //        {
-    //            int k = cb->currentIndex();
-    //            QColor bc = QColor(sendCanData.at(i).pItem.at(j).stl_itemProperty.at(k).r, sendCanData.at(i).pItem.at(j).stl_itemProperty.at(k).g, sendCanData.at(i).pItem.at(j).stl_itemProperty.at(k).b);
-    //            sendValue = sendCanData.at(i).pItem.at(j).stl_itemProperty.at(k).value.toInt();
-    //            QString backcolor = "background-color:#" + QString("%1").arg(bc.red(), 2, 16, QLatin1Char('0')) +
-    //                QString("%1").arg(bc.green(), 2, 16, QLatin1Char('0')) +
-    //                QString("%1").arg(bc.blue(), 2, 16, QLatin1Char('0'));
-    //            cb->setStyleSheet(backcolor);
-    //        }
-    //        else
-    //        {
-    //            cb->setStyleSheet("background-color:#CCCCCC");
-    //        }
-    //        connect(cb, SIGNAL(currentIndexChanged(int)), this, SLOT(on_cbSelectSendItemChanged(int)));
-
-
-    //        tableView->setCellWidget(cr, 1, cb);
-    //        //QString mt = "0x"+QString("%1").arg(sendCanData.at(i).CanId, QString::number(sendCanData.at(i).CanId).length(), 16).toUpper().trimmed();
-    //        QString mt = sendCanData.at(i).strCanId;
-    //        QTableWidgetItem* it1 = new QTableWidgetItem(QString::number(sendValue));
-    //        it1->setTextAlignment(Qt::AlignVCenter | Qt::AlignHCenter);
-    //        tableView->setItem(cr, 2, it1);
-    //        QTableWidgetItem* it3 = new QTableWidgetItem(mt);
-    //        it3->setTextAlignment(Qt::AlignVCenter | Qt::AlignHCenter);
-    //        tableView->setItem(cr, 4, it3);
-    //        QTableWidgetItem* it2 = new QTableWidgetItem(sendCanData.at(i).pItem.at(j).bitName);
-    //        it2->setTextAlignment(Qt::AlignVCenter | Qt::AlignHCenter);
-    //        tableView->setItem(cr, 3, it2);
-    //        QTableWidgetItem* it4 = new QTableWidgetItem(QString::number(sendCanData.at(i).pItem.at(j).startByte));
-    //        it4->setTextAlignment(Qt::AlignVCenter | Qt::AlignHCenter);
-    //        tableView->setItem(cr, 5, it4);
-    //        QTableWidgetItem* it5 = new QTableWidgetItem(QString::number(sendCanData.at(i).pItem.at(j).startBit));
-    //        it5->setTextAlignment(Qt::AlignVCenter | Qt::AlignHCenter);
-    //        tableView->setItem(cr, 6, it5);
-    //        QTableWidgetItem* it6 = new QTableWidgetItem(QString::number(sendCanData.at(i).pItem.at(j).bitLeng));
-    //        it6->setTextAlignment(Qt::AlignVCenter | Qt::AlignHCenter);
-    //        tableView->setItem(cr, 7, it6);
-
-    //    }
-    //}
+    
     return true;
 }
 bool CanTestPlatform::recDataIntoTab()
@@ -1145,6 +1086,9 @@ bool CanTestPlatform::recDataIntoTab()
         tableArray[ch]->setRowCount(cr + 1);
         //tableRecView->insertRow(2);
     }
+
+    
+
     if (ch == 0)
     {
         excelTitle.remove(excelTitle.size() - 1, 1);
@@ -1153,6 +1097,14 @@ bool CanTestPlatform::recDataIntoTab()
         tableRollTitle->setHorizontalHeaderLabels(rollTitle);
        
         tableRollTitle->horizontalHeader()->setStyleSheet(rollTitleStyle);
+
+        if (tp700)
+        {
+            if (tp700->getIsUpdate())
+            {
+                excelTitle += ","+tp700->getAliasName();
+            }
+        }
     }
     tableRollTitleArray[ch]->setColumnCount(rollTitle.size());
     tableRollTitleArray[ch]->clear();
@@ -1214,6 +1166,28 @@ bool CanTestPlatform::recDataIntoTab()
 
         }
         cr += 2;
+    }
+
+    if (tp700 && tp700->getIsUpdate())
+    {
+        int cr = tableArray[ch]->rowCount();
+        //每加一行就要设置到表格去
+        tableArray[ch]->setRowCount(cr + 2);
+        QStringList alias = tp700->getAliasName().split(",");
+        for (int i = 0; i < alias.size() && i < 8; i++)
+        {
+            QTableWidgetItem* item = new QTableWidgetItem(alias.at(i));
+            item->setTextAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
+            item->font().setBold(true);
+            item->setBackgroundColor(recBackgroudColor);
+            item->setForeground(QBrush(recFontColor));
+            QFont ff;
+            ff.setBold(true);
+            item->setFont(ff);
+            tableArray[ch]->setItem(cr, i, item);
+        }
+
+
     }
    }
     return true;
@@ -1423,7 +1397,9 @@ void CanTestPlatform::sendData()
             other[0] = recCanData.at(k).len;
             other[1] = 1;
             if(currentTestModel.modelName!="Bergstrom-LIN-330V7kW")
-                pHardWare->SendMessage(recCanData.at(k).strCanId.toInt(NULL,16), s_Data, other);
+            {
+                pHardWare->SendMessage(recCanData.at(k).strCanId.toInt(NULL, 16), s_Data, other);
+            }
            
         }
         if (m_bGetVer)
@@ -2016,8 +1992,42 @@ void CanTestPlatform::recAnalyseIntel(unsigned int fream_id,QByteArray data)
         iBeginV++;
 
     }
+    //=====2024-05-31 16:39 ========
+    if (tp700 && tp700->getIsUpdate())
+    {
+        int cr = tableArray[0]->rowCount()-2;
+        //每加一行就要设置到表格去
+        //tableArray[0]->setRowCount(cr + 2);
+        QStringList alias = tp700->getAliasName().split(",");
+        QVector<float> res = tp700->getTemperatur();
+        for (int i = 0; i < alias.size() && i < res.size(); i++)
+        {
+            QTableWidgetItem* item = new QTableWidgetItem(alias.at(i));
+            item->setTextAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
+            item->font().setBold(true);
+            item->setBackgroundColor(recBackgroudColor);
+            item->setForeground(QBrush(recFontColor));
+            QFont ff;
+            ff.setBold(true);
+            item->setFont(ff);
+            tableArray[0]->setItem(cr, i, item);
+
+            QTableWidgetItem* item2 = new QTableWidgetItem(QString::number(res.at(i),'f',2));
+            item2->setTextAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
+            item2->font().setBold(true);
+            tableArray[0]->setItem(cr+1, i, item2);
+
+        }
+    }
     dTemp.remove(dTemp.size() - 1, 1);
-    
+    if (tp700 && tp700->getIsUpdate())
+    {
+        QVector<float> res = tp700->getTemperatur();
+        for (auto x : res)
+        {
+            dTemp += ","+QString::number(x, 'f', 2);
+        }
+    }
     uint nn = (dd.toMSecsSinceEpoch() - lastTime.toMSecsSinceEpoch());
     lastTime = dd;
     
@@ -2334,8 +2344,44 @@ void CanTestPlatform::recAnalyseMoto(unsigned int fream_id, QByteArray data)
         iBeginV++;
 
     }
+    //=====2024-05-31 16:39 ========
+    if (tp700 && tp700->getIsUpdate())
+    {
+        int cr = tableArray[0]->rowCount()-2;
+        //每加一行就要设置到表格去
+        //tableArray[0]->setRowCount(cr + 2);
+        QStringList alias = tp700->getAliasName().split(",");
+        QVector<float> res = tp700->getTemperatur();
+        for (int i = 0; i < alias.size() && i < res.size(); i++)
+        {
+            QTableWidgetItem* item = new QTableWidgetItem(alias.at(i));
+            item->setTextAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
+            item->font().setBold(true);
+            item->setBackgroundColor(recBackgroudColor);
+            item->setForeground(QBrush(recFontColor));
+            QFont ff;
+            ff.setBold(true);
+            item->setFont(ff);
+            tableArray[0]->setItem(cr, i, item);
+
+            QTableWidgetItem* item2 = new QTableWidgetItem(QString::number(res.at(i), 'f', 2));
+            item2->setTextAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
+            item2->font().setBold(true);
+            tableArray[0]->setItem(cr + 1, i, item2);
+
+        }
+    }
+
     dTemp.remove(dTemp.size() - 1, 1);
 
+    if (tp700 && tp700->getIsUpdate())
+    {
+        QVector<float> res = tp700->getTemperatur();
+        for (auto x : res)
+        {
+            dTemp += "," + QString::number(x, 'f', 2);
+        }
+    }
     uint nn = (dd.toMSecsSinceEpoch() - lastTime.toMSecsSinceEpoch());
     lastTime = dd;
     //防止一个周期内来一帧就保存一次
@@ -2651,8 +2697,44 @@ void CanTestPlatform::recAnalyseMotoLSB(unsigned int fream_id, QByteArray data)
         iBeginV++;
 
     }
+    //=====2024-05-31 16:39 ========
+    if (tp700 && tp700->getIsUpdate())
+    {
+        int cr = tableArray[0]->rowCount()-2;
+        //每加一行就要设置到表格去
+        //tableArray[0]->setRowCount(cr + 2);
+        QStringList alias = tp700->getAliasName().split(",");
+        QVector<float> res = tp700->getTemperatur();
+        for (int i = 0; i < alias.size() && i < res.size(); i++)
+        {
+            QTableWidgetItem* item = new QTableWidgetItem(alias.at(i));
+            item->setTextAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
+            item->font().setBold(true);
+            item->setBackgroundColor(recBackgroudColor);
+            item->setForeground(QBrush(recFontColor));
+            QFont ff;
+            ff.setBold(true);
+            item->setFont(ff);
+            tableArray[0]->setItem(cr, i, item);
+
+            QTableWidgetItem* item2 = new QTableWidgetItem(QString::number(res.at(i), 'f', 2));
+            item2->setTextAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
+            item2->font().setBold(true);
+            tableArray[0]->setItem(cr + 1, i, item2);
+
+        }
+    }
+
     dTemp.remove(dTemp.size() - 1, 1);
 
+    if (tp700 && tp700->getIsUpdate())
+    {
+        QVector<float> res = tp700->getTemperatur();
+        for (auto x : res)
+        {
+            dTemp += "," + QString::number(x, 'f', 2);
+        }
+    }
     uint nn = (dd.toMSecsSinceEpoch() - lastTime.toMSecsSinceEpoch());
     lastTime = dd;
     //防止一个周期内来一帧就保存一次
@@ -2948,8 +3030,44 @@ void CanTestPlatform::recAnalyseIntel(int ch,unsigned int fream_id, QByteArray d
         iBeginV++;
 
     }
+    //=====2024-05-31 16:39 ========
+    if (tp700 && tp700->getIsUpdate())
+    {
+        int cr = tableArray[ch]->rowCount()-2;
+        //每加一行就要设置到表格去
+        //tableArray[ch]->setRowCount(cr + 2);
+        QStringList alias = tp700->getAliasName().split(",");
+        QVector<float> res = tp700->getTemperatur();
+        for (int i = 0; i < alias.size() && i < res.size(); i++)
+        {
+            QTableWidgetItem* item = new QTableWidgetItem(alias.at(i));
+            item->setTextAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
+            item->font().setBold(true);
+            item->setBackgroundColor(recBackgroudColor);
+            item->setForeground(QBrush(recFontColor));
+            QFont ff;
+            ff.setBold(true);
+            item->setFont(ff);
+            tableArray[ch]->setItem(cr, i, item);
+
+            QTableWidgetItem* item2 = new QTableWidgetItem(QString::number(res.at(i), 'f', 2));
+            item2->setTextAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
+            item2->font().setBold(true);
+            tableArray[ch]->setItem(cr + 1, i, item2);
+
+        }
+    }
+
     dTemp.remove(dTemp.size() - 1, 1);
 
+    if (tp700 && tp700->getIsUpdate())
+    {
+        QVector<float> res = tp700->getTemperatur();
+        for (auto x : res)
+        {
+            dTemp += "," + QString::number(x, 'f', 2);
+        }
+    }
     uint nn = (dd.toMSecsSinceEpoch() - lastTime.toMSecsSinceEpoch());
     lastTime = dd;
     
@@ -3198,75 +3316,7 @@ void CanTestPlatform::recAnalyseMoto(int ch,unsigned int fream_id, QByteArray da
     std::vector<showTableData>::iterator iBeginV = showTableVec.begin();
     std::vector<showTableData>::iterator iEndV = showTableVec.end();
     int cr = 0;
-    //while (iBeginV != iEndV)
-    //{
-    //    int num = iBeginV->Pdata.size();
-    //    int idex = 0;
-    //    for (int j = 0; j < num; j++, idex++)
-    //    {
-    //        if (idex > 9)   //每行10列
-    //        {
-    //            idex = 0;
-    //            cr += 2;
-    //        }
-
-    //        QString tnamp = iBeginV->Pdata.at(j).name;
-    //        QString toword = iBeginV->Pdata.at(j).toWord;
-    //        tableArray[ch]->setItem(cr, idex, new QTableWidgetItem(tnamp));
-    //        QFont ff;
-    //        ff.setBold(true);
-    //        tableArray[ch]->item(cr, idex)->setFont(ff);
-    //        tableArray[ch]->item(cr, idex)->setTextAlignment(Qt::AlignCenter);
-    //        tableArray[ch]->item(cr, idex)->setBackgroundColor(recBackgroudColor);
-    //        tableArray[ch]->item(cr, idex)->setForeground(QBrush(recFontColor));
-    //        tableArray[ch]->setItem(cr + 1, idex, new QTableWidgetItem(toword));
-    //        tableArray[ch]->item(cr + 1, idex)->setBackgroundColor(QColor(iBeginV->Pdata.at(j).color.r, iBeginV->Pdata.at(j).color.g, iBeginV->Pdata.at(j).color.b));
-    //        tableArray[ch]->item(cr + 1, idex)->setTextAlignment(Qt::AlignCenter);
-    //        dTemp += toword + ",";
-    //    }
-    //    if (idex < 9)
-    //    {
-    //        QString tnamp = "";
-    //        QString toword = "";
-    //        for (; idex <= 9; idex++)
-    //        {
-    //            try
-    //            {
-    //                tableArray[ch]->setItem(cr, idex, new QTableWidgetItem(tnamp));
-    //                QFont ff;
-    //                ff.setBold(true);
-    //                QTableWidgetItem* b = tableArray[ch]->item(cr, idex);
-    //                if (!b)
-    //                    continue;
-    //                b->setFont(ff);
-    //                b = tableArray[ch]->item(cr, idex);
-    //                if (!b)
-    //                    continue;
-    //                b->setTextAlignment(Qt::AlignCenter);
-    //                b = tableArray[ch]->item(cr, idex);
-    //                if (!b)
-    //                    continue;
-    //                b->setBackgroundColor(recBackgroudColor);
-    //                b = tableArray[ch]->item(cr, idex);
-    //                if (!b)
-    //                    continue;
-    //                b->setForeground(QBrush(recFontColor));
-    //                tableArray[ch]->setItem(cr + 1, idex, new QTableWidgetItem(toword));
-    //                b = tableArray[ch]->item(cr + 1, idex);
-    //                if (!b)
-    //                    continue;
-
-    //            }
-    //            catch (const std::exception& e)
-    //            {
-    //                QLOG_INFO() << "Error:" << e.what();
-    //            }
-    //        }
-    //    }
-    //    cr += 2;
-    //    iBeginV++;
-
-    //}
+    
     while (iBeginV != iEndV)
     {
 
@@ -3367,7 +3417,44 @@ void CanTestPlatform::recAnalyseMoto(int ch,unsigned int fream_id, QByteArray da
         iBeginV++;
 
     }
+    //=====2024-05-31 16:39 ========
+    if (tp700 && tp700->getIsUpdate())
+    {
+        int cr = tableArray[ch]->rowCount()-2;
+        //每加一行就要设置到表格去
+        //tableArray[ch]->setRowCount(cr + 2);
+        QStringList alias = tp700->getAliasName().split(",");
+        QVector<float> res = tp700->getTemperatur();
+        for (int i = 0; i < alias.size() && i < res.size(); i++)
+        {
+            QTableWidgetItem* item = new QTableWidgetItem(alias.at(i));
+            item->setTextAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
+            item->font().setBold(true);
+            item->setBackgroundColor(recBackgroudColor);
+            item->setForeground(QBrush(recFontColor));
+            QFont ff;
+            ff.setBold(true);
+            item->setFont(ff);
+            tableArray[ch]->setItem(cr, i, item);
+
+            QTableWidgetItem* item2 = new QTableWidgetItem(QString::number(res.at(i), 'f', 2));
+            item2->setTextAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
+            item2->font().setBold(true);
+            tableArray[ch]->setItem(cr + 1, i, item2);
+
+        }
+    }
     dTemp.remove(dTemp.size() - 1, 1);
+
+    if (tp700 && tp700->getIsUpdate())
+    {
+        QVector<float> res = tp700->getTemperatur();
+        for (auto x : res)
+        {
+            dTemp += "," + QString::number(x, 'f', 2);
+        }
+    }
+
     uint nn = (dd.toMSecsSinceEpoch() - lastTime.toMSecsSinceEpoch());
     lastTime = dd;
     //if (nn > 50)
@@ -3680,7 +3767,44 @@ void CanTestPlatform::recAnalyseMotoLSB(int ch, unsigned int fream_id, QByteArra
         iBeginV++;
 
     }
+    //=====2024-05-31 16:39 ========
+    if (tp700 && tp700->getIsUpdate())
+    {
+        int cr = tableArray[ch]->rowCount()-2;
+        //每加一行就要设置到表格去
+        //tableArray[ch]->setRowCount(cr + 2);
+        QStringList alias = tp700->getAliasName().split(",");
+        QVector<float> res = tp700->getTemperatur();
+        for (int i = 0; i < alias.size() && i < res.size(); i++)
+        {
+            QTableWidgetItem* item = new QTableWidgetItem(alias.at(i));
+            item->setTextAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
+            item->font().setBold(true);
+            item->setBackgroundColor(recBackgroudColor);
+            item->setForeground(QBrush(recFontColor));
+            QFont ff;
+            ff.setBold(true);
+            item->setFont(ff);
+            tableArray[ch]->setItem(cr, i, item);
+
+            QTableWidgetItem* item2 = new QTableWidgetItem(QString::number(res.at(i), 'f', 2));
+            item2->setTextAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
+            item2->font().setBold(true);
+            tableArray[ch]->setItem(cr + 1, i, item2);
+
+        }
+    }
     dTemp.remove(dTemp.size() - 1, 1);
+
+    if (tp700 && tp700->getIsUpdate())
+    {
+        QVector<float> res = tp700->getTemperatur();
+        for (auto x : res)
+        {
+            dTemp += "," + QString::number(x, 'f', 2);
+        }
+    }
+
     uint nn = (dd.toMSecsSinceEpoch() - lastTime.toMSecsSinceEpoch());
     lastTime = dd;
     //if (nn > 50)

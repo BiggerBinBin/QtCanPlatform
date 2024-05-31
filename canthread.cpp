@@ -547,9 +547,9 @@ void CANThread::run()
                     stop();
                     closeCAN();
                 }
-                msleep(1);
+                //msleep(1);
             }
-           msleep(10);
+           msleep(1);
         
         
     }

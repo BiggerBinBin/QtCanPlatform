@@ -1,6 +1,7 @@
 #include "QMoudBusCtrl.h"
 #include <QModbusRtuSerialMaster>
 #include <qvariant.h>
+#include <QTimer>
 #include "QsLog.h"
 #include <qeventloop.h>
 QMoudBusCtrl::QMoudBusCtrl(QObject *parent)
@@ -103,6 +104,9 @@ QModbusDataUnit QMoudBusCtrl::sendReadMdu(QModbusDataUnit mdu, uint serverAdd)
 		if (!reply->isFinished())
 		{
 			QEventLoop loop;
+			QTimer T;
+			connect(&T, &QTimer::timeout, &loop, &QEventLoop::quit);
+			T.start(3000);
 			connect(reply, &QModbusReply::finished, &loop, &QEventLoop::quit);
 			loop.exec();
 			if (!modbusDevice)

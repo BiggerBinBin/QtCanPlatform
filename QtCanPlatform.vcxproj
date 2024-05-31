@@ -203,6 +203,7 @@
     <ClCompile Include="LogAsc.cpp" />
     <ClCompile Include="LogTrc.cpp" />
     <ClCompile Include="SerialportManage.cpp" />
+    <ClCompile Include="TP700TemperatureModel.cpp" />
     <ClCompile Include="unit\ImplementPower.cpp" />
     <ClCompile Include="unit\MsgParser.cpp" />
     <ClCompile Include="unit\msgSaveInf.cpp" />
@@ -246,12 +247,14 @@
     <ClCompile Include="QSignalManage.cpp" />
     <ClCompile Include="QtCanPlatform.cpp" />
     <ClCompile Include="main.cpp" />
+    <QtUic Include="TP700TemperatureModel.ui" />
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="QCanSetting.h" />
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="zlgcanmanage.h" />
+    <QtMoc Include="TP700TemperatureModel.h" />
     <ClInclude Include="zlgcan\zlgcan.h" />
     <QtMoc Include="Abstract\LogAbstract.h" />
     <QtMoc Include="Abstract\AbstractPower.h" />
