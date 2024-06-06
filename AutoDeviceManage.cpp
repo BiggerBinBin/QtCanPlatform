@@ -939,6 +939,21 @@ void AutoDeviceManage::on_pbBlowWater_2_clicked(bool isClicked)
 	m_pPLCCtrTCP->write(sendStr.toUtf8().data());
 }
 
+void AutoDeviceManage::on_pbPrintPoint_2_clicked(bool isClicked)
+{
+	if (m_pPLCCtrTCP->state() != QAbstractSocket::ConnectedState)
+	{
+		QLOG_INFO() << "PLC未连接";
+		return;
+	}
+	QString sendStr;
+	if (isClicked)
+		sendStr = Head2 + IO_Print_2 + IOON;
+	else
+		sendStr = Head2 + IO_Print_2 + IOOFF;
+	m_pPLCCtrTCP->write(sendStr.toUtf8().data());
+}
+
 /****************************************************
 * 3#工位
 ******************************************************/
@@ -1025,6 +1040,21 @@ void AutoDeviceManage::on_pbBlowWater_3_clicked(bool isClicked)
 		sendStr = Head + IO_Blow_3 + IOON;
 	else
 		sendStr = Head + IO_Blow_3 + IOOFF;
+	m_pPLCCtrTCP->write(sendStr.toUtf8().data());
+}
+
+void AutoDeviceManage::on_pbPrintPoint_3_clicked(bool isClicked)
+{
+	if (m_pPLCCtrTCP->state() != QAbstractSocket::ConnectedState)
+	{
+		QLOG_INFO() << "PLC未连接";
+		return;
+	}
+	QString sendStr;
+	if (isClicked)
+		sendStr = Head2 + IO_Print_3 + IOON;
+	else
+		sendStr = Head2 + IO_Print_3 + IOOFF;
 	m_pPLCCtrTCP->write(sendStr.toUtf8().data());
 }
 

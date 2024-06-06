@@ -6798,6 +6798,16 @@ void CanTestPlatform::on_processAutoTestSignal(int n, QString str)
         else
             showAutoTestStep(1, str, "OK");
         break;
+    case 77:
+        if (str.contains("OnPrint"))
+        {
+            autoDevMan->on_pbPrintPoint_3_clicked(true);
+        }
+        else
+        {
+            autoDevMan->on_pbPrintPoint_3_clicked(false);
+        }
+        break;
     case -99:
         pbStartAutoTest->setChecked(false);
         lineEditCodeIn->setEnabled(true);
@@ -7602,11 +7612,23 @@ void CanTestPlatform::workAutoTest()
             }
 
             emit sigAutoTestSend(18, up_mes_var.m_strTestResult);
+            //=============2024/06/05 控制气缸打点 =================
+            if (up_mes_var.m_strTestResult != "N" && currentTestModel.ats.m_bIsPrint)
+            {
+                emit sigAutoTestSend(77, "OnPrint");
+            }
+            QThread::msleep(2000);
+            //=============2024/06/05 关闭气缸打点 =================
+            if (up_mes_var.m_strTestResult != "N" && currentTestModel.ats.m_bIsPrint)
+            {
+                emit sigAutoTestSend(77, "OfPrint");
+            }
             //Step9
             //保存测试结果,上传MES
             upMesOutData();
             //延时一下，让冷却液再降温一下
             QThread::msleep(10000);
+
             //正常测试完成的
             if (runStep != -1)
             {

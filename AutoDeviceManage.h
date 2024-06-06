@@ -73,6 +73,7 @@ protected:
 * 字符串为须为utf-8
 ******************************************************/
 	QString Head = "500000FF03FF00001800041402000101M*0000";
+	QString Head2 = "500000FF03FF00001800041402000101M*00";
 	QString IO_UpDown_1 = "10";		//1#上下
 	QString IO_Grasp_1 = "11";		//1#夹紧
 	QString IO_Cover_1 = "12";		//1#密封圈
@@ -86,6 +87,7 @@ protected:
 	QString IO_Cold_2 = "19";		//2#冷水阀
 	QString IO_Pure_2 = "20";		//2#纯水阀
 	QString IO_Blow_2 = "21";		//2#吹水阀
+	QString IO_Print_2 = "1006";	//2#打点
 
 	QString IO_UpDown_3 = "22";		//3#上下
 	QString IO_Grasp_3 = "23";		//3#夹紧
@@ -93,8 +95,10 @@ protected:
 	QString IO_Cold_3 = "25";		//3#冷水阀
 	QString IO_Pure_3 = "26";		//3#纯水阀
 	QString IO_Blow_3 = "27";		//3#吹水阀
+	QString IO_Print_3 = "1007";	//3#打点
 	QString IOON = "01";		//IO输出ON
 	QString IOOFF = "00";		//IO输出OFF
+	
 
 	/*****************************************************
 	* 读取IO输入点,共有21个IO输出点
@@ -156,6 +160,7 @@ public slots:
 	void on_pbColdWater_2_clicked(bool isClicked);
 	void on_pbPureWater_2_clicked(bool isClicked);
 	void on_pbBlowWater_2_clicked(bool isClicked);
+	void on_pbPrintPoint_2_clicked(bool isClicked);
 
 	//3#工位
 	void on_pbGrasp_3_clicked(bool isClicked);
@@ -164,6 +169,7 @@ public slots:
 	void on_pbColdWater_3_clicked(bool isClicked);
 	void on_pbPureWater_3_clicked(bool isClicked);
 	void on_pbBlowWater_3_clicked(bool isClicked);
+	void on_pbPrintPoint_3_clicked(bool isClicked);
 
 	void on_timeToSend();
 

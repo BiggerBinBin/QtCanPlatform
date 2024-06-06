@@ -637,6 +637,16 @@
              </layout>
             </item>
             <item>
+             <widget class="QPushButton" name="pbPrintPoint_3">
+              <property name="text">
+               <string>气缸打点2</string>
+              </property>
+              <property name="checkable">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+            <item>
              <spacer name="horizontalSpacer_2">
               <property name="orientation">
                <enum>Qt::Horizontal</enum>
@@ -648,6 +658,16 @@
                </size>
               </property>
              </spacer>
+            </item>
+            <item>
+             <widget class="QPushButton" name="pbPrintPoint_2">
+              <property name="text">
+               <string>气缸打点1</string>
+              </property>
+              <property name="checkable">
+               <bool>true</bool>
+              </property>
+             </widget>
             </item>
             <item>
              <layout class="QHBoxLayout" name="horizontalLayout_30">
