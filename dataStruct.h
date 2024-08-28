@@ -50,6 +50,7 @@ struct AutoTestStruct
 	int m_iHVLockResistanceTolerance;//误差
 	bool m_bVerInverter;		//40 版本号前后反转？
 	bool m_bIsPrint;			//41是否打点
+	bool m_bIsNeedInletTemp;	//42是否需要监控入口温度
 	//bool isIndepandSend;
 
 };

@@ -94,6 +94,7 @@ void qGboleData::save()
 		mItem.insert("m_iHVLockResistanceTolerance", pGboleData.at(i).ats.m_iHVLockResistanceTolerance);
 		mItem.insert("m_bVerInverter", pGboleData.at(i).ats.m_bVerInverter);
 		mItem.insert("m_bIsPrint", pGboleData.at(i).ats.m_bIsPrint);
+		mItem.insert("m_bIsNeedInletTemp", pGboleData.at(i).ats.m_bIsNeedInletTemp);
 
 
 
@@ -268,6 +269,7 @@ void qGboleData::read()
 		ptem.ats.m_iHVLockResistanceTolerance = rootSecond["m_iHVLockResistanceTolerance"].toInt(5);
 		ptem.ats.m_bVerInverter = rootSecond["m_bVerInverter"].toBool(0);
 		ptem.ats.m_bIsPrint = rootSecond["m_bIsPrint"].toBool(0);
+		ptem.ats.m_bIsNeedInletTemp = rootSecond["m_bIsNeedInletTemp"].toBool(0);
 
 
 		//如果还有嵌套对象

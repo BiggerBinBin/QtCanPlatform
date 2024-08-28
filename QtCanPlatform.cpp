@@ -1105,6 +1105,10 @@ bool CanTestPlatform::recDataIntoTab()
                 excelTitle += ","+tp700->getAliasName();
             }
         }
+        if (currentTestModel.ats.m_bIsNeedInletTemp)
+        {
+            excelTitle += ",进口温度T°C";
+        }
     }
     tableRollTitleArray[ch]->setColumnCount(rollTitle.size());
     tableRollTitleArray[ch]->clear();
@@ -1189,6 +1193,28 @@ bool CanTestPlatform::recDataIntoTab()
 
 
     }
+    if ((autoDevMan!=nullptr) && currentTestModel.ats.m_bIsNeedInletTemp && autoDevMan->getIsUpInletTemp())
+    {
+        int cr = tableArray[ch]->rowCount();
+        //每加一行就要设置到表格去
+        tableArray[ch]->setRowCount(cr + 2);
+        //QStringList alias = tp700->getAliasName().split(",");
+        //for (int i = 0; i < alias.size() && i < 8; i++)
+        {
+            QTableWidgetItem* item = new QTableWidgetItem(autoDevMan->getAliasName());
+            item->setTextAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
+            item->font().setBold(true);
+            item->setBackgroundColor(recBackgroudColor);
+            item->setForeground(QBrush(recFontColor));
+            QFont ff;
+            ff.setBold(true);
+            item->setFont(ff);
+            tableArray[ch]->setItem(cr, 0, item);
+        }
+
+
+    }
+
    }
     return true;
 }
@@ -1271,7 +1297,7 @@ void CanTestPlatform::sendData()
                 other[0] = sendCanData.at(i).len;
                 other[1] = 0;
                 pHardWare->SendMessage(fream_id, s_Data, other);
-                QTime time = QTime::currentTime().addMSecs(240);
+                QTime time = QTime::currentTime().addMSecs(100);
                 while (QTime::currentTime() < time)
                 {
                     QApplication::processEvents();
@@ -1283,7 +1309,7 @@ void CanTestPlatform::sendData()
                     other[0] = recCanData.at(i).len;
                     other[1] = 1;
                     pHardWare->SendMessage(recCanData.at(i).strCanId.toInt(NULL, 16), s_Data, other);
-                    QTime time = QTime::currentTime().addMSecs(240);
+                    QTime time = QTime::currentTime().addMSecs(100);
                     while (QTime::currentTime() < time)
                     {
                         QApplication::processEvents();
@@ -1399,6 +1425,12 @@ void CanTestPlatform::sendData()
             if(currentTestModel.modelName!="Bergstrom-LIN-330V7kW")
             {
                 pHardWare->SendMessage(recCanData.at(k).strCanId.toInt(NULL, 16), s_Data, other);
+            }
+            QTime time = QTime::currentTime().addMSecs(50);
+            while (QTime::currentTime() < time)
+            {
+                QApplication::processEvents();
+                Sleep(1);
             }
            
         }
@@ -2002,6 +2034,7 @@ void CanTestPlatform::recAnalyseIntel(unsigned int fream_id,QByteArray data)
         QVector<float> res = tp700->getTemperatur();
         for (int i = 0; i < alias.size() && i < res.size(); i++)
         {
+            
             QTableWidgetItem* item = new QTableWidgetItem(alias.at(i));
             item->setTextAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
             item->font().setBold(true);
@@ -2019,6 +2052,36 @@ void CanTestPlatform::recAnalyseIntel(unsigned int fream_id,QByteArray data)
 
         }
     }
+    if(autoDevMan&&currentTestModel.ats.m_bIsNeedInletTemp  && autoDevMan->getIsUpInletTemp())
+    {
+        int cr = tableArray[0]->rowCount() - 2;
+        //每加一行就要设置到表格去
+        //tableArray[0]->setRowCount(cr + 2);
+        QString alias = autoDevMan->getAliasName();
+        float res = autoDevMan->getTempD980();
+        in_temp = res;
+        realINTemp[0] = (int)res;
+        //for (int i = 0; i < alias.size() && i < res.size(); i++)
+        {
+            QTableWidgetItem* item = new QTableWidgetItem(alias);
+            item->setTextAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
+            item->font().setBold(true);
+            item->setBackgroundColor(recBackgroudColor);
+            item->setForeground(QBrush(recFontColor));
+            QFont ff;
+            ff.setBold(true);
+            item->setFont(ff);
+            tableArray[0]->setItem(cr, 0, item);
+
+            QTableWidgetItem* item2 = new QTableWidgetItem(QString::number(res, 'f', 2));
+            item2->setTextAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
+            item2->font().setBold(true);
+            tableArray[0]->setItem(cr + 1, 0, item2);
+
+        }
+    }
+
+
     dTemp.remove(dTemp.size() - 1, 1);
     if (tp700 && tp700->getIsUpdate())
     {
@@ -2026,6 +2089,14 @@ void CanTestPlatform::recAnalyseIntel(unsigned int fream_id,QByteArray data)
         for (auto x : res)
         {
             dTemp += ","+QString::number(x, 'f', 2);
+        }
+    }
+    if (autoDevMan && currentTestModel.ats.m_bIsNeedInletTemp && autoDevMan->getIsUpInletTemp())
+    {
+        float res = autoDevMan->getTempD980();
+        //for (auto x : res)
+        {
+            dTemp += ","+QString::number(res, 'f', 2);
         }
     }
     uint nn = (dd.toMSecsSinceEpoch() - lastTime.toMSecsSinceEpoch());
@@ -2371,7 +2442,34 @@ void CanTestPlatform::recAnalyseMoto(unsigned int fream_id, QByteArray data)
 
         }
     }
+    if (autoDevMan && currentTestModel.ats.m_bIsNeedInletTemp && autoDevMan->getIsUpInletTemp())
+    {
+        int cr = tableArray[0]->rowCount() - 2;
+        //每加一行就要设置到表格去
+        //tableArray[0]->setRowCount(cr + 2);
+        QString alias = autoDevMan->getAliasName();
+        float res = autoDevMan->getTempD980();
+        in_temp = res;
+        realINTemp[0] = (int)res;
+        //for (int i = 0; i < alias.size() && i < res.size(); i++)
+        {
+            QTableWidgetItem* item = new QTableWidgetItem(alias);
+            item->setTextAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
+            item->font().setBold(true);
+            item->setBackgroundColor(recBackgroudColor);
+            item->setForeground(QBrush(recFontColor));
+            QFont ff;
+            ff.setBold(true);
+            item->setFont(ff);
+            tableArray[0]->setItem(cr, 0, item);
 
+            QTableWidgetItem* item2 = new QTableWidgetItem(QString::number(res, 'f', 2));
+            item2->setTextAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
+            item2->font().setBold(true);
+            tableArray[0]->setItem(cr + 1, 0, item2);
+
+        }
+    }
     dTemp.remove(dTemp.size() - 1, 1);
 
     if (tp700 && tp700->getIsUpdate())
@@ -2380,6 +2478,14 @@ void CanTestPlatform::recAnalyseMoto(unsigned int fream_id, QByteArray data)
         for (auto x : res)
         {
             dTemp += "," + QString::number(x, 'f', 2);
+        }
+    }
+    if (autoDevMan && currentTestModel.ats.m_bIsNeedInletTemp && autoDevMan->getIsUpInletTemp())
+    {
+        float res = autoDevMan->getTempD980();
+        //for (auto x : res)
+        {
+            dTemp += "," + QString::number(res, 'f', 2);
         }
     }
     uint nn = (dd.toMSecsSinceEpoch() - lastTime.toMSecsSinceEpoch());
@@ -2724,7 +2830,34 @@ void CanTestPlatform::recAnalyseMotoLSB(unsigned int fream_id, QByteArray data)
 
         }
     }
+    if (autoDevMan && currentTestModel.ats.m_bIsNeedInletTemp && autoDevMan->getIsUpInletTemp())
+    {
+        int cr = tableArray[0]->rowCount() - 2;
+        //每加一行就要设置到表格去
+        //tableArray[0]->setRowCount(cr + 2);
+        QString alias = autoDevMan->getAliasName();
+        float res = autoDevMan->getTempD980();
+        in_temp = res;
+        realINTemp[0] = (int)res;
+        //for (int i = 0; i < alias.size() && i < res.size(); i++)
+        {
+            QTableWidgetItem* item = new QTableWidgetItem(alias);
+            item->setTextAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
+            item->font().setBold(true);
+            item->setBackgroundColor(recBackgroudColor);
+            item->setForeground(QBrush(recFontColor));
+            QFont ff;
+            ff.setBold(true);
+            item->setFont(ff);
+            tableArray[0]->setItem(cr, 0, item);
 
+            QTableWidgetItem* item2 = new QTableWidgetItem(QString::number(res, 'f', 2));
+            item2->setTextAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
+            item2->font().setBold(true);
+            tableArray[0]->setItem(cr + 1, 0, item2);
+
+        }
+    }
     dTemp.remove(dTemp.size() - 1, 1);
 
     if (tp700 && tp700->getIsUpdate())
@@ -2733,6 +2866,14 @@ void CanTestPlatform::recAnalyseMotoLSB(unsigned int fream_id, QByteArray data)
         for (auto x : res)
         {
             dTemp += "," + QString::number(x, 'f', 2);
+        }
+    }
+    if (autoDevMan && currentTestModel.ats.m_bIsNeedInletTemp && autoDevMan->getIsUpInletTemp())
+    {
+        float res = autoDevMan->getTempD980();
+        //for (auto x : res)
+        {
+            dTemp += "," + QString::number(res, 'f', 2);
         }
     }
     uint nn = (dd.toMSecsSinceEpoch() - lastTime.toMSecsSinceEpoch());
@@ -3057,7 +3198,34 @@ void CanTestPlatform::recAnalyseIntel(int ch,unsigned int fream_id, QByteArray d
 
         }
     }
+    if (autoDevMan && currentTestModel.ats.m_bIsNeedInletTemp && autoDevMan->getIsUpInletTemp())
+    {
+        int cr = tableArray[0]->rowCount() - 2;
+        //每加一行就要设置到表格去
+        //tableArray[0]->setRowCount(cr + 2);
+        QString alias = autoDevMan->getAliasName();
+        float res = autoDevMan->getTempD980();
+        in_temp = res;
+        realINTemp[0] = (int)res;
+        //for (int i = 0; i < alias.size() && i < res.size(); i++)
+        {
+            QTableWidgetItem* item = new QTableWidgetItem(alias);
+            item->setTextAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
+            item->font().setBold(true);
+            item->setBackgroundColor(recBackgroudColor);
+            item->setForeground(QBrush(recFontColor));
+            QFont ff;
+            ff.setBold(true);
+            item->setFont(ff);
+            tableArray[0]->setItem(cr, 0, item);
 
+            QTableWidgetItem* item2 = new QTableWidgetItem(QString::number(res, 'f', 2));
+            item2->setTextAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
+            item2->font().setBold(true);
+            tableArray[0]->setItem(cr + 1, 0, item2);
+
+        }
+    }
     dTemp.remove(dTemp.size() - 1, 1);
 
     if (tp700 && tp700->getIsUpdate())
@@ -3066,6 +3234,14 @@ void CanTestPlatform::recAnalyseIntel(int ch,unsigned int fream_id, QByteArray d
         for (auto x : res)
         {
             dTemp += "," + QString::number(x, 'f', 2);
+        }
+    }
+    if (autoDevMan && currentTestModel.ats.m_bIsNeedInletTemp && autoDevMan->getIsUpInletTemp())
+    {
+        float res = autoDevMan->getTempD980();
+        //for (auto x : res)
+        {
+            dTemp += "," + QString::number(res, 'f', 2);
         }
     }
     uint nn = (dd.toMSecsSinceEpoch() - lastTime.toMSecsSinceEpoch());
@@ -3444,6 +3620,35 @@ void CanTestPlatform::recAnalyseMoto(int ch,unsigned int fream_id, QByteArray da
 
         }
     }
+    if (autoDevMan && currentTestModel.ats.m_bIsNeedInletTemp && autoDevMan->getIsUpInletTemp())
+    {
+        int cr = tableArray[0]->rowCount() - 2;
+        //每加一行就要设置到表格去
+        //tableArray[0]->setRowCount(cr + 2);
+        QString alias = autoDevMan->getAliasName();
+        float res = autoDevMan->getTempD980();
+        in_temp = res;
+        realINTemp[0] = (int)res;
+        //for (int i = 0; i < alias.size() && i < res.size(); i++)
+        {
+            QTableWidgetItem* item = new QTableWidgetItem(alias);
+            item->setTextAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
+            item->font().setBold(true);
+            item->setBackgroundColor(recBackgroudColor);
+            item->setForeground(QBrush(recFontColor));
+            QFont ff;
+            ff.setBold(true);
+            item->setFont(ff);
+            tableArray[0]->setItem(cr, 0, item);
+
+            QTableWidgetItem* item2 = new QTableWidgetItem(QString::number(res, 'f', 2));
+            item2->setTextAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
+            item2->font().setBold(true);
+            tableArray[0]->setItem(cr + 1, 0, item2);
+
+        }
+    }
+
     dTemp.remove(dTemp.size() - 1, 1);
 
     if (tp700 && tp700->getIsUpdate())
@@ -3454,7 +3659,14 @@ void CanTestPlatform::recAnalyseMoto(int ch,unsigned int fream_id, QByteArray da
             dTemp += "," + QString::number(x, 'f', 2);
         }
     }
-
+    if (autoDevMan && currentTestModel.ats.m_bIsNeedInletTemp && autoDevMan->getIsUpInletTemp())
+    {
+        float res = autoDevMan->getTempD980();
+        //for (auto x : res)
+        {
+            dTemp += "," + QString::number(res, 'f', 2);
+        }
+    }
     uint nn = (dd.toMSecsSinceEpoch() - lastTime.toMSecsSinceEpoch());
     lastTime = dd;
     //if (nn > 50)
@@ -3794,6 +4006,35 @@ void CanTestPlatform::recAnalyseMotoLSB(int ch, unsigned int fream_id, QByteArra
 
         }
     }
+    if (autoDevMan && currentTestModel.ats.m_bIsNeedInletTemp && autoDevMan->getIsUpInletTemp())
+    {
+        int cr = tableArray[0]->rowCount() - 2;
+        //每加一行就要设置到表格去
+        //tableArray[0]->setRowCount(cr + 2);
+        QString alias = autoDevMan->getAliasName();
+        float res = autoDevMan->getTempD980();
+        in_temp = res;
+        realINTemp[0] = (int)res;
+        //for (int i = 0; i < alias.size() && i < res.size(); i++)
+        {
+            QTableWidgetItem* item = new QTableWidgetItem(alias);
+            item->setTextAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
+            item->font().setBold(true);
+            item->setBackgroundColor(recBackgroudColor);
+            item->setForeground(QBrush(recFontColor));
+            QFont ff;
+            ff.setBold(true);
+            item->setFont(ff);
+            tableArray[0]->setItem(cr, 0, item);
+
+            QTableWidgetItem* item2 = new QTableWidgetItem(QString::number(res, 'f', 2));
+            item2->setTextAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
+            item2->font().setBold(true);
+            tableArray[0]->setItem(cr + 1, 0, item2);
+
+        }
+    }
+
     dTemp.remove(dTemp.size() - 1, 1);
 
     if (tp700 && tp700->getIsUpdate())
@@ -3804,7 +4045,14 @@ void CanTestPlatform::recAnalyseMotoLSB(int ch, unsigned int fream_id, QByteArra
             dTemp += "," + QString::number(x, 'f', 2);
         }
     }
-
+    if (autoDevMan && currentTestModel.ats.m_bIsNeedInletTemp && autoDevMan->getIsUpInletTemp())
+    {
+        float res = autoDevMan->getTempD980();
+        //for (auto x : res)
+        {
+            dTemp += "," + QString::number(res, 'f', 2);
+        }
+    }
     uint nn = (dd.toMSecsSinceEpoch() - lastTime.toMSecsSinceEpoch());
     lastTime = dd;
     //if (nn > 50)
@@ -3857,6 +4105,14 @@ void CanTestPlatform::getByteInfo(const std::vector<parseData>& parseArr,int ch)
     /*isCANTestTempetrue = false;
     realHVErr[ch] = "正常";
     realOTPro[ch] = "正常";*/
+
+    if (currentTestModel.modelName.contains("德创未来"))
+    {
+        isCANTestTempetrue = false;
+        realHVErr[ch] = "正常";
+        realOTPro[ch] = "正常";
+    }
+
     for (auto& x : parseArr)
     {
 
@@ -3879,6 +4135,18 @@ void CanTestPlatform::getByteInfo(const std::vector<parseData>& parseArr,int ch)
         else if (x.name == "高压异常故障" || x.name=="高压指示"|| x.name == "高压异常")
         {
             realHVErr[ch] = x.toWord;
+            realHVLowErr[ch] = x.toWord;
+            realHVOverErr[ch] = x.toWord;
+        }
+        else if (x.name == "高压过压")
+        {
+            realHVErr[ch] = x.toWord;
+            realHVOverErr[ch] = x.toWord;
+        }
+        else if (x.name == "高压欠压")
+        {
+            realHVErr[ch] = x.toWord;
+            realHVLowErr[ch] = x.toWord;
         }
         else if (x.name == "过温保护" || x.name == "过温故障" || x.name=="过温报警" || x.name == "出水口过温")
         {
@@ -3889,10 +4157,14 @@ void CanTestPlatform::getByteInfo(const std::vector<parseData>& parseArr,int ch)
             if (x.toWord == "高压过压" || x.toWord == "高压欠压" || x.toWord == "欠压" || x.toWord == "过压"|| x.toWord == "高压异常" || x.toWord == "高压故障")
             {
                 realHVErr[ch] = x.toWord;
+                realHVLowErr[ch] = x.toWord;
+                realHVOverErr[ch] = x.toWord;
             }
             else if (x.toWord != "高压过压" && x.toWord != "高压欠压" && x.toWord != "欠压" && x.toWord != "过压" && x.toWord != "高压异常" && x.toWord != "高压故障")
             {
                 realHVErr[ch] = "正常";
+                realHVLowErr[ch] = "正常";
+                realHVOverErr[ch] = "正常";
             }
             if (x.toWord == "过温保护" || x.toWord == "过温故障" || x.toWord == "过温" || x.toWord == "出水口过温" || x.toWord == "低流量" || x.toWord == "干烧")
             {
@@ -5959,6 +6231,7 @@ void CanTestPlatform::getAveragePW(const AutoTestStruct& at)
         {
             if (realINTemp[0] == tempture)
             {
+                up_mes_var.m_strTempOut = QString::number(realWTemp[0]);
                 while (realINTemp[0] == tempture)
                 {
                     PowerArr[0].push_back(realPower[0]);
@@ -5979,10 +6252,21 @@ void CanTestPlatform::getAveragePW(const AutoTestStruct& at)
     }
     else
     {
+        if (currentTestModel.ats.m_bIsNeedInletTemp)
+        {
+            /*while (runStep != -1)
+            {
+                if (abs(in_temp - currentTestModel.ats.m_usHeatTemp)<=4)
+                {
+                    break;
+                }
+            }*/
+        }
         while (runStep != -1)
         {
             if (realWTemp[0] == tempture)
             {
+                up_mes_var.m_strTempOut = QString::number(realWTemp[0]);
                 while (realWTemp[0] == tempture)
                 {
                     PowerArr[0].push_back(realPower[0]);
@@ -6721,6 +7005,8 @@ void CanTestPlatform::on_processAutoTestSignal(int n, QString str)
         autoDevMan->on_pbBlowWater_clicked(false);
         autoDevMan->on_pbColdWater_2_clicked(false);
         autoDevMan->on_pbPureWater_2_clicked(true);
+        QThread::msleep(5);
+        autoDevMan->on_pbPureWater_2_clicked(true);
         serialport->senddata(OpenPureSerial);
         QLOG_INFO() << "纯水机开启清洗……";
         break;
@@ -6849,7 +7135,7 @@ bool CanTestPlatform::upMesOutData()
         up_mes_var.m_strOverTempProtected + "," +
         up_mes_var.m_strOverTempProtectedRe + "," +
         up_mes_var.m_strOtherFault + ","+
-        (up_mes_var.m_strTestResult=="Y"?"1":"9")+","+ up_mes_var.m_strMaxCurrent+ "," + up_mes_var.m_strHVLock+"$";
+        (up_mes_var.m_strTestResult=="Y"?"1":"9")+","+ up_mes_var.m_strMaxCurrent+ "," + up_mes_var.m_strHVLock+ "," + up_mes_var.m_strTempOut+"$";
     QString res_mes = "#A102;" + m_strPHUCode + ";D_PHU01_006;" + up_mes_var.m_strTestResult+";"+QString::number(t_data.split(",").size()) + ";" + t_data;
     bool b4 = getMesResponed(res_mes);
     if (!b4)
@@ -6883,6 +7169,7 @@ void clear_up_mes_var(struct UpMesData* up_mes_var)
     up_mes_var->m_strTestResult = "N";
     up_mes_var->m_strMaxCurrent = "0";
     up_mes_var->m_strHVLock = "99999";
+    up_mes_var->m_strTempOut = "0";
 }
 void CanTestPlatform::getPowerCurrentMax(int type)
 {
@@ -7114,9 +7401,9 @@ void CanTestPlatform::workAutoTest()
             eachResult = true;
             while (runStep != -1)
             {
-                if (realHVErr[0] == ("高压异常") || realHVErr[0] == ("高压欠压") || realHVErr[0] == ("欠压") || realHVErr[0] == ("高压故障"))
+                if (realHVLowErr[0] == ("高压异常") || realHVLowErr[0] == ("高压欠压") || realHVLowErr[0] == ("欠压") || realHVLowErr[0] == ("高压故障"))
                     break;
-                QThread::msleep(500);
+                QThread::msleep(90);
                 if (QTime::currentTime() > ovTimeVolt)
                 {
                     up_mes_var.m_strLowProtected = QString::number(currentTestModel.ats.m_iLowVoltage);
@@ -7165,9 +7452,9 @@ void CanTestPlatform::workAutoTest()
             eachResult = true;
             while (runStep != -1)
             {
-                if (realHVErr[0] != ("高压异常") && realHVErr[0] != ("高压欠压") && realHVErr[0] != ("欠压") && realHVErr[0] != ("高压故障"))
+                if (realHVLowErr[0] != ("高压异常") && realHVLowErr[0] != ("高压欠压") && realHVLowErr[0] != ("欠压") && realHVLowErr[0] != ("高压故障"))
                     break;
-                QThread::msleep(500);
+                QThread::msleep(90);
 
                 if (QTime::currentTime() > ovTimeVolt)
                 {
@@ -7220,9 +7507,9 @@ void CanTestPlatform::workAutoTest()
             eachResult = true;
             while (runStep != -1)
             {
-                if (realHVErr[0] == ("高压异常") || realHVErr[0] == ("高压过压") || realHVErr[0] == ("过压") || realHVErr[0] == ("高压故障"))
+                if (realHVOverErr[0] == ("高压异常") || realHVOverErr[0] == ("高压过压") || realHVOverErr[0] == ("过压") || realHVOverErr[0] == ("高压故障"))
                     break;
-                QThread::msleep(500);
+                QThread::msleep(90);
 
                 if (QTime::currentTime() > ovTimeVolt)
                 {
@@ -7270,9 +7557,9 @@ void CanTestPlatform::workAutoTest()
             eachResult = true;
             while (runStep != -1)
             {
-                if (realHVErr[0] != ("高压异常") && realHVErr[0] != ("高压过压") && realHVErr[0] != ("过压"))
+                if (realHVOverErr[0] != ("高压异常") && realHVOverErr[0] != ("高压过压") && realHVOverErr[0] != ("过压"))
                     break;
-                QThread::msleep(500);
+                QThread::msleep(90);
                 if (QTime::currentTime() > ovTimeVolt)
                 {
                     up_mes_var.m_strHighProtected = QString::number(currentTestModel.ats.m_iOverVoltage);
@@ -7428,89 +7715,65 @@ void CanTestPlatform::workAutoTest()
             QThread::msleep(500);
             Error[0].clear();
             isRecordError = true;
-            int failtype = 0;
+            int failtype = 1;
+            bool overTempOk = true;
             while (runStep != -1)
             {
-
                 bool b = false;
                 
-                //if (!currentTestModel.ats.m_bOverTempOrDry)
-                
+                if (realOTPro[0] == "过温" || realOTPro[0] == "出水口过温" || realOTPro[0] == "过温故障" || realOTPro[0] == "过温保护" || realOTPro[0] == "冷却液过热")
                 {
-                    if (realOTPro[0] == "过温" || realOTPro[0] == "出水口过温" || realOTPro[0] == "过温故障" || realOTPro[0] == "过温保护" || realOTPro[0] == "冷却液过热")
-                    {
-                        b = true;
-                        failtype = 1;
-                    }
-                    else if (realOTPro[0] == "低流量" || realOTPro[0] == "干烧")
-                    {
-                        b = true;
-                        failtype = 2;
-                    }
+                    b = true;
+                    failtype = 1;
+                }
+                else if (realOTPro[0] == "低流量" || realOTPro[0] == "干烧")
+                {
+                    b = true;
+                    failtype = 2;
+                }
 
-                    
-                    float outTemp = realWTemp[0];
-
-
-                    if (b)
+                float outTemp = realWTemp[0];
+                up_mes_var.m_strOverTempProtected = QString::number(outTemp);
+                if (b)
+                {
+                    if(failtype==1)
                     {
-                        if(failtype==1)
-                        {
-                            up_mes_var.m_strOverTempProtected = QString::number(outTemp);
-                            if (abs(currentTestModel.ats.m_iOverTemperature - outTemp) > currentTestModel.ats.m_iOverTempTolerance)
-                            {
-                                emit sigAutoTestSend(13, QString::number(outTemp) + "NG");
-                                up_mes_var.m_strTestResult = "N";
-                            }
-                            break;
-                        }
-                        else if (failtype == 2)
-                        {
-                            up_mes_var.m_strOverTempProtected = QString::number(outTemp);
-                            if (abs(currentTestModel.ats.m_iOverTemperature - outTemp) > currentTestModel.ats.m_iOverTempTolerance)
-                            {
-                                emit sigAutoTestSend(13, QString::number(outTemp) + "NG");
-                                up_mes_var.m_strTestResult = "N";
-                            }
-                            break;
-                        }
-                    }
-                    if (outTemp - currentTestModel.ats.m_iOverTemperature > currentTestModel.ats.m_iOverTempTolerance + 2)
-                    {
-                        emit sigAutoTestSend(13, QString::number(outTemp) + "过温无保护NG");
-                        up_mes_var.m_strOtherFault = "*过温无保护NG";
                         up_mes_var.m_strOverTempProtected = QString::number(outTemp);
-                        up_mes_var.m_strTestResult = "N";
+                        if (abs(currentTestModel.ats.m_iOverTemperature - outTemp) > currentTestModel.ats.m_iOverTempTolerance)
+                        {
+                            emit sigAutoTestSend(13, QString::number(outTemp) + "NG");
+                            up_mes_var.m_strTestResult = "N";
+                            overTempOk = false;
+                        }
+                        break;
+                    }
+                    else if (failtype == 2)
+                    {
+                        up_mes_var.m_strOverTempProtected = QString::number(outTemp);
+                        if (abs(currentTestModel.ats.m_iOverTemperature - outTemp) > currentTestModel.ats.m_iOverTempTolerance)
+                        {
+                            emit sigAutoTestSend(13, QString::number(outTemp) + "NG");
+                            up_mes_var.m_strTestResult = "N";
+                            overTempOk = false;
+                        }
                         break;
                     }
                 }
-                //else
-               /* {
-                    if (realOTPro[0] == "低流量" || realOTPro[0] == "干烧")
-                    {
-                        b = true;
-                    }
-                    float outTemp = realWTemp[0];
-                    if (b)
-                    {
-                        up_mes_var.m_strOverTempProtected = QString::number(outTemp);
-                        break;
-                    }
-                    if (outTemp - currentTestModel.ats.m_iOverTemperature > currentTestModel.ats.m_iOverTempTolerance + 2)
-                    {
-                        emit sigAutoTestSend(13, QString::number(outTemp) + "干烧无保护NG");
-                        up_mes_var.m_strOtherFault = "*干烧无保护NG";
-                        up_mes_var.m_strOverTempProtected = QString::number(outTemp);
-                        up_mes_var.m_strTestResult = "N";
-                        break;
-                    }
-                }*/
+                if (outTemp - currentTestModel.ats.m_iOverTemperature > currentTestModel.ats.m_iOverTempTolerance + 2)
+                {
+                    emit sigAutoTestSend(13, QString::number(outTemp) + "过温无保护NG");
+                    up_mes_var.m_strOtherFault = "*过温无保护NG";
+                    up_mes_var.m_strOverTempProtected = QString::number(outTemp);
+                    up_mes_var.m_strTestResult = "N";
+                    overTempOk = false;
+                    break;
+                }
                 
                 QThread::msleep(100);
             }
 
             emit sigAutoTestSend(23, "关闭加热");
-            if (!up_mes_var.m_strOtherFault.contains("过温无保护NG") || !up_mes_var.m_strOtherFault.contains("干烧无保护NG"))
+            if (overTempOk)
             {
                 emit sigAutoTestSend(13, up_mes_var.m_strOverTempProtected);
             }

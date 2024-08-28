@@ -74,6 +74,7 @@ struct UpMesData {
     QString m_strTestResult;            //测试结果
     QString m_strMaxCurrent;            //最大电流
     QString m_strHVLock;                //高压互锁
+    QString m_strTempOut;               //出口温度
 };
 
 class CanTestPlatform : public QMainWindow
@@ -115,7 +116,7 @@ private:
    
     std::atomic_bool _bWork = false;
     std::atomic_int _iSetp = 0;
-
+    std::atomic<float>in_temp = 0;
 
     int currentModel = -1;
     ushort m_usRoll;
@@ -283,6 +284,8 @@ private:
     float realWTemp[4] = { 0 };
     float realINTemp[4] = { 0 };
     QString realHVErr[4] = { ""};
+    QString realHVLowErr[4] = { ""};
+    QString realHVOverErr[4] = { ""};
     QString realHvLv[4] = { ""};
     QString realOTPro[4] = { ""};
     QString realOVTemp[4] = { ""};
@@ -305,7 +308,7 @@ private:
     //自动测试显示表格
     QTableWidget* tableAutoResults;
     //设备管理类
-    AutoDeviceManage* autoDevMan;
+    AutoDeviceManage* autoDevMan=nullptr;
 
     //QLine
     QLineEdit* mBlowAirLineedit;

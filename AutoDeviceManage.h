@@ -30,6 +30,9 @@ public:
 	bool isAvailableMes() { return m_bIsRecMES; }
 	QString isReadMes() { return m_strMesData; }
 	float getFlow() { return m_realflow; }
+	float getTempD980() { return inlet_temp; };
+	bool getIsUpInletTemp() { return isUpInletTemp; }
+	QString getAliasName() { return QString("进口温度T°C"); }
 private:
 	Ui::AutoDeviceManageClass ui;
 protected:
@@ -38,6 +41,10 @@ protected:
 	bool m_bMesMacInit;
 	bool m_bPLCMacInit;
 
+	//进口温度传感器
+	float inlet_temp = 0.0;
+	bool isUpInletTemp = false;
+	QTimer* getInlettempTimer = nullptr;
 	//冷水机内循环状态，0关闭，1开启
 	uint bitInCircle = 0;
 	//冷水机外循环状态，0关闭，1开启
@@ -102,7 +109,7 @@ protected:
 
 	/*****************************************************
 	* 读取IO输入点,共有21个IO输出点
-	* 格式为Head+Name+On/Off
+	* 格式为Head+Name
 	* 字符串为须为utf-8
 	******************************************************/
 	QString InHead = "500000FF03FF000018000404010001X*0000";
@@ -111,6 +118,15 @@ protected:
 	QString InSatrtBit_20 = "20";
 	//QString InNum = "0007";
 	QString InNum = "001E";
+
+	/*****************************************************
+	* 读取D980输入点,
+	* 
+	* 字符串为须为utf-8
+	******************************************************/
+	QString InHead_D = "500000FF03FF000018000004010000D*00";
+	QString InPoint = "0980";
+	QString InPointNum = "0001";
 signals:
 	void sigMesNewData(QString str);
 	void sigMeterNewData(QString str);

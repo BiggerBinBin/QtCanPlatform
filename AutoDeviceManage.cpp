@@ -22,18 +22,22 @@ AutoDeviceManage::AutoDeviceManage(QWidget *parent)
 	connect(m_pPowerTCP.data(), &QTcpSocket::readyRead, this, &AutoDeviceManage::on_powerTCP_readlyRecvied);
 	connect(m_pMesUpTCP.data(), &QTcpSocket::readyRead, this, &AutoDeviceManage::on_powerTCP_readlyRecvied);
 	connect(m_pMeterCtrTCP.data(), &QTcpSocket::readyRead, this, &AutoDeviceManage::on_powerTCP_readlyRecvied);
-	connect(m_pPLCCtrTCP.data(), &QTcpSocket::readyRead, this, &AutoDeviceManage::on_PLCCtrTCP_readlyRecvied);
+	//connect(m_pPLCCtrTCP.data(), &QTcpSocket::readyRead, this, &AutoDeviceManage::on_PLCCtrTCP_readlyRecvied);
 	m_pWaterCAN.reset(new CANThread);
 	connect(m_pWaterCAN.data(), SIGNAL(getProtocolData(int, quint32, QByteArray)), this, SLOT(onReceiveData(int, quint32, QByteArray)));
 	m_pHttpMES.reset(new mHttp);
 	ui.pbConnectPower->setCheckable(true);
 	ui.pbOpenCanayst->setCheckable(true);
 	m_bIsRecMES = false;
+	getInlettempTimer = new QTimer(this);
+	connect(getInlettempTimer, &QTimer::timeout, this, &AutoDeviceManage::on_timeToSend);
 	initializeDev();
 }
 
 AutoDeviceManage::~AutoDeviceManage()
 {
+	getInlettempTimer->stop();
+	isUpInletTemp = false; 
 	if (!m_pPowerTCP.isNull())
 	{
 		m_pPowerTCP->disconnectFromHost();
@@ -82,7 +86,7 @@ void AutoDeviceManage::on_pbConnectMes_clicked(bool b)
 }
 void AutoDeviceManage::on_pbConnectPLC_clicked(bool b)
 {
-	if(m_pPLCCtrTCP.isNull()) { QMessageBox::warning(this, "Tips", "指针为空,连接失败"); return; }
+	if(m_pPLCCtrTCP.isNull()) { isUpInletTemp = false; QMessageBox::warning(this, "Tips", "指针为空,连接失败"); return; }
 	if (b)
 	{
 		if (m_pPLCCtrTCP->state() != QAbstractSocket::ConnectedState)
@@ -94,6 +98,7 @@ void AutoDeviceManage::on_pbConnectPLC_clicked(bool b)
 	}
 	else
 	{
+		isUpInletTemp = false;
 		m_bPLCMacInit = false;
 		m_pPLCCtrTCP->disconnectFromHost();
 	}
@@ -207,6 +212,7 @@ void AutoDeviceManage::on_powerTCP_stateChanged(QAbstractSocket::SocketState sta
 		}
 		else if (tcp == m_pPLCCtrTCP.data())
 		{
+			getInlettempTimer->stop();
 			ui.pbConnectPLC->setChecked(false);
 			QLOG_WARN() << "PLC System not connected!";
 			m_bPLCMacInit = false;
@@ -239,6 +245,7 @@ void AutoDeviceManage::on_powerTCP_stateChanged(QAbstractSocket::SocketState sta
 			ui.pbConnectPLC->setChecked(true);
 			QLOG_WARN() << "PLC System  connected!";
 			m_bPLCMacInit = true;
+			getInlettempTimer->start(500);
 		}
 		else if (tcp == m_pMeterCtrTCP.data())
 		{
@@ -370,6 +377,7 @@ void AutoDeviceManage::requireTcpMes(QString data)
 }
 void AutoDeviceManage::requireTcpPLC(QString data)
 {
+	QMutexLocker lock(&mut1);
 	if (m_pPLCCtrTCP->state() != QAbstractSocket::ConnectedState)
 	{
 		on_pbConnectMes_clicked(true);	//if not connection,connect it
@@ -766,6 +774,7 @@ void AutoDeviceManage::on_pbBlowWater_clicked(bool isCheck)
 }
 void AutoDeviceManage::on_pbGrasp_clicked(bool isClicked)
 {
+	QMutexLocker lock(&mut1);
 	if (m_pPLCCtrTCP->state() != QAbstractSocket::ConnectedState)
 	{
 		QLOG_INFO() << "PLC未连接";
@@ -781,6 +790,7 @@ void AutoDeviceManage::on_pbGrasp_clicked(bool isClicked)
 }
 void AutoDeviceManage::on_pbUpDown_clicked(bool isClicked)
 {
+	QMutexLocker lock(&mut1);
 	if (m_pPLCCtrTCP->state() != QAbstractSocket::ConnectedState)
 	{
 		QLOG_INFO() << "PLC未连接";
@@ -795,6 +805,7 @@ void AutoDeviceManage::on_pbUpDown_clicked(bool isClicked)
 }
 void AutoDeviceManage::on_pbCover_clicked(bool isClicked)
 {
+	QMutexLocker lock(&mut1);
 	if (m_pPLCCtrTCP->state() != QAbstractSocket::ConnectedState)
 	{
 		QLOG_INFO() << "PLC未连接";
@@ -809,6 +820,7 @@ void AutoDeviceManage::on_pbCover_clicked(bool isClicked)
 }
 void AutoDeviceManage::on_pbColdWater_clicked(bool isClicked)
 {
+	QMutexLocker lock(&mut1);
 	if (m_pPLCCtrTCP->state() != QAbstractSocket::ConnectedState)
 	{
 		QLOG_INFO() << "PLC未连接";
@@ -823,6 +835,7 @@ void AutoDeviceManage::on_pbColdWater_clicked(bool isClicked)
 }
 void AutoDeviceManage::on_pbPureWater_clicked(bool isClicked)
 {
+	QMutexLocker lock(&mut1);
 	if (m_pPLCCtrTCP->state() != QAbstractSocket::ConnectedState)
 	{
 		QLOG_INFO() << "PLC未连接";
@@ -837,6 +850,7 @@ void AutoDeviceManage::on_pbPureWater_clicked(bool isClicked)
 }
 void AutoDeviceManage::on_pbBlowWaterPLC_clicked(bool isClicked)
 {
+	QMutexLocker lock(&mut1);
 	if (m_pPLCCtrTCP->state() != QAbstractSocket::ConnectedState)
 	{
 		QLOG_INFO() << "PLC未连接";
@@ -855,6 +869,7 @@ void AutoDeviceManage::on_pbBlowWaterPLC_clicked(bool isClicked)
 ******************************************************/
 void AutoDeviceManage::on_pbGrasp_2_clicked(bool isClicked)
 {
+	QMutexLocker lock(&mut1);
 	if (m_pPLCCtrTCP->state() != QAbstractSocket::ConnectedState)
 	{
 		QLOG_INFO() << "PLC未连接";
@@ -870,6 +885,7 @@ void AutoDeviceManage::on_pbGrasp_2_clicked(bool isClicked)
 }
 void AutoDeviceManage::on_pbUpDown_2_clicked(bool isClicked)
 {
+	QMutexLocker lock(&mut1);
 	if (m_pPLCCtrTCP->state() != QAbstractSocket::ConnectedState)
 	{
 		QLOG_INFO() << "PLC未连接";
@@ -884,6 +900,7 @@ void AutoDeviceManage::on_pbUpDown_2_clicked(bool isClicked)
 }
 void AutoDeviceManage::on_pbCover_2_clicked(bool isClicked)
 {
+	QMutexLocker lock(&mut1);
 	if (m_pPLCCtrTCP->state() != QAbstractSocket::ConnectedState)
 	{
 		QLOG_INFO() << "PLC未连接";
@@ -898,6 +915,7 @@ void AutoDeviceManage::on_pbCover_2_clicked(bool isClicked)
 }
 void AutoDeviceManage::on_pbColdWater_2_clicked(bool isClicked)
 {
+	QMutexLocker lock(&mut1);
 	if (m_pPLCCtrTCP->state() != QAbstractSocket::ConnectedState)
 	{
 		QLOG_INFO() << "PLC未连接";
@@ -912,6 +930,7 @@ void AutoDeviceManage::on_pbColdWater_2_clicked(bool isClicked)
 }
 void AutoDeviceManage::on_pbPureWater_2_clicked(bool isClicked)
 {
+	QMutexLocker lock(&mut1);
 	if (m_pPLCCtrTCP->state() != QAbstractSocket::ConnectedState)
 	{
 		QLOG_INFO() << "PLC未连接";
@@ -926,6 +945,7 @@ void AutoDeviceManage::on_pbPureWater_2_clicked(bool isClicked)
 }
 void AutoDeviceManage::on_pbBlowWater_2_clicked(bool isClicked)
 {
+	QMutexLocker lock(&mut1);
 	if (m_pPLCCtrTCP->state() != QAbstractSocket::ConnectedState)
 	{
 		QLOG_INFO() << "PLC未连接";
@@ -941,6 +961,7 @@ void AutoDeviceManage::on_pbBlowWater_2_clicked(bool isClicked)
 
 void AutoDeviceManage::on_pbPrintPoint_2_clicked(bool isClicked)
 {
+	QMutexLocker lock(&mut1);
 	if (m_pPLCCtrTCP->state() != QAbstractSocket::ConnectedState)
 	{
 		QLOG_INFO() << "PLC未连接";
@@ -959,6 +980,7 @@ void AutoDeviceManage::on_pbPrintPoint_2_clicked(bool isClicked)
 ******************************************************/
 void AutoDeviceManage::on_pbGrasp_3_clicked(bool isClicked)
 {
+	QMutexLocker lock(&mut1);
 	if (m_pPLCCtrTCP->state() != QAbstractSocket::ConnectedState)
 	{
 		QLOG_INFO() << "PLC未连接";
@@ -974,6 +996,7 @@ void AutoDeviceManage::on_pbGrasp_3_clicked(bool isClicked)
 }
 void AutoDeviceManage::on_pbUpDown_3_clicked(bool isClicked)
 {
+	QMutexLocker lock(&mut1);
 	if (m_pPLCCtrTCP->state() != QAbstractSocket::ConnectedState)
 	{
 		QLOG_INFO() << "PLC未连接";
@@ -988,6 +1011,7 @@ void AutoDeviceManage::on_pbUpDown_3_clicked(bool isClicked)
 }
 void AutoDeviceManage::on_pbCover_3_clicked(bool isClicked)
 {
+	QMutexLocker lock(&mut1);
 	if (m_pPLCCtrTCP->state() != QAbstractSocket::ConnectedState)
 	{
 		QLOG_INFO() << "PLC未连接";
@@ -1002,6 +1026,7 @@ void AutoDeviceManage::on_pbCover_3_clicked(bool isClicked)
 }
 void AutoDeviceManage::on_pbColdWater_3_clicked(bool isClicked)
 {
+	QMutexLocker lock(&mut1);
 	if (m_pPLCCtrTCP->state() != QAbstractSocket::ConnectedState)
 	{
 		QLOG_INFO() << "PLC未连接";
@@ -1016,6 +1041,7 @@ void AutoDeviceManage::on_pbColdWater_3_clicked(bool isClicked)
 }
 void AutoDeviceManage::on_pbPureWater_3_clicked(bool isClicked)
 {
+	QMutexLocker lock(&mut1);
 	if (m_pPLCCtrTCP->state() != QAbstractSocket::ConnectedState)
 	{
 		QLOG_INFO() << "PLC未连接";
@@ -1030,6 +1056,7 @@ void AutoDeviceManage::on_pbPureWater_3_clicked(bool isClicked)
 }
 void AutoDeviceManage::on_pbBlowWater_3_clicked(bool isClicked)
 {
+	QMutexLocker lock(&mut1);
 	if (m_pPLCCtrTCP->state() != QAbstractSocket::ConnectedState)
 	{
 		QLOG_INFO() << "PLC未连接";
@@ -1045,6 +1072,7 @@ void AutoDeviceManage::on_pbBlowWater_3_clicked(bool isClicked)
 
 void AutoDeviceManage::on_pbPrintPoint_3_clicked(bool isClicked)
 {
+	QMutexLocker lock(&mut1);
 	if (m_pPLCCtrTCP->state() != QAbstractSocket::ConnectedState)
 	{
 		QLOG_INFO() << "PLC未连接";
@@ -1060,11 +1088,37 @@ void AutoDeviceManage::on_pbPrintPoint_3_clicked(bool isClicked)
 
 void AutoDeviceManage::on_timeToSend()
 {
+	QMutexLocker lock(&mut1);
 	if (m_pPLCCtrTCP->state() != QAbstractSocket::ConnectedState)
 	{
+		isUpInletTemp = false;
 		QLOG_INFO() << "PLC未连接";
 		return;
 	}
-	QString str = InHead + InSatrtBit_00 + InNum;
-	m_pPLCCtrTCP->write(str.toUtf8().data());
+	static QString sendstr;
+	sendstr = InHead_D + InPoint + InPointNum;
+	m_pPLCCtrTCP->write(sendstr.toUtf8().data());
+	m_pPLCCtrTCP->waitForReadyRead(1000);
+	QByteArray data = m_pPLCCtrTCP->readAll();
+	int lenght = data.size();
+	if (lenght == 26)
+	{
+		QString dd = data;
+		QString res = dd.mid(18, 4);
+		if (res != "0000")
+			return;
+		QString temp = dd.mid(22, 4);
+		int t_temp = temp.toInt(nullptr, 16);
+		//处理负数
+		if (t_temp > 3000)
+			t_temp = t_temp - 65536;
+		inlet_temp = t_temp / 10.0;
+		//QLOG_INFO() << "T:" << inlet_temp << "°c";
+	}
+	isUpInletTemp = true;
+
+
+	//
+	/*QString str = InHead + InSatrtBit_00 + InNum;
+	m_pPLCCtrTCP->write(str.toUtf8().data());*/
 }
