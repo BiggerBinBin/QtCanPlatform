@@ -120,6 +120,7 @@ private:
 
     int currentModel = -1;
     ushort m_usRoll;
+    int temp_start_row = 0;
 private:
     void initUi();
     void initData();

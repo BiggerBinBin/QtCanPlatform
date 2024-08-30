@@ -103,12 +103,12 @@ QModbusDataUnit QMoudBusCtrl::sendReadMdu(QModbusDataUnit mdu, uint serverAdd)
 	{
 		if (!reply->isFinished())
 		{
-			QEventLoop loop;
-			QTimer T;
-			connect(&T, &QTimer::timeout, &loop, &QEventLoop::quit);
+			std::shared_ptr<QEventLoop> loopPtr = std::make_shared<QEventLoop>();
+			QTimer T(this);
+			connect(&T, &QTimer::timeout, [=]() {loopPtr->quit(); });
 			T.start(3000);
-			connect(reply, &QModbusReply::finished, &loop, &QEventLoop::quit);
-			loop.exec();
+			connect(reply, &QModbusReply::finished, [=]() {loopPtr->quit(); });
+			loopPtr->exec();
 			if (!modbusDevice)
 				return QModbusDataUnit();
 		}

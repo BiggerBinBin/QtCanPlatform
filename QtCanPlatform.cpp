@@ -1175,11 +1175,29 @@ bool CanTestPlatform::recDataIntoTab()
     if (tp700 && tp700->getIsUpdate())
     {
         int cr = tableArray[ch]->rowCount();
-        //每加一行就要设置到表格去
-        tableArray[ch]->setRowCount(cr + 2);
+        temp_start_row = cr;
+       
         QStringList alias = tp700->getAliasName().split(",");
-        for (int i = 0; i < alias.size() && i < 8; i++)
+        int count;
+        if (alias.size() <= 9)
+            count = 1;
+        else
         {
+            if (alias.size() % 9 == 0)
+                count = alias.size() / 9;
+            else
+                count = alias.size() / 9+1;
+        }
+        //每加一行就要设置到表格去
+        tableArray[ch]->setRowCount(cr + 2* count);
+        int index = 0;
+        for (int i = 0; i < alias.size() /*&& i < 8*/; i++, index++)
+        {
+            if (index > 9)
+            {
+                index = 0;
+                cr += 2;
+            }
             QTableWidgetItem* item = new QTableWidgetItem(alias.at(i));
             item->setTextAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
             item->font().setBold(true);
@@ -1188,11 +1206,12 @@ bool CanTestPlatform::recDataIntoTab()
             QFont ff;
             ff.setBold(true);
             item->setFont(ff);
-            tableArray[ch]->setItem(cr, i, item);
+            tableArray[ch]->setItem(cr, index, item);
         }
 
 
     }
+    //PLC的
     if ((autoDevMan!=nullptr) && currentTestModel.ats.m_bIsNeedInletTemp && autoDevMan->getIsUpInletTemp())
     {
         int cr = tableArray[ch]->rowCount();
@@ -1293,18 +1312,20 @@ void CanTestPlatform::sendData()
             }
             else if (cbCanType->currentIndex() == 3)
             {
+                QTimer* t = dynamic_cast<QTimer*> (sender());
+                if (t)t->stop();
                 int other[2];
                 other[0] = sendCanData.at(i).len;
                 other[1] = 0;
                 pHardWare->SendMessage(fream_id, s_Data, other);
-                QTime time = QTime::currentTime().addMSecs(100);
+                QTime time = QTime::currentTime().addMSecs(currentTestModel.circle);
                 while (QTime::currentTime() < time)
                 {
                     QApplication::processEvents();
                     Sleep(1);
                 }
           
-                if (currentTestModel.modelName == "Bergstrom-LIN-330V7kW")
+               /* if (currentTestModel.modelName == "Bergstrom-LIN-330V7kW")
                 {
                     other[0] = recCanData.at(i).len;
                     other[1] = 1;
@@ -1315,9 +1336,8 @@ void CanTestPlatform::sendData()
                         QApplication::processEvents();
                         Sleep(1);
                     }
-                }
-                
-                
+                }*/
+                //t->start(currentTestModel.circle);
                 
             }
             else if (cbCanType->currentIndex() == 4)
@@ -1327,11 +1347,13 @@ void CanTestPlatform::sendData()
             }
             else if (cbCanType->currentIndex() == 5)
             {
+                QTimer* t = dynamic_cast<QTimer*> (sender());
+                if (t)t->stop();
                 int other[2];
                 other[0] = sendCanData.at(i).len;
                 other[1] = 0;
                 pHardTlin->SendMessage(fream_id, s_Data, other);
-                QTime time = QTime::currentTime().addMSecs(240);
+                QTime time = QTime::currentTime().addMSecs(currentTestModel.circle);
                 while (QTime::currentTime() < time)
                 {
                     QApplication::processEvents();
@@ -1355,14 +1377,17 @@ void CanTestPlatform::sendData()
                     int other[2];
                     other[0] = recCanData.at(k).len;
                     other[1] = 1;
-                    time = QTime::currentTime().addMSecs(50);
-                    while (QTime::currentTime() < time)
-                    {
-                        QApplication::processEvents();
-                        Sleep(1);
-                    }
-                    //if (currentTestModel.modelName != "Bergstrom-LIN-330V7kW")
                     pHardTlin->SendMessage(recCanData.at(k).strCanId.toInt(NULL, 16), s_Data, other);
+
+                    time = QTime::currentTime().addMSecs(currentTestModel.circle);
+                    if (k + 1 < recCanData.size())
+                        while (QTime::currentTime() < time)
+                        {
+                            QApplication::processEvents();
+                            Sleep(1);
+                        }
+                    //if (currentTestModel.modelName != "Bergstrom-LIN-330V7kW")
+                   
                 }
                 if (m_bGetVer)
                 {
@@ -1379,10 +1404,19 @@ void CanTestPlatform::sendData()
                     s_Data[5] = 0x09;
                     s_Data[6] = 0x24;
                     s_Data[7] = 0x06;
+                    
                     pHardTlin->SendMessage(currentTestModel.ats.m_strVerSendID.toInt(NULL, 16), s_Data, other);
                     other[1] = 1;
+                    time = QTime::currentTime().addMSecs(currentTestModel.circle);
+                    while (QTime::currentTime() < time)
+                    {
+                        QApplication::processEvents();
+                        Sleep(1);
+                    }
                     pHardTlin->SendMessage(currentTestModel.ats.m_strVerRecID.toInt(NULL, 16), s_Data, other);
                 }
+                if(pbSend->isChecked())
+                  t->start(currentTestModel.circle);
             }
             else if (cbCanType->currentIndex() == 6 || cbCanType->currentIndex() == 7)
             {
@@ -1417,21 +1451,25 @@ void CanTestPlatform::sendData()
     }
     if (cbCanType->currentIndex() == 3)
     {
+        QTimer* t = dynamic_cast<QTimer*> (sender());
+        if (t)t->stop();
         for (int k = 0; k < recCanData.size(); k++)
         {
             int other[2];
             other[0] = recCanData.at(k).len;
             other[1] = 1;
-            if(currentTestModel.modelName!="Bergstrom-LIN-330V7kW")
+            //if(currentTestModel.modelName!="Bergstrom-LIN-330V7kW")
             {
                 pHardWare->SendMessage(recCanData.at(k).strCanId.toInt(NULL, 16), s_Data, other);
             }
-            QTime time = QTime::currentTime().addMSecs(50);
-            while (QTime::currentTime() < time)
-            {
-                QApplication::processEvents();
-                Sleep(1);
-            }
+            QTime time = QTime::currentTime().addMSecs(currentTestModel.circle);
+            if(k+1< recCanData.size())
+                while (QTime::currentTime() < time)
+                {
+                    QApplication::processEvents();
+                   // Sleep(1);
+                    QThread::msleep(1);
+                }
            
         }
         if (m_bGetVer)
@@ -1451,8 +1489,21 @@ void CanTestPlatform::sendData()
             s_Data[7] = 0x06;
             pHardWare->SendMessage(currentTestModel.ats.m_strVerSendID.toInt(NULL, 16), s_Data, other);
             other[1] = 1;
+            QTime time = QTime::currentTime().addMSecs(currentTestModel.circle);
+            while (QTime::currentTime() < time)
+            {
+                QApplication::processEvents();
+                Sleep(1);
+            }
             pHardWare->SendMessage(currentTestModel.ats.m_strVerRecID.toInt(NULL, 16), s_Data, other);
         }
+        if (pbSend->isChecked())
+            if (t)
+            {
+                t->stop();
+                t->start(currentTestModel.circle);
+            }
+
     }
 
 }
@@ -2027,14 +2078,17 @@ void CanTestPlatform::recAnalyseIntel(unsigned int fream_id,QByteArray data)
     //=====2024-05-31 16:39 ========
     if (tp700 && tp700->getIsUpdate())
     {
-        int cr = tableArray[0]->rowCount()-2;
+        int cr = temp_start_row;
         //每加一行就要设置到表格去
         //tableArray[0]->setRowCount(cr + 2);
         QStringList alias = tp700->getAliasName().split(",");
         QVector<float> res = tp700->getTemperatur();
         for (int i = 0; i < alias.size() && i < res.size(); i++)
         {
-            
+            if (i % 10 == 0 && i != 0)
+            {
+                cr += 1;
+            }
             QTableWidgetItem* item = new QTableWidgetItem(alias.at(i));
             item->setTextAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
             item->font().setBold(true);
@@ -2049,6 +2103,8 @@ void CanTestPlatform::recAnalyseIntel(unsigned int fream_id,QByteArray data)
             item2->setTextAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
             item2->font().setBold(true);
             tableArray[0]->setItem(cr+1, i, item2);
+
+            
 
         }
     }
@@ -2418,28 +2474,37 @@ void CanTestPlatform::recAnalyseMoto(unsigned int fream_id, QByteArray data)
     //=====2024-05-31 16:39 ========
     if (tp700 && tp700->getIsUpdate())
     {
-        int cr = tableArray[0]->rowCount()-2;
-        //每加一行就要设置到表格去
-        //tableArray[0]->setRowCount(cr + 2);
-        QStringList alias = tp700->getAliasName().split(",");
-        QVector<float> res = tp700->getTemperatur();
-        for (int i = 0; i < alias.size() && i < res.size(); i++)
+        if (tp700 && tp700->getIsUpdate())
         {
-            QTableWidgetItem* item = new QTableWidgetItem(alias.at(i));
-            item->setTextAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
-            item->font().setBold(true);
-            item->setBackgroundColor(recBackgroudColor);
-            item->setForeground(QBrush(recFontColor));
-            QFont ff;
-            ff.setBold(true);
-            item->setFont(ff);
-            tableArray[0]->setItem(cr, i, item);
+            int cr = temp_start_row;
+            //每加一行就要设置到表格去
+            //tableArray[0]->setRowCount(cr + 2);
+            QStringList alias = tp700->getAliasName().split(",");
+            QVector<float> res = tp700->getTemperatur();
+            for (int i = 0; i < alias.size() && i < res.size(); i++)
+            {
+                if (i % 10 == 0 && i != 0)
+                {
+                    cr += 1;
+                }
+                QTableWidgetItem* item = new QTableWidgetItem(alias.at(i));
+                item->setTextAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
+                item->font().setBold(true);
+                item->setBackgroundColor(recBackgroudColor);
+                item->setForeground(QBrush(recFontColor));
+                QFont ff;
+                ff.setBold(true);
+                item->setFont(ff);
+                tableArray[0]->setItem(cr, i, item);
 
-            QTableWidgetItem* item2 = new QTableWidgetItem(QString::number(res.at(i), 'f', 2));
-            item2->setTextAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
-            item2->font().setBold(true);
-            tableArray[0]->setItem(cr + 1, i, item2);
+                QTableWidgetItem* item2 = new QTableWidgetItem(QString::number(res.at(i), 'f', 2));
+                item2->setTextAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
+                item2->font().setBold(true);
+                tableArray[0]->setItem(cr + 1, i, item2);
 
+                
+
+            }
         }
     }
     if (autoDevMan && currentTestModel.ats.m_bIsNeedInletTemp && autoDevMan->getIsUpInletTemp())
@@ -2806,13 +2871,17 @@ void CanTestPlatform::recAnalyseMotoLSB(unsigned int fream_id, QByteArray data)
     //=====2024-05-31 16:39 ========
     if (tp700 && tp700->getIsUpdate())
     {
-        int cr = tableArray[0]->rowCount()-2;
+        int cr = temp_start_row;
         //每加一行就要设置到表格去
         //tableArray[0]->setRowCount(cr + 2);
         QStringList alias = tp700->getAliasName().split(",");
         QVector<float> res = tp700->getTemperatur();
         for (int i = 0; i < alias.size() && i < res.size(); i++)
         {
+            if (i % 10 == 0 && i != 0)
+            {
+                cr += 1;
+            }
             QTableWidgetItem* item = new QTableWidgetItem(alias.at(i));
             item->setTextAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
             item->font().setBold(true);
@@ -2827,6 +2896,8 @@ void CanTestPlatform::recAnalyseMotoLSB(unsigned int fream_id, QByteArray data)
             item2->setTextAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
             item2->font().setBold(true);
             tableArray[0]->setItem(cr + 1, i, item2);
+
+            
 
         }
     }
@@ -3174,13 +3245,17 @@ void CanTestPlatform::recAnalyseIntel(int ch,unsigned int fream_id, QByteArray d
     //=====2024-05-31 16:39 ========
     if (tp700 && tp700->getIsUpdate())
     {
-        int cr = tableArray[ch]->rowCount()-2;
+        int cr = temp_start_row;
         //每加一行就要设置到表格去
-        //tableArray[ch]->setRowCount(cr + 2);
+        //tableArray[0]->setRowCount(cr + 2);
         QStringList alias = tp700->getAliasName().split(",");
         QVector<float> res = tp700->getTemperatur();
         for (int i = 0; i < alias.size() && i < res.size(); i++)
         {
+            if (i % 10 == 0 && i != 0)
+            {
+                cr += 1;
+            }
             QTableWidgetItem* item = new QTableWidgetItem(alias.at(i));
             item->setTextAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
             item->font().setBold(true);
@@ -3189,12 +3264,14 @@ void CanTestPlatform::recAnalyseIntel(int ch,unsigned int fream_id, QByteArray d
             QFont ff;
             ff.setBold(true);
             item->setFont(ff);
-            tableArray[ch]->setItem(cr, i, item);
+            tableArray[0]->setItem(cr, i, item);
 
             QTableWidgetItem* item2 = new QTableWidgetItem(QString::number(res.at(i), 'f', 2));
             item2->setTextAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
             item2->font().setBold(true);
-            tableArray[ch]->setItem(cr + 1, i, item2);
+            tableArray[0]->setItem(cr + 1, i, item2);
+
+            
 
         }
     }
@@ -3596,13 +3673,17 @@ void CanTestPlatform::recAnalyseMoto(int ch,unsigned int fream_id, QByteArray da
     //=====2024-05-31 16:39 ========
     if (tp700 && tp700->getIsUpdate())
     {
-        int cr = tableArray[ch]->rowCount()-2;
+        int cr = temp_start_row;
         //每加一行就要设置到表格去
-        //tableArray[ch]->setRowCount(cr + 2);
+        //tableArray[0]->setRowCount(cr + 2);
         QStringList alias = tp700->getAliasName().split(",");
         QVector<float> res = tp700->getTemperatur();
         for (int i = 0; i < alias.size() && i < res.size(); i++)
         {
+            if (i % 10 == 0 && i != 0)
+            {
+                cr += 1;
+            }
             QTableWidgetItem* item = new QTableWidgetItem(alias.at(i));
             item->setTextAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
             item->font().setBold(true);
@@ -3611,12 +3692,14 @@ void CanTestPlatform::recAnalyseMoto(int ch,unsigned int fream_id, QByteArray da
             QFont ff;
             ff.setBold(true);
             item->setFont(ff);
-            tableArray[ch]->setItem(cr, i, item);
+            tableArray[0]->setItem(cr, i, item);
 
             QTableWidgetItem* item2 = new QTableWidgetItem(QString::number(res.at(i), 'f', 2));
             item2->setTextAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
             item2->font().setBold(true);
-            tableArray[ch]->setItem(cr + 1, i, item2);
+            tableArray[0]->setItem(cr + 1, i, item2);
+
+            
 
         }
     }
@@ -3982,13 +4065,17 @@ void CanTestPlatform::recAnalyseMotoLSB(int ch, unsigned int fream_id, QByteArra
     //=====2024-05-31 16:39 ========
     if (tp700 && tp700->getIsUpdate())
     {
-        int cr = tableArray[ch]->rowCount()-2;
+        int cr = temp_start_row;
         //每加一行就要设置到表格去
-        //tableArray[ch]->setRowCount(cr + 2);
+        //tableArray[0]->setRowCount(cr + 2);
         QStringList alias = tp700->getAliasName().split(",");
         QVector<float> res = tp700->getTemperatur();
         for (int i = 0; i < alias.size() && i < res.size(); i++)
         {
+            if (i % 10 == 0 && i != 0)
+            {
+                cr += 1;
+            }
             QTableWidgetItem* item = new QTableWidgetItem(alias.at(i));
             item->setTextAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
             item->font().setBold(true);
@@ -3997,12 +4084,14 @@ void CanTestPlatform::recAnalyseMotoLSB(int ch, unsigned int fream_id, QByteArra
             QFont ff;
             ff.setBold(true);
             item->setFont(ff);
-            tableArray[ch]->setItem(cr, i, item);
+            tableArray[0]->setItem(cr, i, item);
 
             QTableWidgetItem* item2 = new QTableWidgetItem(QString::number(res.at(i), 'f', 2));
             item2->setTextAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
             item2->font().setBold(true);
-            tableArray[ch]->setItem(cr + 1, i, item2);
+            tableArray[0]->setItem(cr + 1, i, item2);
+
+            
 
         }
     }

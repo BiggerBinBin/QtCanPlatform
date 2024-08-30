@@ -5,6 +5,7 @@
 #include <QTimer>
 #include <QByteArray>
 #include <QVector>
+#include <qcombobox.h>
 #include "ui_TP700TemperatureModel.h"
 
 class QMoudBusCtrl;
@@ -33,19 +34,20 @@ private:
 	//要开启的通道
 	QStringList channel;
 
-	int indexData[8];
+	int indexData[32];
 	//用于16进制转浮点数的
 	union valReg
 	{
 		unsigned char data[4];
 		float fval;
 	};
-	valReg vData[8];
+	valReg vData[32];
 	//True为可以读
 	bool bDataUp = false;
 	//寄存器数量
-	ushort m_register = 16;
+	
 	bool m_debug = 0;
+	QComboBox* cb = nullptr;
 private:
 	bool openSerial();
 private Q_SLOTS:

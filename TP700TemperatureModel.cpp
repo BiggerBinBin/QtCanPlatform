@@ -7,17 +7,20 @@
 #pragma execution_character_set("utf-8")  
 static QByteArray requestArray_1 = QByteArrayLiteral("\x01\x03\x00\x00\x00\x10\x44\x06");
 #define _DATA_NUM_ 37
+#define _CHANNEL_NUM 32
+static ushort m_register_ = 16;
 TP700TemperatureModel::TP700TemperatureModel(QWidget *parent)
 	: QDialog(parent)
 {
 	ui.setupUi(this);
+	
 	ui.tableWidget->setColumnWidth(0, 200);
-	QComboBox* cb = new QComboBox(this);
-	cb->addItem("TP700",16);
+	cb = new QComboBox(this);
+	cb->addItem("TP700",32);
 	cb->addItem("DAM-4501",8);
 	ui.tableWidget->setCellWidget(0, 1, cb);
 	connect(cb, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &TP700TemperatureModel::on_comboboxDevice_indexChanged);
-
+	m_register_= 32;
 }
 
 TP700TemperatureModel::~TP700TemperatureModel()
@@ -28,7 +31,7 @@ TP700TemperatureModel::~TP700TemperatureModel()
 QVector<float> TP700TemperatureModel::getTemperatur()
 {
 	QVector<float> vec;
-	for (int i = 0; i < 8; i++)
+	for (int i = 0; i < m_register_; i++)
 	{
 		if (indexData[i] == 1)
 		{
@@ -54,9 +57,9 @@ void TP700TemperatureModel::on_timesend()
 	QModbusDataUnit mdu;
 	mdu.setRegisterType(QModbusDataUnit::HoldingRegisters);
 	mdu.setStartAddress(0);
-	mdu.setValueCount(m_register);
+	mdu.setValueCount(m_register_*2);
 	QModbusDataUnit reply = serialport_tp700->sendReadMdu(mdu, serviceAddr);
-	if (reply.valueCount() < m_register)
+	if (reply.valueCount() < m_register_*2)
 	{
 		bDataUp = false;
 		QLOG_WARN() << "Loss data";
@@ -69,9 +72,9 @@ void TP700TemperatureModel::on_receive(QVector<uint16_t> data)
 {
 	
 	{
-		if(m_register==16)
+		if(m_register_==32)
 		{
-			for (int i = 0; i < m_register; i += 2)
+			for (int i = 0; i < m_register_*2 && i< data.size(); i += 2)
 			{
 				//uData[i] = (uchar)data.at(i + 3);
 				vData[i / 2].data[0] = data.at(i + 1) & 0xFF;
@@ -85,9 +88,9 @@ void TP700TemperatureModel::on_receive(QVector<uint16_t> data)
 				}
 			}
 		}
-		else if (m_register == 8)
+		else if (m_register_ == 8)
 		{
-			for (int i = 0; i < m_register; i++)
+			for (int i = 0; i < m_register_*2 && i< data.size(); i++)
 			{
 				vData[i].fval = data.at(i) / 10.0;
 				if (indexData[i] == 1 && m_debug)
@@ -102,9 +105,9 @@ void TP700TemperatureModel::on_receive(QVector<uint16_t> data)
 }
 void TP700TemperatureModel::on_comboboxDevice_indexChanged(int index)
 {
-	QComboBox* cb = dynamic_cast<QComboBox*>(sender());
-	if (!cb)return;
-	m_register = cb->currentData().toInt();
+	QComboBox* cb1 = dynamic_cast<QComboBox*>(sender());
+	if (!cb1)return;
+	m_register_ = cb1->currentData().toInt();
 }
 void TP700TemperatureModel::on_pbStart_clicked(bool b)
 {
@@ -115,7 +118,7 @@ void TP700TemperatureModel::on_pbStart_clicked(bool b)
 			QMessageBox::warning(this, QString("Error"), QString("串口打开失败，请检查串口设备"));
 			return;
 		}
-		memset(indexData, 0, sizeof(uchar) * 8);
+		memset(indexData, 0, sizeof(uchar) * 32);
 		if (!isSerialOK)
 		{
 			QMessageBox::warning(this, QString("Error"), QString("串口未打开，不能启动"));
@@ -124,6 +127,10 @@ void TP700TemperatureModel::on_pbStart_clicked(bool b)
 		aliasName = this->ui.tableWidget->item(4, 1)->text();
 		channel = this->ui.tableWidget->item(3, 1)->text().split(";");
 		m_debug = this->ui.tableWidget->item(5, 1)->text().toInt();
+		if (cb)
+			m_register_ = cb->currentData().toInt();
+		else
+			m_register_ = 8;
 		if (channel.size() <= 0)
 		{
 			QMessageBox::warning(this, QString("Error"), QString("通道参数有错"));
@@ -132,7 +139,7 @@ void TP700TemperatureModel::on_pbStart_clicked(bool b)
 		for (int x = 0; x < channel.size(); x++)
 		{
 			int index = channel.at(x).toInt();
-			if (index < 0 || index>7)
+			if (index < 0 || index>m_register_)
 			{
 				QMessageBox::warning(this, QString("Error"), QString("通道参数有错"));
 				return;
