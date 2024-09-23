@@ -1800,7 +1800,7 @@ void CanTestPlatform::recAnalyseIntel(unsigned int fream_id,QByteArray data)
                     ddf.index = m;
                     ddf.f1 = splt.at(0).toInt();
                     ddf.f2 = splt.at(1).toInt();
-                    ddf.showCount = -1;
+                    ddf.showCount = 0;
                     ddFF.push_back(ddf);
                 }
             }
@@ -1881,7 +1881,8 @@ void CanTestPlatform::recAnalyseIntel(unsigned int fream_id,QByteArray data)
                         parseArr.at(iB->index).value = parseArr.at(iB->f1 - 1).value * parseArr.at(iB->f2 - 1).value;
                         parseArr.at(iB->index).toWord = QString::number(parseArr.at(iB->index).value);
                         //更新RollShowData里面的数据，因为是有序的，之前push进去的数据为空的
-                        if (RollShowData.size() - 1 >= iB->showCount)
+                        int d_count = (RollShowData.size() - 1);
+                        if (d_count >= iB->showCount)
                         {
                             RollShowData.at(iB->showCount).value = parseArr.at(iB->index).value;
                         }
@@ -2236,6 +2237,7 @@ void CanTestPlatform::recAnalyseMoto(unsigned int fream_id, QByteArray data)
                     ddf.index = m;
                     ddf.f1 = splt.at(0).toInt();
                     ddf.f2 = splt.at(1).toInt();
+                    ddf.showCount = 0;
                     ddFF.push_back(ddf);
                 }
             }
@@ -2304,7 +2306,9 @@ void CanTestPlatform::recAnalyseMoto(unsigned int fream_id, QByteArray data)
                 {
                     parseArr.at(iB->index).value = parseArr.at(iB->f1 - 1).value * parseArr.at(iB->f2 - 1).value;
                     parseArr.at(iB->index).toWord = QString::number(parseArr.at(iB->index).value);
-                    if (RollShowData.size() - 1 >= iB->showCount)
+                    //编译器优化TM的搞死人，要定义个变量来做比较
+                    int d_count = (RollShowData.size() - 1);
+                    if (d_count >= iB->showCount)
                     {
                         RollShowData.at(iB->showCount).value = parseArr.at(iB->index).value;
                     }
@@ -2633,6 +2637,7 @@ void CanTestPlatform::recAnalyseMotoLSB(unsigned int fream_id, QByteArray data)
                     ddf.index = m;
                     ddf.f1 = splt.at(0).toInt();
                     ddf.f2 = splt.at(1).toInt();
+                    ddf.showCount = 0;
                     ddFF.push_back(ddf);
                 }
             }
@@ -2701,7 +2706,9 @@ void CanTestPlatform::recAnalyseMotoLSB(unsigned int fream_id, QByteArray data)
                 {
                     parseArr.at(iB->index).value = parseArr.at(iB->f1 - 1).value * parseArr.at(iB->f2 - 1).value;
                     parseArr.at(iB->index).toWord = QString::number(parseArr.at(iB->index).value);
-                    if (RollShowData.size() - 1 >= iB->showCount)
+                    //编译器优化TM的搞死人，要定义个变量来做比较
+                    int d_count = (RollShowData.size() - 1);
+                    if (d_count >= iB->showCount)
                     {
                         RollShowData.at(iB->showCount).value = parseArr.at(iB->index).value;
                     }
