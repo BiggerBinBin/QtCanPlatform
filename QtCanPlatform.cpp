@@ -1800,7 +1800,7 @@ void CanTestPlatform::recAnalyseIntel(unsigned int fream_id,QByteArray data)
                     ddf.index = m;
                     ddf.f1 = splt.at(0).toInt();
                     ddf.f2 = splt.at(1).toInt();
-                    ddf.showCount = 0;
+                    ddf.showCount = -1;
                     ddFF.push_back(ddf);
                 }
             }
@@ -2237,7 +2237,7 @@ void CanTestPlatform::recAnalyseMoto(unsigned int fream_id, QByteArray data)
                     ddf.index = m;
                     ddf.f1 = splt.at(0).toInt();
                     ddf.f2 = splt.at(1).toInt();
-                    ddf.showCount = 0;
+                    ddf.showCount = -1;
                     ddFF.push_back(ddf);
                 }
             }
@@ -2637,7 +2637,7 @@ void CanTestPlatform::recAnalyseMotoLSB(unsigned int fream_id, QByteArray data)
                     ddf.index = m;
                     ddf.f1 = splt.at(0).toInt();
                     ddf.f2 = splt.at(1).toInt();
-                    ddf.showCount = 0;
+                    ddf.showCount = -1;
                     ddFF.push_back(ddf);
                 }
             }
@@ -3436,6 +3436,7 @@ void CanTestPlatform::recAnalyseMoto(int ch,unsigned int fream_id, QByteArray da
                     ddf.index = m;
                     ddf.f1 = splt.at(0).toInt();
                     ddf.f2 = splt.at(1).toInt();
+                    ddf.showCount = -1;
                     ddFF.push_back(ddf);
                 }
             }
@@ -3860,6 +3861,7 @@ void CanTestPlatform::recAnalyseMotoLSB(int ch, unsigned int fream_id, QByteArra
                     ddf.index = m;
                     ddf.f1 = splt.at(0).toInt();
                     ddf.f2 = splt.at(1).toInt();
+                    ddf.showCount = -1;
                     ddFF.push_back(ddf);
                 }
             }
