@@ -1,0 +1,20 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <DebuggerFlavor>WindowsRemoteDebugger</DebuggerFlavor>
+    <RemoteDebuggerCommand>E:\HIL-Test-System\HIL_Client\CANMasterPlus.exe</RemoteDebuggerCommand>
+    <RemoteDebuggerWorkingDirectory>E:\HIL-Test-System\HIL_Client\</RemoteDebuggerWorkingDirectory>
+    <RemoteDebuggerServerName>192.168.200.99:4026</RemoteDebuggerServerName>
+    <DeploymentDirectory>E:\HIL-Test-System\HIL_Client\</DeploymentDirectory>
+  </PropertyGroup>
+  <PropertyGroup Label="QtSettings" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <QtLastBackgroundBuild>2026-08-10T07:18:06.6867717Z</QtLastBackgroundBuild>
+    <QtTouchProperty>
+    </QtTouchProperty>
+  </PropertyGroup>
+  <PropertyGroup Label="QtSettings" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <QtLastBackgroundBuild>2026-08-10T07:38:21.5733189Z</QtLastBackgroundBuild>
+    <QtTouchProperty>
+    </QtTouchProperty>
+  </PropertyGroup>
+</Project>

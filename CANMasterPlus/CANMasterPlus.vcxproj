@@ -1,0 +1,200 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!--
+***************************************************************************************************
+ Copyright (C) 2023 The Qt Company Ltd.
+ SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
+***************************************************************************************************
+-->
+<Project DefaultTargets="Build" ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{7126F9BE-8B4F-400B-85F0-7244B4EE3CC6}</ProjectGuid>
+    <Keyword>QtVS_v304</Keyword>
+    <WindowsTargetPlatformVersion Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">10.0.22000.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">10.0.22000.0</WindowsTargetPlatformVersion>
+    <QtMsBuild Condition="'$(QtMsBuild)'=='' OR !Exists('$(QtMsBuild)\qt.targets')">$(MSBuildProjectDirectory)\QtMsBuild</QtMsBuild>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Condition="Exists('$(QtMsBuild)\qt_defaults.props')">
+    <Import Project="$(QtMsBuild)\qt_defaults.props" />
+  </ImportGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'" Label="QtSettings">
+    <QtInstall>msvc2019</QtInstall>
+    <QtModules>core;gui;axcontainer;widgets;serialport;printsupport;concurrent;dbus;serialbus;</QtModules>
+    <QtBuildConfig>debug</QtBuildConfig>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'" Label="QtSettings">
+    <QtInstall>msvc2019</QtInstall>
+    <QtModules>core;network;gui;axcontainer;widgets;serialport;printsupport;concurrent;dbus;serialbus</QtModules>
+    <QtBuildConfig>release</QtBuildConfig>
+  </PropertyGroup>
+  <Target Name="QtMsBuildNotFound" BeforeTargets="CustomBuild;ClCompile" Condition="!Exists('$(QtMsBuild)\qt.targets') or !Exists('$(QtMsBuild)\qt.props')">
+    <Message Importance="High" Text="QtMsBuild: could not locate qt.targets, qt.props; project may not build correctly." />
+  </Target>
+  <ImportGroup Label="ExtensionSettings" />
+  <ImportGroup Label="Shared" />
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(QtMsBuild)\Qt.props" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(QtMsBuild)\Qt.props" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
+    <IncludePath>$(Qt_INCLUDEPATH_);$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalIncludeDirectories>..\..\HILGUI\HilGui;..\..\HILGUI\HilGui\x64\$(Configuration)\uic;..\..\HILGUI\HilGui\x64\$(Configuration)\qt\uic;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>/Zm200 %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
+    <Link>
+      <AdditionalLibraryDirectories>..\x64\$(Configuration);..\..\HILGUI\x64\$(Configuration);..\..\HILGUI\HilGui\YAML\libs\$(Configuration);../DeviceIO/release;../ModelDataManage/release;../DeviceIO/3rd/QsLog/bin/$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>DeviceIO.lib;ModelDataManage.lib;QsLog2.lib;yaml-cpp.lib;HilGui.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <PostBuildEvent>
+      <Command>call "$(ProjectDir)CleanAfterBuild.bat" $(ProjectDir)$(platform)  $(Configuration) $(OutDir)</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalIncludeDirectories>$(Qt_INCLUDEPATH_);..\..\HILGUI\HilGui;..\..\HILGUI\HilGui\x64\$(Configuration)\uic;..\..\HILGUI\HilGui\x64\$(Configuration)\qt\uic;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+    </ClCompile>
+    <Link>
+      <AdditionalLibraryDirectories>..\x64\$(Configuration);..\..\HILGUI\x64\$(Configuration);..\..\HILGUI\HilGui\YAML\libs\$(Configuration);../DeviceIO/debug;../ModelDataManage/debug;../DeviceIO/3rd/QsLog/bin/$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>DeviceIO.lib;QsLog2.lib;ModelDataManage.lib;yaml-cppd.lib;HilGui.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <PostBuildEvent>
+      <Command>call "$(ProjectDir)CleanAfterBuild.bat" $(ProjectDir)$(platform)  $(Configuration) $(OutDir)</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'" Label="Configuration">
+    <ClCompile>
+      <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <Optimization>Disabled</Optimization>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'" Label="Configuration">
+    <ClCompile>
+      <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+      <Optimization>Disabled</Optimization>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\ModelDataManage\Unities\AlgorithmSet.cpp" />
+    <ClCompile Include="..\ModelDataManage\Unities\MsgParser.cpp" />
+    <ClCompile Include="..\ModelDataManage\Unities\qGboleData.cpp" />
+    <ClCompile Include="communicate.cpp" />
+    <ClCompile Include="DataSave.cpp" />
+    <ClCompile Include="Login.cpp" />
+    <ClCompile Include="messageview.cpp" />
+    <ClCompile Include="qcustomplot.cpp" />
+    <ClCompile Include="QLogPlot.cpp" />
+    <ClCompile Include="QMoudBusCtrl.cpp" />
+    <ClCompile Include="QSignalManage.cpp" />
+    <ClCompile Include="ReceiveTableManage.cpp" />
+    <ClCompile Include="RequestTableManage.cpp" />
+    <ClCompile Include="RollShowManage.cpp" />
+    <ClCompile Include="SysSetting.cpp" />
+    <ClCompile Include="TP700TemperatureModel.cpp" />
+    <QtRcc Include="CANMasterPlus.qrc" />
+    <QtUic Include="CANMasterPlus.ui" />
+    <QtMoc Include="CANMasterPlus.h" />
+    <ClCompile Include="CANMasterPlus.cpp" />
+    <ClCompile Include="main.cpp" />
+    <QtUic Include="Login.ui" />
+    <QtUic Include="QLogPlot.ui" />
+    <QtUic Include="QSignalManage.ui" />
+    <QtUic Include="SysSetting.ui" />
+    <QtUic Include="TP700TemperatureModel.ui" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\DeviceIO\DeviceIO.vcxproj">
+      <Project>{d192cfb5-371b-3484-93e7-efd277b5f314}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\ModelDataManage\ModelDataManage.vcxproj">
+      <Project>{71e6514c-8853-3382-8c74-0c771a363bcd}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\HILGUI\HilGui\HilGui.vcxproj">
+      <Project>{22692e2f-c226-47ea-b817-116793fff805}</Project>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <QtMoc Include="communicate.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <QtMoc Include="messageview.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\ModelDataManage\Unities\AlgorithmSet.h" />
+    <ClInclude Include="..\ModelDataManage\Unities\dataStruct.h" />
+    <QtMoc Include="TP700TemperatureModel.h" />
+    <QtMoc Include="Login.h" />
+    <ClInclude Include="MsgQueue.h" />
+    <QtMoc Include="QMoudBusCtrl.h" />
+    <ClInclude Include="resource.h" />
+    <QtMoc Include="SysSetting.h" />
+    <QtMoc Include="qcustomplot.h" />
+    <QtMoc Include="QLogPlot.h" />
+    <QtMoc Include="QSignalManage.h" />
+    <QtMoc Include="..\ModelDataManage\Unities\MsgParser.h" />
+    <ClInclude Include="..\ModelDataManage\Unities\qGboleData.h" />
+    <QtMoc Include="DataSave.h" />
+    <ClInclude Include="GlobalDataStruct.h" />
+    <QtMoc Include="RollShowManage.h" />
+    <QtMoc Include="ReceiveTableManage.h" />
+    <QtMoc Include="RequestTableManage.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="CANMasterPlus.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="app-logo.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <QtTranslation Include="Chinese_zh_CN.ts" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Condition="Exists('$(QtMsBuild)\qt.targets')">
+    <Import Project="$(QtMsBuild)\qt.targets" />
+  </ImportGroup>
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

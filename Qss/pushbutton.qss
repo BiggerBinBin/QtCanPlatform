@@ -1,8 +1,0 @@
-QPushButton:pressed{
-	background-color:#ff9966
-	border-radius:6px;
-}
-QPushButton:default{
-
-	background-color:navy;
-}

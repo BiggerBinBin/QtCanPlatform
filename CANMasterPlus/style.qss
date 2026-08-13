@@ -1,0 +1,287 @@
+QWidget
+{
+	color:white;
+	font-family:Microsoft YaHei;
+}
+QPushButton {
+    border-style:solid;
+    border-width:2px;
+    border-radius:5px;
+    border-radius:8px;
+	border-color:#5A69B2;
+	margin:5px;
+	height:25px;
+	color:white;
+	font-family:Microsoft YaHei;
+	
+}
+QPushButton:checked {
+  border-color:#298DFF;
+  background:#298DFF;
+  color:#ffffff;
+}
+QPushButton:!checked {
+	border-style:solid;
+    border-width:2px;
+    border-radius:5px;
+    border-radius:8px;
+	border-color:#5A69B2;
+	margin:5px;
+	height:25px;
+	color:white;
+	font-family:Microsoft YaHei;
+}
+QMainWindow,QWidget{
+	background-color:#2E3648;
+	color:white;
+	font-family:Microsoft YaHei;
+}
+QPushButton:hover {
+    border-color:#298DFF;
+    background:#298DFF;
+    color:#ffffff;
+}
+
+
+QPushButton#Btn_APP_In{
+    border-radius:15px;
+}
+
+
+
+
+/*
+QLineEdit{
+    border: 2px solid grey;
+    border-radius: 10px;
+    height:25px;
+	border-color:#5A69B2;
+	background-color:#212934;
+	color:white;
+}
+
+QTextEdit,QTextBrowser{
+    border: 2px solid grey;
+    
+    /*微软雅黑*/
+    /*font-family:SimSun;*/
+    font-family:Microsoft YaHei;
+    /*字体大小为20点*/
+    font-size:10pt;
+    
+	border-color:#5A69B2;
+	border-radius: 10px;
+	background-color:#212934;
+	color:#ffffff;
+}
+
+QLabel{
+	color:white;
+	font-family:Microsoft YaHei;
+}
+
+*/
+
+/* 未下拉时，QComboBox的样式 */
+QComboBox {
+    border: 1px solid gray;   /* 边框 */
+    border-radius: 5px;   /* 圆角 */
+    padding: 1px 18px 1px 3px;   /* 字体填衬 */
+    font: normal normal 15px "Microsoft YaHei";
+	border-color:#5A69B2;
+	color:white;
+	background-color:#212934;
+}
+
+/* 下拉后，整个下拉窗体样式 */
+QComboBox QAbstractItemView {
+    outline: 0px solid gray;   /* 选定项的虚框 */
+    border: 1px solid black;   /* 整个下拉窗体的边框 */
+    color: #FFFFFF;
+    font: normal normal 15px "Microsoft YaHei";
+    background-color: #212934;   /* 整个下拉窗体的背景色 */
+    selection-background-color: #298DFF;   /* 整个下拉窗体被选中项的背景色 */
+}
+
+/* 下拉后，整个下拉窗体每项的样式 */
+QComboBox QAbstractItemView::item {
+    height: 30px;   /* 项的高度（设置pComboBox->setView(new QListView());后，该项才起作用） */
+}
+
+
+/* 下拉后，整个下拉窗体被选择的每项的样式 */
+QComboBox QAbstractItemView::item:selected {
+    color: blue;
+    background-color: rgba(27,167,132,30%);
+}
+
+/* QComboBox中的垂直滚动条 */
+QComboBox QAbstractScrollArea QScrollBar:vertical {
+    width: 10px;
+    background-color: #ffffff;   /* 空白区域的背景色  灰色green */
+}
+
+QComboBox QAbstractScrollArea QScrollBar::handle:vertical {
+    border-radius: 5px;   /* 圆角 */
+    background: rgb(160,160,160);   /* 小方块的背景色深灰lightblue */
+}
+
+QComboBox QAbstractScrollArea QScrollBar::handle:vertical:hover {
+    background: rgb(90, 91, 93);   /* 越过小方块的背景色yellow */
+}
+
+
+
+/* 设置为非编辑!editable时，点击下拉框的样式 */
+/*QComboBox::drop-down:!editable:on {
+    background: rgba(255,0,0,10%);
+}*/
+
+/* 下拉框样式 */
+QComboBox::drop-down {
+    subcontrol-origin: padding;   /* 子控件在父元素中的原点矩形。如果未指定此属性，则默认为padding。 */
+    subcontrol-position: top right;   /* 下拉框的位置（右上） */
+    width: 15px;   /* 下拉框的宽度 */
+
+    border-left-width: 1px;   /* 下拉框的左边界线宽度 */
+    border-left-style: solid;   /* 下拉框的左边界线为实线 */
+    border-top-right-radius: 3px;   /* 下拉框的右上边界线的圆角半径（应和整个QComboBox右上边界线的圆角半径一致） */
+    border-bottom-right-radius: 3px;   /* 同上 */
+}
+/* 下拉箭头样式 */
+QComboBox::down-arrow {
+    width: 15px; /* 下拉箭头的宽度（建议与下拉框drop-down的宽度一致） */
+    background: transparent; /* 下拉箭头的的背景色 */
+    padding: 0px 10px 0px 0px; /* 上内边距、右内边距、下内边距、左内边距 */
+    image: url(:/PHU_Bootloader_20/Resource/down.ico);
+} /* 点击下拉箭头 */
+QComboBox::down-arrow:on {
+    width: 15px; /* 下拉箭头的宽度（建议与下拉框drop-down的宽度一致） */
+    background: transparent; /* 下拉箭头的的背景色 */
+    padding: 0px 10px 0px 0px; /* 上内边距、右内边距、下内边距、左内边距 */
+    image: url(:/Image/IMG/push.png); /* 显示下拉箭头 */
+	image: url(:/PHU_Bootloader_20/Resource/down.ico);
+}
+
+
+QMessageBox {
+        background-color: #ffffff; /* QMessageBox背景颜色 */
+}
+
+QMessageBox QLabel#qt_msgbox_label { /* textLabel */
+        color: #000000;
+        background-color: transparent;
+        min-width: 200px; /* textLabel设置最小宽度可以相应的改变QMessageBox的最小宽度 */
+        min-height: 60px; /* textLabel和iconLabel高度保持一致 */
+}
+
+QMessageBox QLabel#qt_msgboxex_icon_label { /* iconLabel */
+        padding-top:30px;
+        width: 40px;
+        height: 10px; /* textLabel和iconLabel高度保持一致 */
+}
+
+QMessageBox QPushButton { /* QMessageBox中的QPushButton样式 */
+        border: 1px solid #298DFF;
+        border-radius: 3px;
+        background-color: #F2F2F2;
+        color: #298DFF;
+        font-family: "Microsoft YaHei";
+        font-size: 10pt;
+        min-width: 70px;
+        min-height: 25px;
+}
+
+QMessageBox QPushButton:hover {
+        background-color: #298DFF;
+        color: #F2F2F2;
+}
+
+QMessageBox QPushButton:pressed {
+        background-color: #257FE6;
+}
+
+/*
+QInputDialog {
+        background-color: #F2F2F2; /* QMessageBox背景颜色 */
+}
+
+QInputDialog QLineEdit{
+    height:30px;
+    font-size:20px;
+}
+
+QInputDialog QLabel { /* textLabel */
+        color: #000000;
+        background-color: transparent;
+        min-width: 200px; /* textLabel设置最小宽度可以相应的改变QMessageBox的最小宽度 */
+        min-height: 10px; /* textLabel和iconLabel高度保持一致 */
+        font-family: "Microsoft YaHei";
+        font-size: 12pt;
+}
+
+QInputDialog QPushButton { /* QMessageBox中的QPushButton样式 */
+        border: 1px solid #298DFF;
+        border-radius: 3px;
+        background-color: #F2F2F2;
+        color: #298DFF;
+        font-family: "Microsoft YaHei";
+        font-size: 10pt;
+        min-width: 70px;
+        min-height: 25px;
+}
+
+QInputDialog QPushButton:hover {
+        background-color: #298DFF;
+        color: #F2F2F2;
+}
+
+QInputDialog QPushButton:pressed {
+        background-color: #257FE6;
+}
+
+QTableWidget{
+    text-align:center;
+    border: 2px solid #5A69B2;;
+    color:#DCDCDC; 
+    /*微软雅黑*/
+    /*font-family:SimSun;*/
+    font-family:Microsoft YaHei;
+    /*字体大小为20点
+    font-size:12pt;*/
+    font:blod;
+	border-color:#5A69B2;
+	border-radius: 10px;
+	background-color:#212934;
+   
+}
+QTableWidget::item{
+    border:2px solid #5A69B2;
+	border-radius: 5px;
+    text-align: center;
+    margin:0px; 
+}
+QHeaderView
+{ 
+    text-align:center;
+    /*padding:3px;*/ 
+    margin:0px; 
+    color:#DCDCDC; 
+    background-color:#2E3648;
+ }
+ QHeaderView::section,QTableCornerButton::section
+ {
+    background-color:#2E3648;
+ }
+ */
+QProgressBar { 
+	border: 2px solid #5A69B2; 
+	border-radius: 10px; 
+	background-color: #212934; 
+	text-align: center;
+	}
+QProgressBar::chunk {
+	background:QLinearGradient(x1:0,y1:0,x2:2,y2:0,stop:0 #666699,stop:1  #DB7093); 
+    border-radius: 10px;
+	}
+	

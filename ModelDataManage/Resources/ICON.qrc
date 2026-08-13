@@ -1,0 +1,6 @@
+<RCC>
+  <qresource prefix="icon">
+    <file>idcard-fill.ico</file>
+    <file>model.ico</file>
+  </qresource>
+</RCC>

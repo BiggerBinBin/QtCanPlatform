@@ -1,0 +1,55 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.7.34024.191
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CANMasterPlus", "CANMasterPlus\CANMasterPlus.vcxproj", "{7126F9BE-8B4F-400B-85F0-7244B4EE3CC6}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DeviceIO", "DeviceIO\DeviceIO.vcxproj", "{D192CFB5-371B-3484-93E7-EFD277B5F314}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ModelDataManage", "ModelDataManage\ModelDataManage.vcxproj", "{71E6514C-8853-3382-8C74-0C771A363BCD}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "HILDeviceCtrl", "..\HILDeviceCtrl\HILDeviceCtrl\HILDeviceCtrl.vcxproj", "{A6651D34-4095-46E1-A492-90010205CDC0}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "HilTestCaseRun", "..\HilTestCaseRun\HilTestCaseRun\HilTestCaseRun.vcxproj", "{191CD019-CA1D-4C67-B54E-634F5095DA87}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "HilGui", "..\HILGUI\HilGui\HilGui.vcxproj", "{22692E2F-C226-47EA-B817-116793FFF805}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{7126F9BE-8B4F-400B-85F0-7244B4EE3CC6}.Debug|x64.ActiveCfg = Debug|x64
+		{7126F9BE-8B4F-400B-85F0-7244B4EE3CC6}.Debug|x64.Build.0 = Debug|x64
+		{7126F9BE-8B4F-400B-85F0-7244B4EE3CC6}.Release|x64.ActiveCfg = Release|x64
+		{7126F9BE-8B4F-400B-85F0-7244B4EE3CC6}.Release|x64.Build.0 = Release|x64
+		{D192CFB5-371B-3484-93E7-EFD277B5F314}.Debug|x64.ActiveCfg = Debug|x64
+		{D192CFB5-371B-3484-93E7-EFD277B5F314}.Debug|x64.Build.0 = Debug|x64
+		{D192CFB5-371B-3484-93E7-EFD277B5F314}.Release|x64.ActiveCfg = Release|x64
+		{D192CFB5-371B-3484-93E7-EFD277B5F314}.Release|x64.Build.0 = Release|x64
+		{71E6514C-8853-3382-8C74-0C771A363BCD}.Debug|x64.ActiveCfg = Debug|x64
+		{71E6514C-8853-3382-8C74-0C771A363BCD}.Debug|x64.Build.0 = Debug|x64
+		{71E6514C-8853-3382-8C74-0C771A363BCD}.Release|x64.ActiveCfg = Release|x64
+		{71E6514C-8853-3382-8C74-0C771A363BCD}.Release|x64.Build.0 = Release|x64
+		{A6651D34-4095-46E1-A492-90010205CDC0}.Debug|x64.ActiveCfg = Debug|x64
+		{A6651D34-4095-46E1-A492-90010205CDC0}.Debug|x64.Build.0 = Debug|x64
+		{A6651D34-4095-46E1-A492-90010205CDC0}.Release|x64.ActiveCfg = Release|x64
+		{A6651D34-4095-46E1-A492-90010205CDC0}.Release|x64.Build.0 = Release|x64
+		{191CD019-CA1D-4C67-B54E-634F5095DA87}.Debug|x64.ActiveCfg = Debug|x64
+		{191CD019-CA1D-4C67-B54E-634F5095DA87}.Debug|x64.Build.0 = Debug|x64
+		{191CD019-CA1D-4C67-B54E-634F5095DA87}.Release|x64.ActiveCfg = Release|x64
+		{191CD019-CA1D-4C67-B54E-634F5095DA87}.Release|x64.Build.0 = Release|x64
+		{22692E2F-C226-47EA-B817-116793FFF805}.Debug|x64.ActiveCfg = Debug|x64
+		{22692E2F-C226-47EA-B817-116793FFF805}.Debug|x64.Build.0 = Debug|x64
+		{22692E2F-C226-47EA-B817-116793FFF805}.Release|x64.ActiveCfg = Release|x64
+		{22692E2F-C226-47EA-B817-116793FFF805}.Release|x64.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {11C10A3F-31D2-48CC-A0C4-C04786BB5FC2}
+	EndGlobalSection
+EndGlobal

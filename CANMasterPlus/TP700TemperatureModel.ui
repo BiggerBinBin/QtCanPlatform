@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>TP700TemperatureModelClass</class>
+ <widget class="QWidget" name="TP700TemperatureModelClass">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>413</width>
+    <height>326</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>TP700TemperatureModel</string>
+  </property>
+  <layout class="QGridLayout" name="gridLayout">
+   <item row="0" column="0">
+    <widget class="QPushButton" name="pbStart">
+     <property name="text">
+      <string>启动</string>
+     </property>
+     <property name="checkable">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="0">
+    <widget class="QTableWidget" name="tableWidget">
+     <row>
+      <property name="text">
+       <string>0</string>
+      </property>
+     </row>
+     <row>
+      <property name="text">
+       <string>1</string>
+      </property>
+     </row>
+     <row>
+      <property name="text">
+       <string>2</string>
+      </property>
+     </row>
+     <row>
+      <property name="text">
+       <string>3</string>
+      </property>
+     </row>
+     <row>
+      <property name="text">
+       <string>4</string>
+      </property>
+     </row>
+     <column>
+      <property name="text">
+       <string>参数</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>值</string>
+      </property>
+     </column>
+     <item row="0" column="0">
+      <property name="text">
+       <string>设备型号</string>
+      </property>
+     </item>
+     <item row="0" column="1">
+      <property name="text">
+       <string/>
+      </property>
+     </item>
+     <item row="1" column="0">
+      <property name="text">
+       <string>串口名</string>
+      </property>
+     </item>
+     <item row="1" column="1">
+      <property name="text">
+       <string>COM4</string>
+      </property>
+     </item>
+     <item row="2" column="0">
+      <property name="text">
+       <string>波特率</string>
+      </property>
+     </item>
+     <item row="2" column="1">
+      <property name="text">
+       <string>9600</string>
+      </property>
+     </item>
+     <item row="3" column="0">
+      <property name="text">
+       <string>启用通道(英文分号隔开)</string>
+      </property>
+     </item>
+     <item row="3" column="1">
+      <property name="text">
+       <string>0;1</string>
+      </property>
+     </item>
+     <item row="4" column="0">
+      <property name="text">
+       <string>Debug</string>
+      </property>
+     </item>
+     <item row="4" column="1">
+      <property name="text">
+       <string>0</string>
+      </property>
+     </item>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <layoutdefault spacing="6" margin="11"/>
+ <resources/>
+ <connections/>
+</ui>

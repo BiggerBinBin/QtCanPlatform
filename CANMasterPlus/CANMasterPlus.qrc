@@ -1,0 +1,9 @@
+<RCC>
+  <qresource prefix="/CANMasterPlus">
+    <file>app-logo.ico</file>
+    <file>Qtoolbuuton.qss</file>
+    <file>save.ico</file>
+    <file>clear.ico</file>
+    <file>style.qss</file>
+  </qresource>
+</RCC>
